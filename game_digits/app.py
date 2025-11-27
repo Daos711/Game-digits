@@ -217,24 +217,11 @@ class GameApp:
             if arrow.rect.collidepoint(pos):
                 tile = arrow.tile
                 direction = arrow.direction
-                # Вычисляем путь до запуска движения
-                old_row, old_col = tile.position
-                target_rect = tile.target_move(direction, self.game.board)
-                new_col = (target_rect.topleft[0] - self.gap) // (self.tile_size + self.gap)
-                new_row = (target_rect.topleft[1] - self.gap) // (self.tile_size + self.gap)
-                # Строим путь пройденных ячеек (без финальной)
-                positions = []
-                if old_row == new_row:  # Горизонтальное движение
-                    step = 1 if new_col > old_col else -1
-                    for col in range(old_col, new_col, step):
-                        positions.append((old_row, col))
-                else:  # Вертикальное движение
-                    step = 1 if new_row > old_row else -1
-                    for row in range(old_row, new_row, step):
-                        positions.append((row, old_col))
-                # Запускаем анимацию сразу
-                if positions:
-                    self.spawn_move_animation(positions)
+                # Инициализируем отслеживание движения для анимации
+                tile.move_start_pos = tile.position
+                tile.last_grid_pos = tile.position
+                tile.cells_left_count = 0
+                tile.move_animation_group = pygame.sprite.Group()
                 # Начинаем движение
                 tile.is_moving = True
                 tile.current_direction = direction
@@ -280,19 +267,6 @@ class GameApp:
             value = i + 1
             delay = i * delay_per_number
             popup = ScorePopup(value, pos, delay, max_value, group=animation_group, board=self.game.board)
-            animation_group.add(popup)
-            self.score_popups.add(popup)
-
-    def spawn_move_animation(self, positions):
-        """Создаёт анимацию отрицательных очков при движении плитки."""
-        delay_per_number = 90  # Задержка между появлением чисел (мс)
-        max_value = len(positions)
-        # Создаём отдельную группу для этой анимации
-        animation_group = pygame.sprite.Group()
-        for i, pos in enumerate(positions):
-            value = i + 1
-            delay = i * delay_per_number
-            popup = ScorePopup(value, pos, delay, max_value, group=animation_group, board=self.game.board, negative=True)
             animation_group.add(popup)
             self.score_popups.add(popup)
 
@@ -353,6 +327,25 @@ class GameApp:
             step_x = self.speed * (1 if dx > 0 else -1)
             tile.rect.x += step_x
 
+        # Проверяем, покинула ли плитка ячейку (для анимации -N)
+        if hasattr(tile, 'last_grid_pos'):
+            current_col = (tile.rect.centerx - self.gap) // (self.tile_size + self.gap)
+            current_row = (tile.rect.centery - self.gap) // (self.tile_size + self.gap)
+            current_pos = (current_row, current_col)
+            if current_pos != tile.last_grid_pos:
+                # Плитка покинула ячейку - показываем popup там
+                tile.cells_left_count += 1
+                left_pos = tile.last_grid_pos
+                popup = ScorePopup(
+                    tile.cells_left_count, left_pos, 0, 9,
+                    group=tile.move_animation_group,
+                    board=self.game.board,
+                    negative=True
+                )
+                tile.move_animation_group.add(popup)
+                self.score_popups.add(popup)
+                tile.last_grid_pos = current_pos
+
         # Проверяем коллизию с другими движущимися плитками
         collided = self.check_collision(tile)
         if collided:
@@ -391,6 +384,12 @@ class GameApp:
     def finalize_move(self, tile):
         tile.is_moving = False
         tile.current_direction = None
+        # Очищаем атрибуты отслеживания движения
+        if hasattr(tile, 'last_grid_pos'):
+            del tile.last_grid_pos
+            del tile.move_start_pos
+            del tile.cells_left_count
+            del tile.move_animation_group
         old_x, old_y = tile.position
         new_x = (tile.rect.topleft[1] - self.gap) // (self.tile_size + self.gap)
         new_y = (tile.rect.topleft[0] - self.gap) // (self.tile_size + self.gap)
