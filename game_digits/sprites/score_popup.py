@@ -7,7 +7,7 @@ GAP = 3
 class ScorePopup(pygame.sprite.Sprite):
     """Анимированное число очков, появляющееся при удалении плиток."""
 
-    def __init__(self, value, position, delay, max_value, group=None):
+    def __init__(self, value, position, delay, max_value, group=None, board=None):
         """
         Args:
             value: Значение очков (+1, +2, и т.д.)
@@ -15,6 +15,7 @@ class ScorePopup(pygame.sprite.Sprite):
             delay: Задержка появления в миллисекундах
             max_value: Максимальное значение в последовательности
             group: Ссылка на группу для динамического расчёта яркости
+            board: Ссылка на игровое поле для проверки появления плиток
         """
         super().__init__()
         self.value = value
@@ -22,6 +23,7 @@ class ScorePopup(pygame.sprite.Sprite):
         self.delay = delay
         self.max_value = max_value
         self.group = group
+        self.board = board
         self.created_at = pygame.time.get_ticks()
         self.visible = False
         self.appeared_at = None
@@ -74,6 +76,13 @@ class ScorePopup(pygame.sprite.Sprite):
 
         if not self.visible:
             return
+
+        # Проверяем, появилась ли плитка на нашей позиции
+        if self.board is not None:
+            row, col = self.grid_position
+            if self.board[row][col] is not None:
+                self.kill()
+                return
 
         # Проверяем, появились ли все цифры
         if not self.all_appeared:
