@@ -3,7 +3,7 @@ import pygame
 
 from game_digits import get_image_path
 from game_digits.game import Game
-from game_digits.sprites import Arrow
+from game_digits.sprites import Arrow, ScorePopup
 
 TILE_SIZE = 64
 GAP = 3
@@ -39,6 +39,7 @@ class GameApp:
         self.background_tile = pygame.image.load(get_image_path("cell.JPG"))
         self.arrows = pygame.sprite.Group()
         self.tiles = pygame.sprite.Group()
+        self.score_popups = pygame.sprite.Group()  # Анимация очков
         self.game = Game(self.tiles)
         self.tile_surface = pygame.Surface(
             (self.HEIGHT - 4 * self.frame, self.HEIGHT - 4 * self.frame)
@@ -231,8 +232,10 @@ class GameApp:
         if self.game.selected_tile:
             if self.game.selected_tile == tile:
                 return
-            elif self.game.remove_tiles(self.game.selected_tile, tile):
+            positions = self.game.remove_tiles(self.game.selected_tile, tile)
+            if positions:
                 self.arrows.empty()  # Очищаем стрелки после удаления плиток
+                self.spawn_score_animation(positions)  # Создаём анимацию очков
                 self.update_display()
                 self.game.selected_tile = None
                 if not self.timer_running and any(
@@ -246,6 +249,16 @@ class GameApp:
         self.arrows.empty()
         self.game.select_tile(tile)
         self.draw_arrows_for_tile(tile)
+
+    def spawn_score_animation(self, positions):
+        """Создаёт анимацию очков от первой плитки ко второй."""
+        delay_per_number = 100  # Задержка между появлением чисел (мс)
+        max_value = len(positions)
+        for i, pos in enumerate(positions):
+            value = i + 1
+            delay = i * delay_per_number
+            popup = ScorePopup(value, pos, delay, max_value)
+            self.score_popups.add(popup)
 
     def draw_arrows_for_tile(self, tile):
         for direction in ["up", "down", "left", "right"]:
@@ -343,7 +356,11 @@ class GameApp:
     def update_display(self):
         self.tile_surface.fill((249, 246, 247))
         self.tiles.draw(self.tile_surface)
-        self.arrows.draw(self.tile_surface)  # Рисуем стрелки
+        # Обновляем и рисуем анимацию очков (под стрелками)
+        self.score_popups.update()
+        for popup in self.score_popups:
+            popup.draw(self.tile_surface)
+        self.arrows.draw(self.tile_surface)  # Стрелки поверх всего
         self.draw_background()
         pygame.display.update()
 

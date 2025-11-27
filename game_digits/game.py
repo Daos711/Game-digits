@@ -58,10 +58,15 @@ class Game:
             self.original_color = None
 
     def remove_tiles(self, tile1, tile2):
+        """
+        Удаляет пару плиток если они подходят.
+        Возвращает None если удаление не удалось,
+        или список позиций от первой плитки ко второй для анимации очков.
+        """
         if tile1 is None or tile2 is None:
-            return False
+            return None
         if tile1.is_moving or tile2.is_moving:
-            return False
+            return None
         x1, y1 = tile1.position
         x2, y2 = tile2.position
         if tile1.number == tile2.number or tile1.number + tile2.number == 10:
@@ -74,7 +79,10 @@ class Game:
                     self.board[x2][y2] = None
                     self.tiles.remove(tile1, tile2)
                     self.post_remove_actions()
-                    return True
+                    # Возвращаем путь от первой плитки ко второй
+                    step = 1 if y2 > y1 else -1
+                    positions = [(x1, j) for j in range(y1, y2 + step, step)]
+                    return positions
             elif y1 == y2:  # Плитки на одной горизонтальной линии
                 if abs(x1 - x2) == 1 or all(
                     self.board[i][y1] is None for i in range(min(x1, x2) + 1, max(x1, x2))
@@ -84,8 +92,11 @@ class Game:
                     self.board[x2][y2] = None
                     self.tiles.remove(tile1, tile2)
                     self.post_remove_actions()
-                    return True
-        return False
+                    # Возвращаем путь от первой плитки ко второй
+                    step = 1 if x2 > x1 else -1
+                    positions = [(i, y1) for i in range(x1, x2 + step, step)]
+                    return positions
+        return None
 
     def add_new_tile(self):
         empty_positions = [
