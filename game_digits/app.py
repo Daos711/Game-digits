@@ -216,8 +216,28 @@ class GameApp:
         for arrow in self.arrows:
             if arrow.rect.collidepoint(pos):
                 tile = arrow.tile
+                direction = arrow.direction
+                # Вычисляем путь до запуска движения
+                old_row, old_col = tile.position
+                target_rect = tile.target_move(direction, self.game.board)
+                new_col = (target_rect.topleft[0] - self.gap) // (self.tile_size + self.gap)
+                new_row = (target_rect.topleft[1] - self.gap) // (self.tile_size + self.gap)
+                # Строим путь пройденных ячеек (без финальной)
+                positions = []
+                if old_row == new_row:  # Горизонтальное движение
+                    step = 1 if new_col > old_col else -1
+                    for col in range(old_col, new_col, step):
+                        positions.append((old_row, col))
+                else:  # Вертикальное движение
+                    step = 1 if new_row > old_row else -1
+                    for row in range(old_row, new_row, step):
+                        positions.append((row, old_col))
+                # Запускаем анимацию сразу
+                if positions:
+                    self.spawn_move_animation(positions)
+                # Начинаем движение
                 tile.is_moving = True
-                tile.current_direction = arrow.direction
+                tile.current_direction = direction
                 self.arrows.empty()
                 return
         for tile in self.tiles:
@@ -252,7 +272,7 @@ class GameApp:
 
     def spawn_score_animation(self, positions):
         """Создаёт анимацию очков от первой плитки ко второй."""
-        delay_per_number = 80  # Задержка между появлением чисел (мс)
+        delay_per_number = 90  # Задержка между появлением чисел (мс)
         max_value = len(positions)
         # Создаём отдельную группу для этой анимации
         animation_group = pygame.sprite.Group()
@@ -265,7 +285,7 @@ class GameApp:
 
     def spawn_move_animation(self, positions):
         """Создаёт анимацию отрицательных очков при движении плитки."""
-        delay_per_number = 80  # Задержка между появлением чисел (мс)
+        delay_per_number = 90  # Задержка между появлением чисел (мс)
         max_value = len(positions)
         # Создаём отдельную группу для этой анимации
         animation_group = pygame.sprite.Group()
@@ -385,18 +405,6 @@ class GameApp:
         cells_moved = delta_x + delta_y
         if cells_moved > 0:
             self.game.deduct_score(cells_moved)
-            # Создаём анимацию отрицательных очков по пройденному пути
-            positions = []
-            if old_x == new_x:  # Горизонтальное движение
-                step = 1 if new_y > old_y else -1
-                for col in range(old_y, new_y, step):
-                    positions.append((old_x, col))
-            else:  # Вертикальное движение
-                step = 1 if new_x > old_x else -1
-                for row in range(old_x, new_x, step):
-                    positions.append((row, old_y))
-            if positions:
-                self.spawn_move_animation(positions)
         self.update_display()
         pygame.display.flip()
 
