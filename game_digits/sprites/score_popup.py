@@ -7,15 +7,16 @@ GAP = 3
 class ScorePopup(pygame.sprite.Sprite):
     """Анимированное число очков, появляющееся при удалении плиток."""
 
-    def __init__(self, value, position, delay, max_value, group=None, board=None):
+    def __init__(self, value, position, delay, max_value, group=None, board=None, negative=False):
         """
         Args:
-            value: Значение очков (+1, +2, и т.д.)
+            value: Значение очков (1, 2, и т.д.)
             position: Позиция на сетке (row, col)
             delay: Задержка появления в миллисекундах
             max_value: Максимальное значение в последовательности
             group: Ссылка на группу для динамического расчёта яркости
             board: Ссылка на игровое поле для проверки появления плиток
+            negative: True для отрицательных очков (движение)
         """
         super().__init__()
         self.value = value
@@ -24,6 +25,7 @@ class ScorePopup(pygame.sprite.Sprite):
         self.max_value = max_value
         self.group = group
         self.board = board
+        self.negative = negative
         self.created_at = pygame.time.get_ticks()
         self.visible = False
         self.appeared_at = None
@@ -36,7 +38,8 @@ class ScorePopup(pygame.sprite.Sprite):
 
         # Создаём изображение с тонким шрифтом
         self.font = pygame.font.SysFont('arial', 36, bold=False)
-        self.base_image = self.font.render(f"+{value}", True, self.base_color)
+        prefix = "-" if negative else "+"
+        self.base_image = self.font.render(f"{prefix}{value}", True, self.base_color)
         self.image = self.base_image.copy()
         self.rect = self.image.get_rect()
 

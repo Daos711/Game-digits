@@ -252,7 +252,7 @@ class GameApp:
 
     def spawn_score_animation(self, positions):
         """Создаёт анимацию очков от первой плитки ко второй."""
-        delay_per_number = 100  # Задержка между появлением чисел (мс)
+        delay_per_number = 80  # Задержка между появлением чисел (мс)
         max_value = len(positions)
         # Создаём отдельную группу для этой анимации
         animation_group = pygame.sprite.Group()
@@ -260,6 +260,19 @@ class GameApp:
             value = i + 1
             delay = i * delay_per_number
             popup = ScorePopup(value, pos, delay, max_value, group=animation_group, board=self.game.board)
+            animation_group.add(popup)
+            self.score_popups.add(popup)
+
+    def spawn_move_animation(self, positions):
+        """Создаёт анимацию отрицательных очков при движении плитки."""
+        delay_per_number = 80  # Задержка между появлением чисел (мс)
+        max_value = len(positions)
+        # Создаём отдельную группу для этой анимации
+        animation_group = pygame.sprite.Group()
+        for i, pos in enumerate(positions):
+            value = i + 1
+            delay = i * delay_per_number
+            popup = ScorePopup(value, pos, delay, max_value, group=animation_group, board=self.game.board, negative=True)
             animation_group.add(popup)
             self.score_popups.add(popup)
 
@@ -372,6 +385,18 @@ class GameApp:
         cells_moved = delta_x + delta_y
         if cells_moved > 0:
             self.game.deduct_score(cells_moved)
+            # Создаём анимацию отрицательных очков по пройденному пути
+            positions = []
+            if old_x == new_x:  # Горизонтальное движение
+                step = 1 if new_y > old_y else -1
+                for col in range(old_y, new_y, step):
+                    positions.append((old_x, col))
+            else:  # Вертикальное движение
+                step = 1 if new_x > old_x else -1
+                for row in range(old_x, new_x, step):
+                    positions.append((row, old_y))
+            if positions:
+                self.spawn_move_animation(positions)
         self.update_display()
         pygame.display.flip()
 
