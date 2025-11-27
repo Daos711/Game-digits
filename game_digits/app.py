@@ -217,10 +217,17 @@ class GameApp:
             if arrow.rect.collidepoint(pos):
                 tile = arrow.tile
                 direction = arrow.direction
+                # Вычисляем сколько ячеек плитка пройдёт
+                old_row, old_col = tile.position
+                target_rect = tile.target_move(direction, self.game.board)
+                new_col = (target_rect.topleft[0] - self.gap) // (self.tile_size + self.gap)
+                new_row = (target_rect.topleft[1] - self.gap) // (self.tile_size + self.gap)
+                total_cells = abs(new_row - old_row) + abs(new_col - old_col)
                 # Инициализируем отслеживание движения для анимации
                 tile.move_start_pos = tile.position
                 tile.last_grid_pos = tile.position
                 tile.cells_left_count = 0
+                tile.total_cells_to_move = total_cells
                 tile.move_animation_group = pygame.sprite.Group()
                 # Начинаем движение
                 tile.is_moving = True
@@ -337,7 +344,7 @@ class GameApp:
                 tile.cells_left_count += 1
                 left_pos = tile.last_grid_pos
                 popup = ScorePopup(
-                    tile.cells_left_count, left_pos, 0, 9,
+                    tile.cells_left_count, left_pos, 0, tile.total_cells_to_move,
                     group=tile.move_animation_group,
                     board=self.game.board,
                     negative=True
@@ -389,6 +396,7 @@ class GameApp:
             del tile.last_grid_pos
             del tile.move_start_pos
             del tile.cells_left_count
+            del tile.total_cells_to_move
             del tile.move_animation_group
         old_x, old_y = tile.position
         new_x = (tile.rect.topleft[1] - self.gap) // (self.tile_size + self.gap)

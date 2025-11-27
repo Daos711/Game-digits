@@ -81,7 +81,8 @@ class ScorePopup(pygame.sprite.Sprite):
             return
 
         # Проверяем, появилась ли плитка на нашей позиции
-        if self.board is not None:
+        # Для negative popup не проверяем - там ещё движущаяся плитка
+        if self.board is not None and not self.negative:
             row, col = self.grid_position
             if self.board[row][col] is not None:
                 self.kill()
