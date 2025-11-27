@@ -1,9 +1,7 @@
 import pygame
 
 from game_digits import get_font_path
-
-TILE_SIZE = 64
-GAP = 3
+from game_digits.constants import TILE_SIZE, GAP, TILE_BORDER_COLOR, grid_to_pixel
 
 
 class Tile(pygame.sprite.Sprite):
@@ -19,15 +17,13 @@ class Tile(pygame.sprite.Sprite):
         self.x = self.position[0]
         self.y = self.position[1]
         self.target_rect = None
-        self.rect.topleft = (
-            (self.y + 1) * GAP + self.y * TILE_SIZE,
-            (self.x + 1) * GAP + self.x * TILE_SIZE,
-        )
+        x, y = grid_to_pixel(self.x, self.y)
+        self.rect.topleft = (x, y)
         self.draw_tile((0, 0, 0))
 
     def draw_tile(self, text_color):
         self.image.fill(self.color)
-        pygame.draw.rect(self.image, (71, 74, 72), self.image.get_rect(), 2)
+        pygame.draw.rect(self.image, TILE_BORDER_COLOR, self.image.get_rect(), 2)
         font = pygame.font.Font(
             get_font_path("OpenSans-VariableFont_wdth,wght.ttf"), 40
         )
@@ -54,6 +50,5 @@ class Tile(pygame.sprite.Sprite):
             while y < len(board[0]) - 1 and board[x][y + 1] is None:
                 y += 1
 
-        target_x = (y + 1) * GAP + y * TILE_SIZE
-        target_y = (x + 1) * GAP + x * TILE_SIZE
+        target_x, target_y = grid_to_pixel(x, y)
         return pygame.Rect(target_x, target_y, TILE_SIZE, TILE_SIZE)

@@ -1,7 +1,6 @@
 import pygame
 
-TILE_SIZE = 64
-GAP = 3
+from game_digits.constants import TILE_SIZE, GAP, grid_to_pixel_center
 
 
 class ScorePopup(pygame.sprite.Sprite):
@@ -44,9 +43,10 @@ class ScorePopup(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
 
         # Позиционируем на сетке
-        col, row = position[1], position[0]
-        self.rect.centerx = (col + 1) * GAP + col * TILE_SIZE + TILE_SIZE // 2
-        self.rect.centery = (row + 1) * GAP + row * TILE_SIZE + TILE_SIZE // 2
+        row, col = position[0], position[1]
+        center_x, center_y = grid_to_pixel_center(row, col)
+        self.rect.centerx = center_x
+        self.rect.centery = center_y
 
     def _count_visible_after_me(self):
         """Подсчитывает сколько цифр с большим value уже видимы."""

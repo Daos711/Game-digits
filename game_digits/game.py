@@ -1,22 +1,8 @@
 import random
 import pygame
 
+from game_digits.constants import COLORS, BOARD_SIZE
 from game_digits.sprites import Tile
-
-TILE_SIZE = 64
-GAP = 3
-OFFSET = (23, 23)
-COLORS = {
-    1: (250, 130, 124),
-    2: (98, 120, 255),
-    3: (249, 204, 122),
-    4: (127, 254, 138),
-    5: (251, 94, 223),
-    6: (126, 253, 205),
-    7: (239, 255, 127),
-    8: (174, 121, 251),
-    9: (255, 152, 123),
-}
 
 
 class Game:
@@ -24,7 +10,7 @@ class Game:
 
     def __init__(self, tiles, time_limit=300):
         self.tiles = tiles
-        self.board = [[None for _ in range(10)] for _ in range(10)]
+        self.board = [[None for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
         self.score = 0
         self.time_limit = time_limit
         self.current_time = time_limit
@@ -37,8 +23,8 @@ class Game:
         self.prepare_to_end = False
 
     def initialize_tiles(self):
-        for i in range(10):
-            for j in range(10):
+        for i in range(BOARD_SIZE):
+            for j in range(BOARD_SIZE):
                 number = random.randint(1, 9)
                 tile = Tile(number, (i, j), COLORS[number])
                 self.board[i][j] = tile
@@ -100,7 +86,7 @@ class Game:
 
     def add_new_tile(self):
         empty_positions = [
-            (i, j) for i in range(10) for j in range(10) if self.board[i][j] is None
+            (i, j) for i in range(BOARD_SIZE) for j in range(BOARD_SIZE) if self.board[i][j] is None
         ]
         if empty_positions:
             position = random.choice(empty_positions)

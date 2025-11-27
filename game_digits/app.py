@@ -2,11 +2,12 @@ import sys
 import pygame
 
 from game_digits import get_image_path
+from game_digits.constants import (
+    TILE_SIZE, GAP, COLORS, BOARD_SIZE, BACKGROUND_COLOR,
+    grid_to_pixel, pixel_to_grid, pixel_to_grid_round
+)
 from game_digits.game import Game
 from game_digits.sprites import Arrow, ScorePopup
-
-TILE_SIZE = 64
-GAP = 3
 
 
 class GameApp:
@@ -18,17 +19,7 @@ class GameApp:
         self.panel_width, self.panel_height = 240, self.HEIGHT
         self.tile_size, self.gap = TILE_SIZE, GAP
         self.offset = (23, 23)
-        self.COLORS = {
-            1: (250, 130, 124),
-            2: (98, 120, 255),
-            3: (249, 204, 122),
-            4: (127, 254, 138),
-            5: (251, 94, 223),
-            6: (126, 253, 205),
-            7: (239, 255, 127),
-            8: (174, 121, 251),
-            9: (255, 152, 123),
-        }
+        self.COLORS = COLORS
         pygame.init()
         pygame.font.init()
         self.font = pygame.font.Font(None, 36)
@@ -44,7 +35,7 @@ class GameApp:
         self.tile_surface = pygame.Surface(
             (self.HEIGHT - 4 * self.frame, self.HEIGHT - 4 * self.frame)
         )
-        self.tile_surface.fill((249, 246, 247))
+        self.tile_surface.fill(BACKGROUND_COLOR)
         self.ADD_TILE_EVENT = pygame.USEREVENT + 1
         self.tile_timer_interval = 10000  # 10 секунд
         self.timer_running = False
@@ -220,8 +211,7 @@ class GameApp:
                 # Вычисляем сколько ячеек плитка пройдёт
                 old_row, old_col = tile.position
                 target_rect = tile.target_move(direction, self.game.board)
-                new_col = (target_rect.topleft[0] - self.gap) // (self.tile_size + self.gap)
-                new_row = (target_rect.topleft[1] - self.gap) // (self.tile_size + self.gap)
+                new_row, new_col = pixel_to_grid(target_rect.topleft[0], target_rect.topleft[1])
                 total_cells = abs(new_row - old_row) + abs(new_col - old_col)
                 # Инициализируем отслеживание движения для анимации
                 tile.move_start_pos = tile.position
@@ -253,7 +243,7 @@ class GameApp:
                 self.update_display()
                 self.game.selected_tile = None
                 if not self.timer_running and any(
-                    self.game.board[i][j] is None for i in range(10) for j in range(10)
+                    self.game.board[i][j] is None for i in range(BOARD_SIZE) for j in range(BOARD_SIZE)
                 ):
                     pygame.time.set_timer(self.ADD_TILE_EVENT, self.tile_timer_interval)
                     self.timer_running = True
@@ -266,7 +256,7 @@ class GameApp:
 
     def spawn_score_animation(self, positions):
         """Создаёт анимацию очков от первой плитки ко второй."""
-        delay_per_number = 90  # Задержка между появлением чисел (мс)
+        delay_per_number = 80  # Задержка между появлением чисел (мс)
         max_value = len(positions)
         # Создаём отдельную группу для этой анимации
         animation_group = pygame.sprite.Group()
@@ -336,8 +326,7 @@ class GameApp:
 
         # Проверяем, покинула ли плитка ячейку (для анимации -N)
         if hasattr(tile, 'last_grid_pos'):
-            current_col = (tile.rect.centerx - self.gap) // (self.tile_size + self.gap)
-            current_row = (tile.rect.centery - self.gap) // (self.tile_size + self.gap)
+            current_row, current_col = pixel_to_grid(tile.rect.centerx, tile.rect.centery)
             current_pos = (current_row, current_col)
             if current_pos != tile.last_grid_pos:
                 # Плитка покинула ячейку - показываем popup там
@@ -368,21 +357,19 @@ class GameApp:
     def snap_to_grid(self, tile):
         """Привязывает плитку к ближайшей ячейке сетки."""
         # Вычисляем ближайшую позицию на сетке
-        grid_x = round((tile.rect.topleft[0] - self.gap) / (self.tile_size + self.gap))
-        grid_y = round((tile.rect.topleft[1] - self.gap) / (self.tile_size + self.gap))
+        grid_row, grid_col = pixel_to_grid_round(tile.rect.topleft[0], tile.rect.topleft[1])
 
         # Ограничиваем в пределах поля
-        grid_x = max(0, min(9, grid_x))
-        grid_y = max(0, min(9, grid_y))
+        grid_col = max(0, min(BOARD_SIZE - 1, grid_col))
+        grid_row = max(0, min(BOARD_SIZE - 1, grid_row))
 
         # Если ячейка занята, ищем ближайшую свободную в направлении движения
-        if self.game.board[grid_y][grid_x] is not None and self.game.board[grid_y][grid_x] != tile:
+        if self.game.board[grid_row][grid_col] is not None and self.game.board[grid_row][grid_col] != tile:
             # Откатываемся на предыдущую позицию
-            grid_x, grid_y = tile.position[1], tile.position[0]
+            grid_row, grid_col = tile.position[0], tile.position[1]
 
         # Устанавливаем новую позицию
-        new_rect_x = (grid_x + 1) * self.gap + grid_x * self.tile_size
-        new_rect_y = (grid_y + 1) * self.gap + grid_y * self.tile_size
+        new_rect_x, new_rect_y = grid_to_pixel(grid_row, grid_col)
         tile.rect.topleft = (new_rect_x, new_rect_y)
 
         # Финализируем движение
@@ -399,8 +386,7 @@ class GameApp:
             del tile.total_cells_to_move
             del tile.move_animation_group
         old_x, old_y = tile.position
-        new_x = (tile.rect.topleft[1] - self.gap) // (self.tile_size + self.gap)
-        new_y = (tile.rect.topleft[0] - self.gap) // (self.tile_size + self.gap)
+        new_x, new_y = pixel_to_grid(tile.rect.topleft[0], tile.rect.topleft[1])
         tile.position = (new_x, new_y)
         self.game.update_board((old_x, old_y), (new_x, new_y), tile)
         # Очищаем стрелки только если это была выбранная плитка
@@ -416,7 +402,7 @@ class GameApp:
         pygame.display.flip()
 
     def update_display(self):
-        self.tile_surface.fill((249, 246, 247))
+        self.tile_surface.fill(BACKGROUND_COLOR)
         self.tiles.draw(self.tile_surface)
         # Обновляем и рисуем анимацию очков (под стрелками)
         self.score_popups.update()
@@ -432,7 +418,7 @@ class GameApp:
         prepare_to_show_result = False
         while running:
             # Очищаем и перерисовываем tile_surface каждый кадр
-            self.tile_surface.fill((249, 246, 247))
+            self.tile_surface.fill(BACKGROUND_COLOR)
             self.tiles.draw(self.tile_surface)
             # Обновляем и рисуем анимацию очков в каждом кадре
             self.score_popups.update()
@@ -456,8 +442,8 @@ class GameApp:
                     self.update_display()
                     empty = any(
                         self.game.board[i][j] is None
-                        for i in range(10)
-                        for j in range(10)
+                        for i in range(BOARD_SIZE)
+                        for j in range(BOARD_SIZE)
                     )
                     if not empty:
                         pygame.time.set_timer(self.ADD_TILE_EVENT, 0)
