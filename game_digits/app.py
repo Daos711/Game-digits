@@ -123,15 +123,24 @@ class GameApp:
         window_y = (self.HEIGHT - window_height) // 2
 
         title_font = pygame.font.Font(None, 48)
-        title_text = title_font.render("Результат игры", True, (0, 0, 0))
+        label_font = pygame.font.Font(None, 36)
+
+        # Определяем победа или проигрыш
+        is_victory = not self.game.game_over_flag or self.game.current_time > 0
+
+        if is_victory:
+            title_text = title_font.render("Победа!", True, (0, 128, 0))
+            remaining_time = int(self.game.current_time)
+            bonus = remaining_time * 5 + 300
+        else:
+            title_text = title_font.render("Время вышло!", True, (200, 0, 0))
+            bonus = 0
+
         title_rect = title_text.get_rect(center=(window_width // 2, 50))
         window_surface.blit(title_text, title_rect)
 
-        remaining_time = int(self.game.current_time)
-        bonus = remaining_time * 5 + 300
         total_score = self.game.score + bonus
 
-        label_font = pygame.font.Font(None, 36)
         result_label = label_font.render("Ваш результат:", True, (0, 0, 0))
         result_label_rect = result_label.get_rect(topleft=(50, 100))
         window_surface.blit(result_label, result_label_rect)
@@ -193,6 +202,9 @@ class GameApp:
                 break
 
     def handle_tile_click(self, tile):
+        # Не позволяем выбирать плитку которая сама движется
+        if tile.is_moving:
+            return
         if self.game.selected_tile:
             if self.game.selected_tile == tile:
                 return
@@ -205,6 +217,7 @@ class GameApp:
                     pygame.time.set_timer(self.ADD_TILE_EVENT, self.tile_timer_interval)
                     self.timer_running = True
                 return
+        # Разрешаем выбор новой плитки даже когда другие движутся
         self.arrows.empty()
         self.game.select_tile(tile)
         self.draw_arrows_for_tile(tile)
@@ -228,6 +241,14 @@ class GameApp:
         elif direction == "right":
             return (x + self.tile_size + self.gap, y)
 
+    def check_collision(self, tile):
+        """Проверяет столкновение с другими движущимися плитками."""
+        for other in self.tiles:
+            if other != tile and other.is_moving:
+                if tile.rect.colliderect(other.rect):
+                    return other
+        return None
+
     def move_tile(self, tile, direction):
         target_rect = tile.target_move(direction, self.game.board)
         dx = target_rect.topleft[0] - tile.rect.topleft[0]
@@ -238,7 +259,41 @@ class GameApp:
         elif dy == 0:
             step_x = self.speed * (1 if dx > 0 else -1)
             tile.rect.x += step_x
+
+        # Проверяем коллизию с другими движущимися плитками
+        collided = self.check_collision(tile)
+        if collided:
+            self.resolve_collision(tile, collided)
+
         self.update_display()
+
+    def resolve_collision(self, tile1, tile2):
+        """Останавливает обе плитки при столкновении."""
+        self.snap_to_grid(tile1)
+        self.snap_to_grid(tile2)
+
+    def snap_to_grid(self, tile):
+        """Привязывает плитку к ближайшей ячейке сетки."""
+        # Вычисляем ближайшую позицию на сетке
+        grid_x = round((tile.rect.topleft[0] - self.gap) / (self.tile_size + self.gap))
+        grid_y = round((tile.rect.topleft[1] - self.gap) / (self.tile_size + self.gap))
+
+        # Ограничиваем в пределах поля
+        grid_x = max(0, min(9, grid_x))
+        grid_y = max(0, min(9, grid_y))
+
+        # Если ячейка занята, ищем ближайшую свободную в направлении движения
+        if self.game.board[grid_y][grid_x] is not None and self.game.board[grid_y][grid_x] != tile:
+            # Откатываемся на предыдущую позицию
+            grid_x, grid_y = tile.position[1], tile.position[0]
+
+        # Устанавливаем новую позицию
+        new_rect_x = (grid_x + 1) * self.gap + grid_x * self.tile_size
+        new_rect_y = (grid_y + 1) * self.gap + grid_y * self.tile_size
+        tile.rect.topleft = (new_rect_x, new_rect_y)
+
+        # Финализируем движение
+        self.finalize_move(tile)
 
     def finalize_move(self, tile):
         tile.is_moving = False
@@ -297,12 +352,18 @@ class GameApp:
                     self.game.handle_countdown()
                 else:
                     running = self.handle_event(event)
+            # Проверяем успешное завершение (все плитки убраны)
             if self.game.prepare_to_end:
                 self.game.prepare_to_end = False
                 prepare_to_show_result = True
             elif prepare_to_show_result:
                 prepare_to_show_result = False
                 show_result = True
+
+            # Проверяем завершение по таймеру (время истекло)
+            if self.game.game_over_flag:
+                show_result = True
+
             if show_result and not any(tile.is_moving for tile in self.tiles):
                 self.update_display()
                 pygame.display.flip()
