@@ -148,7 +148,9 @@ class Game:
             new_position = (x, y + 1)
         a, b = new_position[0], new_position[1]
         if 0 <= a < len(self.board) and 0 <= b < len(self.board[0]):
-            if self.board[a][b] is None:
+            cell = self.board[a][b]
+            # Клетка свободна или занята движущейся плиткой (которая уходит)
+            if cell is None or cell.is_moving:
                 return True
         return False
 

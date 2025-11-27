@@ -341,6 +341,7 @@ class GameApp:
     def update_display(self):
         self.tile_surface.fill((249, 246, 247))
         self.tiles.draw(self.tile_surface)
+        self.arrows.draw(self.tile_surface)  # Рисуем стрелки
         self.draw_background()
         pygame.display.update()
 
