@@ -264,12 +264,31 @@ class GameApp:
             self.score_popups.add(popup)
 
     def draw_arrows_for_tile(self, tile):
+        arrow_grid_positions = []
         for direction in ["up", "down", "left", "right"]:
             if self.game.can_move(tile, direction):
                 arrow_position = self.get_arrow_position(tile.rect.topleft, direction)
                 self.arrows.add(Arrow(direction, arrow_position, self.game, tile))
+                # Вычисляем grid позицию стрелки
+                row, col = tile.position
+                if direction == "up":
+                    arrow_grid_positions.append((row - 1, col))
+                elif direction == "down":
+                    arrow_grid_positions.append((row + 1, col))
+                elif direction == "left":
+                    arrow_grid_positions.append((row, col - 1))
+                elif direction == "right":
+                    arrow_grid_positions.append((row, col + 1))
+        # Удаляем popup-ы которые перекрываются стрелками
+        self.remove_popups_at_positions(arrow_grid_positions)
         self.update_display()
         self.arrows.draw(self.tile_surface)
+
+    def remove_popups_at_positions(self, grid_positions):
+        """Удаляет анимации очков, находящиеся на указанных позициях."""
+        for popup in list(self.score_popups):
+            if popup.grid_position in grid_positions:
+                popup.kill()
 
     def get_arrow_position(self, tile_position, direction):
         x, y = tile_position

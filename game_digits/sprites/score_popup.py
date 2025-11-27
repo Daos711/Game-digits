@@ -26,14 +26,14 @@ class ScorePopup(pygame.sprite.Sprite):
         self.visible = False
         self.appeared_at = None
         self.alpha = 255  # Текущая прозрачность
-        self.fade_speed = 4  # Скорость затухания за кадр для завершающего fadeout
+        self.fade_speed = 1.5  # Скорость затухания за кадр для завершающего fadeout
         self.all_appeared = False  # Флаг что все цифры появились
 
         # Базовый цвет - тёмно-серый для контраста
         self.base_color = (80, 80, 80)
 
-        # Создаём изображение с увеличенным шрифтом
-        self.font = pygame.font.Font(None, 42)
+        # Создаём изображение с тонким шрифтом
+        self.font = pygame.font.SysFont('arial', 36, bold=False)
         self.base_image = self.font.render(f"+{value}", True, self.base_color)
         self.image = self.base_image.copy()
         self.rect = self.image.get_rect()
@@ -107,7 +107,7 @@ class ScorePopup(pygame.sprite.Sprite):
 
         # Обновляем изображение с новой прозрачностью
         self.image = self.base_image.copy()
-        self.image.set_alpha(self.alpha)
+        self.image.set_alpha(int(self.alpha))
 
     def draw(self, surface):
         """Рисует спрайт если он видим."""
