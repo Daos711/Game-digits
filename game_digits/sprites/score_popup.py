@@ -7,44 +7,60 @@ GAP = 3
 class ScorePopup(pygame.sprite.Sprite):
     """Анимированное число очков, появляющееся при удалении плиток."""
 
-    def __init__(self, value, position, delay, max_value):
+    def __init__(self, value, position, delay, max_value, group=None):
         """
         Args:
             value: Значение очков (+1, +2, и т.д.)
             position: Позиция на сетке (row, col)
             delay: Задержка появления в миллисекундах
-            max_value: Максимальное значение в последовательности (для расчёта цвета)
+            max_value: Максимальное значение в последовательности
+            group: Ссылка на группу для динамического расчёта яркости
         """
         super().__init__()
         self.value = value
         self.grid_position = position
         self.delay = delay
         self.max_value = max_value
+        self.group = group
         self.created_at = pygame.time.get_ticks()
         self.visible = False
-        self.duration = 1500  # Время жизни после появления (мс)
         self.appeared_at = None
+        self.alpha = 255  # Текущая прозрачность
+        self.fade_speed = 4  # Скорость затухания за кадр для завершающего fadeout
+        self.all_appeared = False  # Флаг что все цифры появились
 
-        # Вычисляем цвет (от светлого к тёмному)
-        # Прогресс от 0 (первое число) до 1 (последнее)
-        if max_value > 1:
-            progress = (value - 1) / (max_value - 1)
-        else:
-            progress = 0
+        # Базовый цвет - тёмно-серый для контраста
+        self.base_color = (80, 80, 80)
 
-        # Светлый серый -> тёмный серый
-        base_color = 200 - int(progress * 120)  # от 200 до 80
-        self.color = (base_color, base_color, base_color)
-
-        # Создаём изображение
-        self.font = pygame.font.Font(None, 32)
-        self.image = self.font.render(f"+{value}", True, self.color)
+        # Создаём изображение с увеличенным шрифтом
+        self.font = pygame.font.Font(None, 42)
+        self.base_image = self.font.render(f"+{value}", True, self.base_color)
+        self.image = self.base_image.copy()
         self.rect = self.image.get_rect()
 
         # Позиционируем на сетке
         col, row = position[1], position[0]
         self.rect.centerx = (col + 1) * GAP + col * TILE_SIZE + TILE_SIZE // 2
         self.rect.centery = (row + 1) * GAP + row * TILE_SIZE + TILE_SIZE // 2
+
+    def _count_visible_after_me(self):
+        """Подсчитывает сколько цифр с большим value уже видимы."""
+        if not self.group:
+            return 0
+        count = 0
+        for popup in self.group:
+            if popup.value > self.value and popup.visible:
+                count += 1
+        return count
+
+    def _check_all_appeared(self):
+        """Проверяет, появились ли все цифры в последовательности."""
+        if not self.group:
+            return True
+        for popup in self.group:
+            if not popup.visible:
+                return False
+        return True
 
     def update(self):
         """Обновляет состояние спрайта."""
@@ -56,12 +72,44 @@ class ScorePopup(pygame.sprite.Sprite):
             self.visible = True
             self.appeared_at = current_time
 
-        # Проверяем, пора ли исчезнуть
-        if self.visible and self.appeared_at:
-            if current_time - self.appeared_at >= self.duration:
-                self.kill()
+        if not self.visible:
+            return
+
+        # Проверяем, появились ли все цифры
+        if not self.all_appeared:
+            self.all_appeared = self._check_all_appeared()
+
+        # Вычисляем целевую прозрачность
+        if self.all_appeared:
+            # Все появились - плавно затухаем
+            self.alpha = max(0, self.alpha - self.fade_speed)
+        else:
+            # Динамическая яркость: чем больше цифр появилось после нас, тем тусклее
+            visible_after = self._count_visible_after_me()
+            # Каждая следующая цифра уменьшает нашу яркость
+            # При 0 цифр после нас - 255, при max_value-value цифр - минимум
+            max_after = self.max_value - self.value
+            if max_after > 0:
+                fade_per_number = 200 / max_after  # Уменьшаем на ~200 к полному появлению
+                target_alpha = max(55, 255 - int(visible_after * fade_per_number))
+            else:
+                target_alpha = 255
+            # Плавно переходим к целевой прозрачности
+            if self.alpha > target_alpha:
+                self.alpha = max(target_alpha, self.alpha - 8)
+            elif self.alpha < target_alpha:
+                self.alpha = min(target_alpha, self.alpha + 8)
+
+        # Удаляем если полностью прозрачны
+        if self.alpha <= 0:
+            self.kill()
+            return
+
+        # Обновляем изображение с новой прозрачностью
+        self.image = self.base_image.copy()
+        self.image.set_alpha(self.alpha)
 
     def draw(self, surface):
         """Рисует спрайт если он видим."""
-        if self.visible:
+        if self.visible and self.alpha > 0:
             surface.blit(self.image, self.rect)

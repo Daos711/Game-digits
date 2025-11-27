@@ -254,10 +254,13 @@ class GameApp:
         """Создаёт анимацию очков от первой плитки ко второй."""
         delay_per_number = 100  # Задержка между появлением чисел (мс)
         max_value = len(positions)
+        # Создаём отдельную группу для этой анимации
+        animation_group = pygame.sprite.Group()
         for i, pos in enumerate(positions):
             value = i + 1
             delay = i * delay_per_number
-            popup = ScorePopup(value, pos, delay, max_value)
+            popup = ScorePopup(value, pos, delay, max_value, group=animation_group)
+            animation_group.add(popup)
             self.score_popups.add(popup)
 
     def draw_arrows_for_tile(self, tile):
