@@ -232,6 +232,7 @@ class GameApp:
             if self.game.selected_tile == tile:
                 return
             elif self.game.remove_tiles(self.game.selected_tile, tile):
+                self.arrows.empty()  # Очищаем стрелки после удаления плиток
                 self.update_display()
                 self.game.selected_tile = None
                 if not self.timer_running and any(
@@ -327,9 +328,10 @@ class GameApp:
         new_y = (tile.rect.topleft[0] - self.gap) // (self.tile_size + self.gap)
         tile.position = (new_x, new_y)
         self.game.update_board((old_x, old_y), (new_x, new_y), tile)
+        # Очищаем стрелки только если это была выбранная плитка
         if self.game.selected_tile == tile:
             self.game.deselect_tile()
-        self.arrows.empty()
+            self.arrows.empty()
         delta_x = abs(new_x - old_x)
         delta_y = abs(new_y - old_y)
         cells_moved = delta_x + delta_y
