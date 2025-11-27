@@ -1,0 +1,17 @@
+# Виртуальная среда
+venv/
+
+# Кэш Python’а
+__pycache__/
+*.py[cod]
+
+# Логи / временные файлы
+*.log
+
+# PyCharm
+.idea/
+
+# Сборки (если будешь делать exe)
+build/
+dist/
+*.spec
