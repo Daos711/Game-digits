@@ -90,13 +90,13 @@ class ScorePopup(pygame.sprite.Sprite):
             # При 0 цифр после нас - 255, при max_value-value цифр - минимум
             max_after = self.max_value - self.value
             if max_after > 0:
-                fade_per_number = 200 / max_after  # Уменьшаем на ~200 к полному появлению
-                target_alpha = max(55, 255 - int(visible_after * fade_per_number))
+                fade_per_number = 230 / max_after  # Уменьшаем на ~230 к полному появлению
+                target_alpha = max(25, 255 - int(visible_after * fade_per_number))
             else:
                 target_alpha = 255
-            # Плавно переходим к целевой прозрачности
+            # Плавно переходим к целевой прозрачности (быстрее затухаем)
             if self.alpha > target_alpha:
-                self.alpha = max(target_alpha, self.alpha - 8)
+                self.alpha = max(target_alpha, self.alpha - 20)
             elif self.alpha < target_alpha:
                 self.alpha = min(target_alpha, self.alpha + 8)
 
