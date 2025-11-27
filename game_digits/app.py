@@ -369,8 +369,16 @@ class GameApp:
         show_result = False
         prepare_to_show_result = False
         while running:
-            self.draw_background()
+            # Очищаем и перерисовываем tile_surface каждый кадр
+            self.tile_surface.fill((249, 246, 247))
             self.tiles.draw(self.tile_surface)
+            # Обновляем и рисуем анимацию очков в каждом кадре
+            self.score_popups.update()
+            for popup in self.score_popups:
+                popup.draw(self.tile_surface)
+            # Рисуем стрелки поверх
+            self.arrows.draw(self.tile_surface)
+            self.draw_background()
             for tile in self.tiles:
                 if tile.is_moving:
                     direction = tile.current_direction
