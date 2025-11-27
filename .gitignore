@@ -1,17 +1,25 @@
 # Виртуальная среда
 venv/
+.venv/
+env/
 
-# Кэш Python’а
+# Кэш Python
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
 
 # Логи / временные файлы
 *.log
 
-# PyCharm
+# IDE
 .idea/
+.vscode/
+*.swp
+*.swo
 
-# Сборки (если будешь делать exe)
-build/
+# Распределения / пакеты
 dist/
-*.spec
+build/
+*.egg-info/
+*.egg
