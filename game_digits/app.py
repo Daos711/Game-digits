@@ -45,8 +45,9 @@ class GameApp:
         )
         self.tile_surface.fill((249, 246, 247))
         self.ADD_TILE_EVENT = pygame.USEREVENT + 1
-        self.tile_timer_interval = 10500
+        self.tile_timer_interval = 10000  # 10 секунд
         self.timer_running = False
+        self.tile_timer_start = 0  # Время начала таймера для прогресс-бара
         self.COUNTDOWN_EVENT = self.game.COUNTDOWN_EVENT
 
     def draw_background(self):
@@ -106,6 +107,27 @@ class GameApp:
         )
         self.screen.blit(time_text, time_rect)
 
+        # Прогресс-бар для таймера появления новых цифр
+        if self.timer_running:
+            progress_rect = pygame.Rect(
+                self.HEIGHT + 10, 230, self.panel_width - 20, 20
+            )
+            # Фон прогресс-бара (серый)
+            pygame.draw.rect(self.screen, (200, 200, 200), progress_rect)
+            pygame.draw.rect(self.screen, (0, 0, 0), progress_rect, 2)
+
+            # Вычисляем прогресс (уменьшается справа налево)
+            elapsed = pygame.time.get_ticks() - self.tile_timer_start
+            progress = max(0, 1 - elapsed / self.tile_timer_interval)
+            bar_width = int((self.panel_width - 24) * progress)
+
+            if bar_width > 0:
+                bar_rect = pygame.Rect(
+                    progress_rect.left + 2, progress_rect.top + 2,
+                    bar_width, progress_rect.height - 4
+                )
+                pygame.draw.rect(self.screen, (247, 204, 74), bar_rect)  # Желтый
+
     def show_result_window(self):
         overlay = pygame.Surface((self.WIDTH, self.HEIGHT))
         overlay.set_alpha(128)
@@ -130,11 +152,12 @@ class GameApp:
 
         if is_victory:
             title_text = title_font.render("Победа!", True, (0, 128, 0))
-            remaining_time = int(self.game.current_time)
-            bonus = remaining_time * 5 + 300
         else:
             title_text = title_font.render("Время вышло!", True, (200, 0, 0))
-            bonus = 0
+
+        # Бонус за скорость: 300 + 5*t (всегда по формуле)
+        remaining_time = round(self.game.current_time)
+        bonus = 300 + 5 * remaining_time
 
         title_rect = title_text.get_rect(center=(window_width // 2, 50))
         window_surface.blit(title_text, title_rect)
@@ -216,6 +239,7 @@ class GameApp:
                 ):
                     pygame.time.set_timer(self.ADD_TILE_EVENT, self.tile_timer_interval)
                     self.timer_running = True
+                    self.tile_timer_start = pygame.time.get_ticks()
                 return
         # Разрешаем выбор новой плитки даже когда другие движутся
         self.arrows.empty()
@@ -348,6 +372,9 @@ class GameApp:
                     if not empty:
                         pygame.time.set_timer(self.ADD_TILE_EVENT, 0)
                         self.timer_running = False
+                    else:
+                        # Перезапускаем таймер для прогресс-бара
+                        self.tile_timer_start = pygame.time.get_ticks()
                 elif event.type == self.COUNTDOWN_EVENT:
                     self.game.handle_countdown()
                 else:
