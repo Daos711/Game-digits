@@ -27,7 +27,9 @@ class GameApp:
         pygame.display.set_caption("Игра цифры")
         self.icon = pygame.image.load(get_image_path("icon.png"))
         pygame.display.set_icon(self.icon)
-        self.background_tile = pygame.image.load(get_image_path("cell.JPG"))
+        # Параметры для клеточного фона (как в школьной тетради)
+        self.grid_cell_size = 25  # Размер клетки в пикселях
+        self.grid_line_color = (200, 200, 200)  # Светло-серые линии
         self.arrows = pygame.sprite.Group()
         self.tiles = pygame.sprite.Group()
         self.score_popups = pygame.sprite.Group()  # Анимация очков
@@ -48,9 +50,13 @@ class GameApp:
         self.game.start_tile_appearance()
 
     def draw_background(self):
-        for i in range(0, 960, self.background_tile.get_width()):
-            for j in range(0, 720, self.background_tile.get_height()):
-                self.screen.blit(self.background_tile, (i, j))
+        # Заливаем фон белым
+        self.screen.fill((255, 255, 255))
+        # Рисуем клеточный паттерн (как в школьной тетради)
+        for x in range(0, self.WIDTH + 1, self.grid_cell_size):
+            pygame.draw.line(self.screen, self.grid_line_color, (x, 0), (x, self.HEIGHT), 1)
+        for y in range(0, self.HEIGHT + 1, self.grid_cell_size):
+            pygame.draw.line(self.screen, self.grid_line_color, (0, y), (self.WIDTH, y), 1)
         pygame.draw.rect(
             self.screen,
             (247, 204, 74),

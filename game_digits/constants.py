@@ -21,33 +21,40 @@ BACKGROUND_COLOR = (252, 250, 248)  # Очень светлый, почти бе
 STRIPE_COLOR = (240, 238, 235)  # Цвет диагональных линий (чуть темнее фона)
 TILE_BORDER_COLOR = (71, 74, 72)
 
-# Размер тайла для фоновой текстуры
-BACKGROUND_TILE_SIZE = 8
-
-
-def create_background_tile():
-    """Создаёт тайл 8x8 с диагональной линией для фоновой текстуры."""
-    import pygame
-    size = BACKGROUND_TILE_SIZE
-    tile = pygame.Surface((size, size))
-    tile.fill(BACKGROUND_COLOR)
-    # Рисуем диагональную линию (из нижнего левого в верхний правый)
-    # Линия проходит по диагонали тайла
-    for i in range(size):
-        tile.set_at((i, size - 1 - i), STRIPE_COLOR)
-    return tile
+# Шаг между диагональными линиями (пиксели)
+STRIPE_SPACING = 8
 
 
 def create_background_surface(width, height):
-    """Создаёт поверхность с тайловой текстурой заданного размера."""
+    """Создаёт поверхность с диагональными линиями под углом 60 градусов."""
     import pygame
+    import math
     surface = pygame.Surface((width, height))
-    tile = create_background_tile()
-    tile_size = BACKGROUND_TILE_SIZE
-    # Заполняем поверхность тайлами
-    for x in range(0, width, tile_size):
-        for y in range(0, height, tile_size):
-            surface.blit(tile, (x, y))
+    surface.fill(BACKGROUND_COLOR)
+
+    # Угол 60 градусов (от горизонтали)
+    # tan(60°) = √3 ≈ 1.732
+    angle_rad = math.radians(60)
+    tan_angle = math.tan(angle_rad)
+
+    # Рисуем диагональные линии из левого нижнего в правый верхний
+    # Для угла 60° от горизонтали: dy/dx = tan(60°)
+    # Линия идёт снизу-слева вверх-вправо
+    spacing = STRIPE_SPACING
+
+    # Нужно покрыть всю поверхность линиями
+    # Начинаем с нижнего левого угла и идём вправо и вверх
+    max_offset = width + height * tan_angle
+
+    for offset in range(-int(height / tan_angle), int(max_offset), spacing):
+        # Точка старта на нижней границе (y = height)
+        x1 = offset
+        y1 = height
+        # Точка конца на верхней границе (y = 0)
+        x2 = offset + height / tan_angle
+        y2 = 0
+        pygame.draw.line(surface, STRIPE_COLOR, (x1, y1), (x2, y2), 1)
+
     return surface
 
 
