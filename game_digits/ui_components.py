@@ -51,22 +51,22 @@ def draw_pause_button(surface, rect, font, text="пауза", is_pressed=False):
 
     if is_pressed:
         # Более тёмные цвета при нажатии
-        color_top = (220, 170, 50)      # Тёмно-жёлтый
-        color_bottom = (200, 140, 30)   # Тёмно-оранжевый
+        color_top = (200, 135, 0)       # Тёмнее оригинала
+        color_bottom = (150, 100, 0)    # Тёмнее оригинала
     else:
-        # Жёлто-оранжевый градиент (верх светлее, низ темнее)
-        color_top = (255, 210, 80)      # Светло-жёлтый
-        color_bottom = (250, 175, 50)   # Оранжевый
+        # Градиент: верх RGB(243, 165, 0), низ RGB(186, 127, 0)
+        color_top = (243, 165, 0)
+        color_bottom = (186, 127, 0)
 
     # Рисуем кнопку с градиентом
     draw_gradient_rounded_rect(surface, rect, color_top, color_bottom, radius)
 
-    # Белый жирный текст по центру с небольшой тенью
+    # Белый жирный текст строго по центру с небольшой тенью
     # Тень текста
-    shadow_text = font.render(text, True, (180, 120, 40))
+    shadow_text = font.render(text, True, (140, 95, 0))
     shadow_rect = shadow_text.get_rect(center=(x + w // 2 + 1, y + h // 2 + 1))
     surface.blit(shadow_text, shadow_rect)
-    # Основной текст
+    # Основной текст (строго по центру)
     text_surface = font.render(text, True, (255, 255, 255))
     text_rect = text_surface.get_rect(center=(x + w // 2, y + h // 2))
     surface.blit(text_surface, text_rect)
@@ -210,19 +210,40 @@ def draw_value_bar(surface, rect, value, font):
 
 
 def draw_progress_bar(surface, rect, progress, radius=None):
-    """Draw progress bar with same style as value bars."""
+    """Draw progress bar with blue background and two-color yellow fill."""
     x, y, w, h = rect
     if radius is None:
         radius = 8  # Менее скруглённые углы как у value bar
 
-    # Жёлто-оранжевый градиент (как у кнопки паузы)
-    color_top = (255, 210, 80)
-    color_bottom = (250, 175, 50)
+    # 1. Сначала рисуем синий фон (как у value bar)
+    bg_color_top = (70, 130, 175)
+    bg_color_bottom = (110, 170, 210)
+    draw_gradient_rounded_rect(surface, rect, bg_color_top, bg_color_bottom, radius)
 
-    # Заполненная часть
+    # 2. Затем рисуем жёлтую заполненную часть поверх
+    # Верхние 2/3 высоты - RGB(255, 192, 41), нижняя 1/3 - RGB(211, 136, 0)
     bar_width = int(w * progress)
     if bar_width > radius * 2:  # Минимальная ширина для отрисовки
-        draw_gradient_rounded_rect(surface, (x, y, bar_width, h), color_top, color_bottom, radius)
+        # Создаём временную поверхность для двухцветной полоски
+        temp_surface = pygame.Surface((bar_width, h), pygame.SRCALPHA)
+
+        # Верхняя часть (2/3 высоты)
+        upper_height = int(h * 2 / 3)
+        upper_color = (255, 192, 41)
+        pygame.draw.rect(temp_surface, upper_color, (0, 0, bar_width, upper_height))
+
+        # Нижняя часть (1/3 высоты)
+        lower_color = (211, 136, 0)
+        pygame.draw.rect(temp_surface, lower_color, (0, upper_height, bar_width, h - upper_height))
+
+        # Создаём маску для скруглённых углов
+        mask_surface = pygame.Surface((bar_width, h), pygame.SRCALPHA)
+        draw_rounded_rect(mask_surface, (255, 255, 255, 255), (0, 0, bar_width, h), radius)
+
+        # Применяем маску
+        temp_surface.blit(mask_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+
+        surface.blit(temp_surface, (x, y))
 
 
 def draw_mute_button(surface, pos, size, is_muted=False):

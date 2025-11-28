@@ -25,11 +25,11 @@ class GameApp:
         pygame.font.init()
         self.font = pygame.font.Font(None, 36)
         # Жирные шрифты для UI панели (с поддержкой кириллицы)
-        # OpenSans поддерживает кириллицу и уже есть в проекте
-        cyrillic_font = get_font_path("OpenSans-VariableFont_wdth,wght.ttf")
-        self.font_bold_large = pygame.font.Font(cyrillic_font, 28)
-        self.font_bold_medium = pygame.font.Font(cyrillic_font, 22)
-        self.font_bold_value = pygame.font.Font(cyrillic_font, 36)
+        # Poppins-Bold для жирного текста
+        bold_font = get_font_path("Poppins-Bold.ttf")
+        self.font_bold_large = pygame.font.Font(bold_font, 28)
+        self.font_bold_medium = pygame.font.Font(bold_font, 24)
+        self.font_bold_value = pygame.font.Font(bold_font, 38)
         # Состояние UI
         self.is_paused = False
         self.pause_button_rect = None
@@ -110,22 +110,24 @@ class GameApp:
         current_y += time_label.get_height() + 10
 
         # Строка со значением времени (иконка + полоска)
+        # Полоска заходит ПОД иконку - иконка перекрывает левый край полоски
         icon_size = 50
         icon_x = panel_x + padding
-        bar_x = icon_x + icon_size + 8
-        bar_width = self.panel_width - padding * 2 - icon_size - 8
+        # Полоска начинается от центра иконки (иконка перекрывает левую часть)
+        bar_x = icon_x + icon_size // 2
+        bar_width = self.panel_width - padding - bar_x + panel_x
         bar_height = 44
 
-        # Иконка часов (без скошенного бейджа)
-        ui.draw_clock_icon(self.screen, (icon_x + icon_size // 2, current_y + icon_size // 2), icon_size)
-
-        # Голубая полоска с временем
+        # СНАЧАЛА рисуем голубую полоску с временем (она будет ПОД иконкой)
         ui.draw_value_bar(
             self.screen,
             (bar_x, current_y + 3, bar_width, bar_height),
             self.game.current_time,
             self.font_bold_value
         )
+
+        # ЗАТЕМ рисуем иконку часов ПОВЕРХ полоски
+        ui.draw_clock_icon(self.screen, (icon_x + icon_size // 2, current_y + icon_size // 2), icon_size)
         current_y += icon_size + 15
 
         # === 3. Прогресс-бар (индикатор времени до появления новой цифры) ===
@@ -154,16 +156,16 @@ class GameApp:
         current_y += score_label.get_height() + 10
 
         # Строка со значением очков (иконка + полоска)
-        # Иконка солнца (без скошенного бейджа)
-        ui.draw_sun_icon(self.screen, (icon_x + icon_size // 2, current_y + icon_size // 2), icon_size)
-
-        # Голубая полоска с очками
+        # СНАЧАЛА рисуем голубую полоску с очками (она будет ПОД иконкой)
         ui.draw_value_bar(
             self.screen,
             (bar_x, current_y + 3, bar_width, bar_height),
             self.game.score,
             self.font_bold_value
         )
+
+        # ЗАТЕМ рисуем иконку солнца ПОВЕРХ полоски
+        ui.draw_sun_icon(self.screen, (icon_x + icon_size // 2, current_y + icon_size // 2), icon_size)
 
     def show_result_window(self):
         overlay = pygame.Surface((self.WIDTH, self.HEIGHT))
