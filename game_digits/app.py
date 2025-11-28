@@ -1,13 +1,14 @@
 import sys
 import pygame
 
-from game_digits import get_image_path
+from game_digits import get_image_path, get_font_path
 from game_digits.constants import (
     TILE_SIZE, GAP, COLORS, BOARD_SIZE, BACKGROUND_COLOR,
     grid_to_pixel, pixel_to_grid, pixel_to_grid_round, create_background_surface
 )
 from game_digits.game import Game
 from game_digits.sprites import Arrow, ScorePopup
+from game_digits import ui_components as ui
 
 
 class GameApp:
@@ -23,6 +24,15 @@ class GameApp:
         pygame.init()
         pygame.font.init()
         self.font = pygame.font.Font(None, 36)
+        # Жирные шрифты для UI панели
+        self.font_bold_large = pygame.font.Font(get_font_path("Poppins-Bold.ttf"), 32)
+        self.font_bold_medium = pygame.font.Font(get_font_path("Poppins-Bold.ttf"), 24)
+        self.font_bold_value = pygame.font.Font(get_font_path("Poppins-Bold.ttf"), 36)
+        # Состояние UI
+        self.is_muted = False
+        self.is_paused = False
+        self.pause_button_rect = None
+        self.mute_button_rect = None
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         pygame.display.set_caption("Игра цифры")
         self.icon = pygame.image.load(get_image_path("icon.png"))
@@ -72,64 +82,91 @@ class GameApp:
         self.draw_score_and_timer_window()
 
     def draw_score_and_timer_window(self):
-        # Окно счётчика очков
-        score_window_rect = pygame.Rect(
-            self.HEIGHT + 10, 10, self.panel_width - 20, 100
-        )
-        pygame.draw.rect(self.screen, (255, 255, 255), score_window_rect)
-        pygame.draw.rect(self.screen, (0, 0, 0), score_window_rect, 2)
+        panel_x = self.HEIGHT  # Начало правой панели
+        padding = 15
+        current_y = padding
 
-        score_label = self.font.render("Очки", True, (0, 0, 0))
-        label_rect = score_label.get_rect(
-            center=(score_window_rect.centerx, score_window_rect.top + 20)
+        # === 1. Кнопка "Пауза" и иконка звука ===
+        button_width = 120
+        button_height = 40
+        button_x = panel_x + padding
+        self.pause_button_rect = ui.draw_pause_button(
+            self.screen,
+            (button_x, current_y, button_width, button_height),
+            self.font_bold_medium
         )
-        self.screen.blit(score_label, label_rect)
 
-        score_text = self.font.render(str(self.game.score), True, (0, 0, 0))
-        score_rect = score_text.get_rect(
-            center=(score_window_rect.centerx, score_window_rect.top + 60)
+        # Иконка звука справа от кнопки паузы
+        mute_x = button_x + button_width + 15
+        mute_size = 30
+        self.mute_button_rect = ui.draw_mute_button(
+            self.screen, (mute_x, current_y + 5), mute_size, self.is_muted
         )
-        self.screen.blit(score_text, score_rect)
 
-        # Окно таймера
-        time_window_rect = pygame.Rect(
-            self.HEIGHT + 10, 120, self.panel_width - 20, 100
+        current_y += button_height + 25
+
+        # === 2. Блок "Время" ===
+        # Заголовок "Время"
+        time_label = self.font_bold_large.render("Время", True, (255, 255, 255))
+        label_x = panel_x + (self.panel_width - time_label.get_width()) // 2
+        self.screen.blit(time_label, (label_x, current_y))
+        current_y += time_label.get_height() + 10
+
+        # Строка со значением времени (бейдж + полоска)
+        badge_size = 50
+        badge_x = panel_x + padding
+        bar_x = badge_x + badge_size + 8
+        bar_width = self.panel_width - padding * 2 - badge_size - 8
+        bar_height = 44
+
+        # Бейдж с часами
+        ui.draw_badge(self.screen, (badge_x, current_y, badge_size, badge_size), "clock")
+
+        # Голубая полоска с временем
+        ui.draw_value_bar(
+            self.screen,
+            (bar_x, current_y + 3, bar_width, bar_height),
+            self.game.current_time,
+            self.font_bold_value
         )
-        pygame.draw.rect(self.screen, (255, 255, 255), time_window_rect)
-        pygame.draw.rect(self.screen, (0, 0, 0), time_window_rect, 2)
+        current_y += badge_size + 15
 
-        time_label = self.font.render("Время", True, (0, 0, 0))
-        label_rect = time_label.get_rect(
-            center=(time_window_rect.centerx, time_window_rect.top + 20)
-        )
-        self.screen.blit(time_label, label_rect)
+        # === 3. Оранжевый прогресс-бар (индикатор времени до появления новой цифры) ===
+        progress_height = 22
+        progress_x = panel_x + padding
+        progress_width = self.panel_width - padding * 2
 
-        time_text = self.font.render(f"{self.game.current_time}", True, (0, 0, 0))
-        time_rect = time_text.get_rect(
-            center=(time_window_rect.centerx, time_window_rect.top + 60)
-        )
-        self.screen.blit(time_text, time_rect)
-
-        # Прогресс-бар для таймера появления новых цифр
         if self.timer_running:
-            progress_rect = pygame.Rect(
-                self.HEIGHT + 10, 230, self.panel_width - 20, 20
-            )
-            # Фон прогресс-бара (серый)
-            pygame.draw.rect(self.screen, (200, 200, 200), progress_rect)
-            pygame.draw.rect(self.screen, (0, 0, 0), progress_rect, 2)
-
-            # Вычисляем прогресс (уменьшается справа налево)
             elapsed = pygame.time.get_ticks() - self.tile_timer_start
             progress = max(0, 1 - elapsed / self.tile_timer_interval)
-            bar_width = int((self.panel_width - 24) * progress)
+        else:
+            progress = 1.0
 
-            if bar_width > 0:
-                bar_rect = pygame.Rect(
-                    progress_rect.left + 2, progress_rect.top + 2,
-                    bar_width, progress_rect.height - 4
-                )
-                pygame.draw.rect(self.screen, (247, 204, 74), bar_rect)  # Желтый
+        ui.draw_progress_bar(
+            self.screen,
+            (progress_x, current_y, progress_width, progress_height),
+            progress
+        )
+        current_y += progress_height + 25
+
+        # === 4. Блок "Очки" ===
+        # Заголовок "Очки"
+        score_label = self.font_bold_large.render("Очки", True, (255, 255, 255))
+        label_x = panel_x + (self.panel_width - score_label.get_width()) // 2
+        self.screen.blit(score_label, (label_x, current_y))
+        current_y += score_label.get_height() + 10
+
+        # Строка со значением очков (бейдж + полоска)
+        # Бейдж с солнцем
+        ui.draw_badge(self.screen, (badge_x, current_y, badge_size, badge_size), "sun")
+
+        # Голубая полоска с очками
+        ui.draw_value_bar(
+            self.screen,
+            (bar_x, current_y + 3, bar_width, bar_height),
+            self.game.score,
+            self.font_bold_value
+        )
 
     def show_result_window(self):
         overlay = pygame.Surface((self.WIDTH, self.HEIGHT))
