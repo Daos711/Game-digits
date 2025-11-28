@@ -4,7 +4,6 @@ import pygame
 from game_digits import get_image_path
 from game_digits.constants import (
     TILE_SIZE, GAP, COLORS, BOARD_SIZE, BACKGROUND_COLOR,
-    MOVE_MS_PER_CELL, TARGET_FPS,
     grid_to_pixel, pixel_to_grid, pixel_to_grid_round
 )
 from game_digits.game import Game
@@ -15,10 +14,8 @@ class GameApp:
     def __init__(self):
         self.WIDTH, self.HEIGHT = 953, 713
         self.frame = 10
+        self.speed = 1
         self.window = self.HEIGHT - 20
-        # Time-based движение
-        self.clock = pygame.time.Clock()
-        self.pixels_per_cell = TILE_SIZE + GAP  # 67 пикселей на ячейку
         self.panel_width, self.panel_height = 240, self.HEIGHT
         self.tile_size, self.gap = TILE_SIZE, GAP
         self.offset = (23, 23)
@@ -259,7 +256,7 @@ class GameApp:
 
     def spawn_score_animation(self, positions):
         """Создаёт анимацию очков от первой плитки ко второй."""
-        delay_per_number = 80  # Задержка между появлением чисел (мс)
+        delay_per_number = 100  # Задержка между появлением чисел (мс)
         max_value = len(positions)
         # Создаём отдельную группу для этой анимации
         animation_group = pygame.sprite.Group()
@@ -326,21 +323,16 @@ class GameApp:
                     return other
         return None
 
-    def move_tile(self, tile, direction, delta_ms):
+    def move_tile(self, tile, direction):
         target_rect = tile.target_move(direction, self.game.board)
         dx = target_rect.topleft[0] - tile.rect.topleft[0]
         dy = target_rect.topleft[1] - tile.rect.topleft[1]
-
-        # Вычисляем скорость: пикселей за миллисекунду
-        pixels_per_ms = self.pixels_per_cell / MOVE_MS_PER_CELL
-        step = pixels_per_ms * delta_ms
-
-        if dx == 0 and dy != 0:
-            move_amount = min(step, abs(dy))
-            tile.rect.y += move_amount * (1 if dy > 0 else -1)
-        elif dy == 0 and dx != 0:
-            move_amount = min(step, abs(dx))
-            tile.rect.x += move_amount * (1 if dx > 0 else -1)
+        if dx == 0:
+            step_y = self.speed * (1 if dy > 0 else -1)
+            tile.rect.y += step_y
+        elif dy == 0:
+            step_x = self.speed * (1 if dx > 0 else -1)
+            tile.rect.x += step_x
 
         # Проверяем, покинула ли плитка ячейку (для анимации -N)
         if hasattr(tile, 'last_grid_pos'):
@@ -435,9 +427,6 @@ class GameApp:
         show_result = False
         prepare_to_show_result = False
         while running:
-            # Ограничиваем FPS и получаем delta time
-            delta_ms = self.clock.tick(TARGET_FPS)
-
             # Очищаем и перерисовываем tile_surface каждый кадр
             self.tile_surface.fill(BACKGROUND_COLOR)
             self.tiles.draw(self.tile_surface)
@@ -452,7 +441,7 @@ class GameApp:
                 if tile.is_moving:
                     direction = tile.current_direction
                     if direction:
-                        self.move_tile(tile, direction, delta_ms)
+                        self.move_tile(tile, direction)
                         target_rect = tile.target_move(direction, self.game.board)
                         # Проверяем достижение цели с допуском (для float координат)
                         dx = abs(tile.rect.x - target_rect.x)
