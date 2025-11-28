@@ -25,7 +25,8 @@ class GameApp:
         pygame.font.init()
         self.font = pygame.font.Font(None, 36)
         # Жирные шрифты для UI панели (с поддержкой кириллицы)
-        cyrillic_font = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+        # OpenSans поддерживает кириллицу и уже есть в проекте
+        cyrillic_font = get_font_path("OpenSans-VariableFont_wdth,wght.ttf")
         self.font_bold_large = pygame.font.Font(cyrillic_font, 28)
         self.font_bold_medium = pygame.font.Font(cyrillic_font, 22)
         self.font_bold_value = pygame.font.Font(cyrillic_font, 36)
