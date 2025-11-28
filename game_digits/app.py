@@ -24,15 +24,17 @@ class GameApp:
         pygame.init()
         pygame.font.init()
         self.font = pygame.font.Font(None, 36)
-        # Жирные шрифты для UI панели
-        self.font_bold_large = pygame.font.Font(get_font_path("Poppins-Bold.ttf"), 32)
-        self.font_bold_medium = pygame.font.Font(get_font_path("Poppins-Bold.ttf"), 24)
-        self.font_bold_value = pygame.font.Font(get_font_path("Poppins-Bold.ttf"), 36)
+        # Жирные шрифты для UI панели (с поддержкой кириллицы)
+        cyrillic_font = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+        self.font_bold_large = pygame.font.Font(cyrillic_font, 28)
+        self.font_bold_medium = pygame.font.Font(cyrillic_font, 22)
+        self.font_bold_value = pygame.font.Font(cyrillic_font, 36)
         # Состояние UI
-        self.is_muted = False
         self.is_paused = False
         self.pause_button_rect = None
-        self.mute_button_rect = None
+        # Для сохранения времени паузы
+        self.pause_start_time = 0
+        self.total_pause_time = 0
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         pygame.display.set_caption("Игра цифры")
         self.icon = pygame.image.load(get_image_path("icon.png"))
@@ -86,21 +88,15 @@ class GameApp:
         padding = 15
         current_y = padding
 
-        # === 1. Кнопка "Пауза" и иконка звука ===
+        # === 1. Кнопка "Пауза" (центрированная) ===
         button_width = 120
         button_height = 40
-        button_x = panel_x + padding
+        button_x = panel_x + (self.panel_width - button_width) // 2  # Центрирование
         self.pause_button_rect = ui.draw_pause_button(
             self.screen,
             (button_x, current_y, button_width, button_height),
-            self.font_bold_medium
-        )
-
-        # Иконка звука справа от кнопки паузы
-        mute_x = button_x + button_width + 15
-        mute_size = 30
-        self.mute_button_rect = ui.draw_mute_button(
-            self.screen, (mute_x, current_y + 5), mute_size, self.is_muted
+            self.font_bold_medium,
+            is_pressed=self.is_paused
         )
 
         current_y += button_height + 25
@@ -112,15 +108,15 @@ class GameApp:
         self.screen.blit(time_label, (label_x, current_y))
         current_y += time_label.get_height() + 10
 
-        # Строка со значением времени (бейдж + полоска)
-        badge_size = 50
-        badge_x = panel_x + padding
-        bar_x = badge_x + badge_size + 8
-        bar_width = self.panel_width - padding * 2 - badge_size - 8
+        # Строка со значением времени (иконка + полоска)
+        icon_size = 50
+        icon_x = panel_x + padding
+        bar_x = icon_x + icon_size + 8
+        bar_width = self.panel_width - padding * 2 - icon_size - 8
         bar_height = 44
 
-        # Бейдж с часами
-        ui.draw_badge(self.screen, (badge_x, current_y, badge_size, badge_size), "clock")
+        # Иконка часов (без скошенного бейджа)
+        ui.draw_clock_icon(self.screen, (icon_x + icon_size // 2, current_y + icon_size // 2), icon_size)
 
         # Голубая полоска с временем
         ui.draw_value_bar(
@@ -129,14 +125,14 @@ class GameApp:
             self.game.current_time,
             self.font_bold_value
         )
-        current_y += badge_size + 15
+        current_y += icon_size + 15
 
-        # === 3. Оранжевый прогресс-бар (индикатор времени до появления новой цифры) ===
+        # === 3. Прогресс-бар (индикатор времени до появления новой цифры) ===
         progress_height = 22
         progress_x = panel_x + padding
         progress_width = self.panel_width - padding * 2
 
-        if self.timer_running:
+        if self.timer_running and not self.is_paused:
             elapsed = pygame.time.get_ticks() - self.tile_timer_start
             progress = max(0, 1 - elapsed / self.tile_timer_interval)
         else:
@@ -156,9 +152,9 @@ class GameApp:
         self.screen.blit(score_label, (label_x, current_y))
         current_y += score_label.get_height() + 10
 
-        # Строка со значением очков (бейдж + полоска)
-        # Бейдж с солнцем
-        ui.draw_badge(self.screen, (badge_x, current_y, badge_size, badge_size), "sun")
+        # Строка со значением очков (иконка + полоска)
+        # Иконка солнца (без скошенного бейджа)
+        ui.draw_sun_icon(self.screen, (icon_x + icon_size // 2, current_y + icon_size // 2), icon_size)
 
         # Голубая полоска с очками
         ui.draw_value_bar(
@@ -246,13 +242,49 @@ class GameApp:
         if event.type == pygame.QUIT:
             return False
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            pos = pygame.mouse.get_pos()
+
+            # Проверяем нажатие на кнопку паузы
+            if self.pause_button_rect and self.pause_button_rect.collidepoint(pos):
+                self.toggle_pause()
+                return True
+
+            # Блокируем игровые взаимодействия на паузе
+            if self.is_paused:
+                return True
+
             # Block interaction during tile appearance animation
             if self.game.is_initializing:
                 return True
-            pos = pygame.mouse.get_pos()
+
             pos = (pos[0] - self.offset[0], pos[1] - self.offset[1])
             self.handle_mouse_click(pos)
         return True
+
+    def toggle_pause(self):
+        """Переключает состояние паузы."""
+        self.is_paused = not self.is_paused
+
+        if self.is_paused:
+            # Остановка игры
+            self.pause_start_time = pygame.time.get_ticks()
+            # Останавливаем таймер обратного отсчёта
+            pygame.time.set_timer(self.COUNTDOWN_EVENT, 0)
+            # Останавливаем таймер появления плиток
+            pygame.time.set_timer(self.ADD_TILE_EVENT, 0)
+        else:
+            # Возобновление игры
+            pause_duration = pygame.time.get_ticks() - self.pause_start_time
+            self.total_pause_time += pause_duration
+            # Корректируем время начала таймера плиток
+            if self.timer_running:
+                self.tile_timer_start += pause_duration
+            # Возобновляем таймер обратного отсчёта
+            pygame.time.set_timer(self.COUNTDOWN_EVENT, 1000)
+            # Возобновляем таймер появления плиток если он был активен
+            if self.timer_running:
+                remaining = self.tile_timer_interval - (self.pause_start_time - self.tile_timer_start)
+                pygame.time.set_timer(self.ADD_TILE_EVENT, max(100, remaining))
 
     def handle_mouse_click(self, pos):
         for arrow in self.arrows:
@@ -481,25 +513,28 @@ class GameApp:
             # Очищаем и перерисовываем tile_surface каждый кадр
             self.tile_surface.blit(self.background_texture, (0, 0))
             self.tiles.draw(self.tile_surface)
-            # Обновляем и рисуем анимацию очков в каждом кадре
-            self.score_popups.update()
+            # Обновляем и рисуем анимацию очков в каждом кадре (только если не пауза)
+            if not self.is_paused:
+                self.score_popups.update()
             for popup in self.score_popups:
                 popup.draw(self.tile_surface)
             # Рисуем стрелки поверх
             self.arrows.draw(self.tile_surface)
             self.draw_background()
-            for tile in self.tiles:
-                if tile.is_moving:
-                    direction = tile.current_direction
-                    if direction:
-                        self.move_tile(tile, direction)
-                        target_rect = tile.target_move(direction, self.game.board)
-                        # Проверяем достижение цели с допуском (для float координат)
-                        dx = abs(tile.rect.x - target_rect.x)
-                        dy = abs(tile.rect.y - target_rect.y)
-                        if dx < 1 and dy < 1:
-                            tile.rect.topleft = target_rect.topleft
-                            self.finalize_move(tile)
+            # Движение плиток только если не пауза
+            if not self.is_paused:
+                for tile in self.tiles:
+                    if tile.is_moving:
+                        direction = tile.current_direction
+                        if direction:
+                            self.move_tile(tile, direction)
+                            target_rect = tile.target_move(direction, self.game.board)
+                            # Проверяем достижение цели с допуском (для float координат)
+                            dx = abs(tile.rect.x - target_rect.x)
+                            dy = abs(tile.rect.y - target_rect.y)
+                            if dx < 1 and dy < 1:
+                                tile.rect.topleft = target_rect.topleft
+                                self.finalize_move(tile)
             pygame.display.update()
             for event in pygame.event.get():
                 if event.type == self.TILE_APPEAR_EVENT:

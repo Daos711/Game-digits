@@ -44,27 +44,22 @@ def draw_gradient_rounded_rect(surface, rect, color_top, color_bottom, radius):
     surface.blit(temp_surface, (x, y))
 
 
-def draw_pause_button(surface, rect, font, text="пауза"):
+def draw_pause_button(surface, rect, font, text="пауза", is_pressed=False):
     """Draw the pause button with gradient - like reference."""
     x, y, w, h = rect
-    radius = h // 2  # Сильно скруглённые углы (капсула)
+    radius = 8  # Менее скруглённые углы
 
-    # Жёлто-оранжевый градиент (верх светлее, низ темнее)
-    color_top = (255, 210, 80)      # Светло-жёлтый
-    color_bottom = (250, 175, 50)   # Оранжевый
+    if is_pressed:
+        # Более тёмные цвета при нажатии
+        color_top = (220, 170, 50)      # Тёмно-жёлтый
+        color_bottom = (200, 140, 30)   # Тёмно-оранжевый
+    else:
+        # Жёлто-оранжевый градиент (верх светлее, низ темнее)
+        color_top = (255, 210, 80)      # Светло-жёлтый
+        color_bottom = (250, 175, 50)   # Оранжевый
 
     # Рисуем кнопку с градиентом
     draw_gradient_rounded_rect(surface, rect, color_top, color_bottom, radius)
-
-    # Светлый блик сверху для выпуклости
-    highlight_surface = pygame.Surface((w - 16, 4), pygame.SRCALPHA)
-    highlight_surface.fill((255, 255, 255, 100))
-    surface.blit(highlight_surface, (x + 8, y + 3))
-
-    # Тёмная тень снизу для объёма
-    shadow_surface = pygame.Surface((w - 16, 3), pygame.SRCALPHA)
-    shadow_surface.fill((200, 130, 30, 100))
-    surface.blit(shadow_surface, (x + 8, y + h - 6))
 
     # Белый жирный текст по центру с небольшой тенью
     # Тень текста
@@ -194,7 +189,7 @@ def draw_badge(surface, rect, icon_type="clock"):
 def draw_value_bar(surface, rect, value, font):
     """Draw the blue value bar with number inside - like reference."""
     x, y, w, h = rect
-    radius = h // 2
+    radius = 8  # Менее скруглённые углы
 
     # Голубой градиент (верх темнее, низ светлее - как на референсе)
     color_top = (70, 130, 175)
@@ -202,12 +197,6 @@ def draw_value_bar(surface, rect, value, font):
 
     # Рисуем основную полоску
     draw_gradient_rounded_rect(surface, rect, color_top, color_bottom, radius)
-
-    # Добавляем светлую линию сверху для блика
-    highlight_rect = (x + 4, y + 2, w - 8, 3)
-    highlight_surface = pygame.Surface((w - 8, 3), pygame.SRCALPHA)
-    highlight_surface.fill((255, 255, 255, 60))
-    surface.blit(highlight_surface, (x + 4, y + 2))
 
     # Белое число по центру с небольшой тенью
     # Тень
@@ -221,29 +210,19 @@ def draw_value_bar(surface, rect, value, font):
 
 
 def draw_progress_bar(surface, rect, progress, radius=None):
-    """Draw orange progress bar (capsule shape) - like reference."""
+    """Draw progress bar with same style as value bars."""
     x, y, w, h = rect
     if radius is None:
-        radius = h // 2
+        radius = 8  # Менее скруглённые углы как у value bar
 
-    # Жёлто-оранжевый градиент (верх светлее, низ темнее для объёма)
-    color_top = (255, 210, 70)
-    color_bottom = (245, 170, 40)
+    # Жёлто-оранжевый градиент (как у кнопки паузы)
+    color_top = (255, 210, 80)
+    color_bottom = (250, 175, 50)
 
     # Заполненная часть
     bar_width = int(w * progress)
     if bar_width > radius * 2:  # Минимальная ширина для отрисовки
         draw_gradient_rounded_rect(surface, (x, y, bar_width, h), color_top, color_bottom, radius)
-
-        # Светлый блик сверху
-        highlight_surface = pygame.Surface((bar_width - 8, 2), pygame.SRCALPHA)
-        highlight_surface.fill((255, 255, 255, 80))
-        surface.blit(highlight_surface, (x + 4, y + 2))
-
-        # Тёмная линия снизу для объёма
-        shadow_surface = pygame.Surface((bar_width - 8, 2), pygame.SRCALPHA)
-        shadow_surface.fill((180, 120, 30, 100))
-        surface.blit(shadow_surface, (x + 4, y + h - 4))
 
 
 def draw_mute_button(surface, pos, size, is_muted=False):
