@@ -256,7 +256,7 @@ class GameApp:
 
     def spawn_score_animation(self, positions):
         """Создаёт анимацию очков от первой плитки ко второй."""
-        delay_per_number = 100  # Задержка между появлением чисел (мс)
+        delay_per_number = 80  # Задержка между появлением чисел (мс)
         max_value = len(positions)
         # Создаём отдельную группу для этой анимации
         animation_group = pygame.sprite.Group()

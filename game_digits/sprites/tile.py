@@ -23,6 +23,26 @@ class Tile(pygame.sprite.Sprite):
 
     def draw_tile(self, text_color):
         self.image.fill(self.color)
+
+        # Эффект объёма: тень на правой и нижней гранях
+        shadow_width = 4  # Толщина тени
+        # Вычисляем более тёмный цвет для тени (на 30% темнее)
+        shadow_color = (
+            max(0, int(self.color[0] * 0.7)),
+            max(0, int(self.color[1] * 0.7)),
+            max(0, int(self.color[2] * 0.7))
+        )
+        # Правая грань (вертикальная полоса)
+        pygame.draw.rect(
+            self.image, shadow_color,
+            (TILE_SIZE - shadow_width, 0, shadow_width, TILE_SIZE)
+        )
+        # Нижняя грань (горизонтальная полоса)
+        pygame.draw.rect(
+            self.image, shadow_color,
+            (0, TILE_SIZE - shadow_width, TILE_SIZE, shadow_width)
+        )
+
         pygame.draw.rect(self.image, TILE_BORDER_COLOR, self.image.get_rect(), 2)
         font = pygame.font.Font(
             get_font_path("OpenSans-VariableFont_wdth,wght.ttf"), 40
