@@ -142,12 +142,8 @@ class GameApp:
                 progress = self.paused_progress
             else:
                 elapsed = pygame.time.get_ticks() - self.tile_timer_start
-                if elapsed >= self.tile_timer_interval:
-                    # Время истекло - показываем полный бар (не пустой!)
-                    # Плитка появится в начале следующего кадра
-                    progress = 1.0
-                else:
-                    progress = 1 - elapsed / self.tile_timer_interval
+                # Прогресс уменьшается от 1 до 0, когда elapsed >= interval показываем пустой бар
+                progress = max(0, 1 - elapsed / self.tile_timer_interval)
         else:
             progress = 1.0
 
@@ -532,26 +528,14 @@ class GameApp:
         running = True
         show_result = False
         prepare_to_show_result = False
+        # Флаг для добавления плитки ПОСЛЕ отрисовки пустого бара
+        pending_tile_spawn = False
         while running:
-            # Проверяем появление плитки по времени ПЕРЕД отрисовкой
-            # Это обеспечивает синхронизацию с прогресс-баром
+            # Проверяем нужно ли добавить плитку (но добавляем ПОСЛЕ отрисовки)
             if self.timer_running and not self.is_paused:
                 elapsed = pygame.time.get_ticks() - self.tile_timer_start
                 if elapsed >= self.tile_timer_interval:
-                    self.game.add_new_tile()
-                    self.remove_arrows_on_occupied_cells()
-                    empty = any(
-                        self.game.board[i][j] is None
-                        for i in range(BOARD_SIZE)
-                        for j in range(BOARD_SIZE)
-                    )
-                    if not empty:
-                        pygame.time.set_timer(self.ADD_TILE_EVENT, 0)
-                        self.timer_running = False
-                    else:
-                        # Перезапускаем таймер для следующего цикла
-                        self.tile_timer_start = pygame.time.get_ticks()
-                        pygame.time.set_timer(self.ADD_TILE_EVENT, self.tile_timer_interval)
+                    pending_tile_spawn = True
 
             # Очищаем и перерисовываем tile_surface каждый кадр
             self.tile_surface.blit(self.background_texture, (0, 0))
@@ -579,6 +563,25 @@ class GameApp:
                                 tile.rect.topleft = target_rect.topleft
                                 self.finalize_move(tile)
             pygame.display.update()
+
+            # Добавляем плитку ПОСЛЕ отрисовки пустого бара
+            if pending_tile_spawn:
+                pending_tile_spawn = False
+                self.game.add_new_tile()
+                self.remove_arrows_on_occupied_cells()
+                empty = any(
+                    self.game.board[i][j] is None
+                    for i in range(BOARD_SIZE)
+                    for j in range(BOARD_SIZE)
+                )
+                if not empty:
+                    pygame.time.set_timer(self.ADD_TILE_EVENT, 0)
+                    self.timer_running = False
+                else:
+                    # Перезапускаем таймер для следующего цикла
+                    self.tile_timer_start = pygame.time.get_ticks()
+                    pygame.time.set_timer(self.ADD_TILE_EVENT, self.tile_timer_interval)
+
             for event in pygame.event.get():
                 if event.type == self.TILE_APPEAR_EVENT:
                     # Spawn next tile in appearance animation
