@@ -25,22 +25,22 @@ class Tile(pygame.sprite.Sprite):
         self.image.fill(self.color)
 
         # Эффект объёма: тень на правой и нижней гранях
-        shadow_width = 4  # Толщина тени
-        # Вычисляем более тёмный цвет для тени (на 30% темнее)
+        shadow_width = 6  # Толщина тени
+        # Вычисляем более тёмный цвет для тени (на 50% темнее)
         shadow_color = (
-            max(0, int(self.color[0] * 0.7)),
-            max(0, int(self.color[1] * 0.7)),
-            max(0, int(self.color[2] * 0.7))
+            max(0, int(self.color[0] * 0.5)),
+            max(0, int(self.color[1] * 0.5)),
+            max(0, int(self.color[2] * 0.5))
         )
-        # Правая грань (вертикальная полоса)
+        # Правая грань (вертикальная полоса) - внутри бордера
         pygame.draw.rect(
             self.image, shadow_color,
-            (TILE_SIZE - shadow_width, 0, shadow_width, TILE_SIZE)
+            (TILE_SIZE - shadow_width - 2, 2, shadow_width, TILE_SIZE - 4)
         )
-        # Нижняя грань (горизонтальная полоса)
+        # Нижняя грань (горизонтальная полоса) - внутри бордера
         pygame.draw.rect(
             self.image, shadow_color,
-            (0, TILE_SIZE - shadow_width, TILE_SIZE, shadow_width)
+            (2, TILE_SIZE - shadow_width - 2, TILE_SIZE - 4, shadow_width)
         )
 
         pygame.draw.rect(self.image, TILE_BORDER_COLOR, self.image.get_rect(), 2)
