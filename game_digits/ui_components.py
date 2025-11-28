@@ -230,7 +230,10 @@ def draw_progress_bar(surface, rect, progress, radius=None):
     # 2. Затем рисуем жёлтую заполненную часть поверх
     # Верхние 2/3 высоты - RGB(255, 192, 41), нижняя 1/3 - RGB(211, 136, 0)
     bar_width = int(w * progress)
-    if bar_width > radius * 2:  # Минимальная ширина для отрисовки
+    if bar_width > 0:  # Рисуем при любом положительном прогрессе
+        # Адаптивный радиус скругления - уменьшается пропорционально ширине
+        actual_radius = min(radius, bar_width // 2)
+
         # Создаём временную поверхность для двухцветной полоски
         temp_surface = pygame.Surface((bar_width, h), pygame.SRCALPHA)
 
@@ -243,9 +246,12 @@ def draw_progress_bar(surface, rect, progress, radius=None):
         lower_color = (211, 136, 0)
         pygame.draw.rect(temp_surface, lower_color, (0, upper_height, bar_width, h - upper_height))
 
-        # Создаём маску для скруглённых углов
+        # Создаём маску для скруглённых углов (с адаптивным радиусом)
         mask_surface = pygame.Surface((bar_width, h), pygame.SRCALPHA)
-        draw_rounded_rect(mask_surface, (255, 255, 255, 255), (0, 0, bar_width, h), radius)
+        if actual_radius > 0:
+            draw_rounded_rect(mask_surface, (255, 255, 255, 255), (0, 0, bar_width, h), actual_radius)
+        else:
+            pygame.draw.rect(mask_surface, (255, 255, 255, 255), (0, 0, bar_width, h))
 
         # Применяем маску
         temp_surface.blit(mask_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
