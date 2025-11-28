@@ -17,8 +17,38 @@ COLORS = {
 }
 
 # Цвета интерфейса
-BACKGROUND_COLOR = (249, 246, 247)
+BACKGROUND_COLOR = (252, 250, 248)  # Очень светлый, почти белый
+STRIPE_COLOR = (240, 238, 235)  # Цвет диагональных линий (чуть темнее фона)
 TILE_BORDER_COLOR = (71, 74, 72)
+
+# Размер тайла для фоновой текстуры
+BACKGROUND_TILE_SIZE = 8
+
+
+def create_background_tile():
+    """Создаёт тайл 8x8 с диагональной линией для фоновой текстуры."""
+    import pygame
+    size = BACKGROUND_TILE_SIZE
+    tile = pygame.Surface((size, size))
+    tile.fill(BACKGROUND_COLOR)
+    # Рисуем диагональную линию (из нижнего левого в верхний правый)
+    # Линия проходит по диагонали тайла
+    for i in range(size):
+        tile.set_at((i, size - 1 - i), STRIPE_COLOR)
+    return tile
+
+
+def create_background_surface(width, height):
+    """Создаёт поверхность с тайловой текстурой заданного размера."""
+    import pygame
+    surface = pygame.Surface((width, height))
+    tile = create_background_tile()
+    tile_size = BACKGROUND_TILE_SIZE
+    # Заполняем поверхность тайлами
+    for x in range(0, width, tile_size):
+        for y in range(0, height, tile_size):
+            surface.blit(tile, (x, y))
+    return surface
 
 
 def grid_to_pixel(row, col):

@@ -4,7 +4,7 @@ import pygame
 from game_digits import get_image_path
 from game_digits.constants import (
     TILE_SIZE, GAP, COLORS, BOARD_SIZE, BACKGROUND_COLOR,
-    grid_to_pixel, pixel_to_grid, pixel_to_grid_round
+    grid_to_pixel, pixel_to_grid, pixel_to_grid_round, create_background_surface
 )
 from game_digits.game import Game
 from game_digits.sprites import Arrow, ScorePopup
@@ -32,10 +32,11 @@ class GameApp:
         self.tiles = pygame.sprite.Group()
         self.score_popups = pygame.sprite.Group()  # Анимация очков
         self.game = Game(self.tiles)
-        self.tile_surface = pygame.Surface(
-            (self.HEIGHT - 4 * self.frame, self.HEIGHT - 4 * self.frame)
-        )
-        self.tile_surface.fill(BACKGROUND_COLOR)
+        tile_surface_size = self.HEIGHT - 4 * self.frame
+        self.tile_surface = pygame.Surface((tile_surface_size, tile_surface_size))
+        # Создаём фоновую текстуру с диагональной штриховкой
+        self.background_texture = create_background_surface(tile_surface_size, tile_surface_size)
+        self.tile_surface.blit(self.background_texture, (0, 0))
         self.ADD_TILE_EVENT = pygame.USEREVENT + 1
         self.tile_timer_interval = 10000  # 10 секунд
         self.timer_running = False
@@ -419,7 +420,7 @@ class GameApp:
         pygame.display.flip()
 
     def update_display(self):
-        self.tile_surface.fill(BACKGROUND_COLOR)
+        self.tile_surface.blit(self.background_texture, (0, 0))
         self.tiles.draw(self.tile_surface)
         # Обновляем и рисуем анимацию очков (под стрелками)
         self.score_popups.update()
@@ -435,7 +436,7 @@ class GameApp:
         prepare_to_show_result = False
         while running:
             # Очищаем и перерисовываем tile_surface каждый кадр
-            self.tile_surface.fill(BACKGROUND_COLOR)
+            self.tile_surface.blit(self.background_texture, (0, 0))
             self.tiles.draw(self.tile_surface)
             # Обновляем и рисуем анимацию очков в каждом кадре
             self.score_popups.update()
