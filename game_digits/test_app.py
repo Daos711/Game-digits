@@ -155,66 +155,125 @@ class TestGameApp:
         ui.draw_sun_icon(self.screen, (icon_x + icon_size // 2, current_y + icon_size // 2), icon_size)
 
     def show_result_window(self):
+        """Display the game result window with final score."""
         overlay = pygame.Surface((self.WIDTH, self.HEIGHT))
         overlay.set_alpha(128)
         overlay.fill((0, 0, 0))
         self.screen.blit(overlay, (0, 0))
 
-        window_width, window_height = 400, 300
-        window_surface = pygame.Surface((window_width, window_height))
-        window_surface.fill((255, 255, 255))
-        pygame.draw.rect(
-            window_surface, (0, 0, 0), (0, 0, window_width, window_height), 2
-        )
-
+        # Window dimensions
+        window_width, window_height = 420, 340
         window_x = (self.WIDTH - window_width) // 2
         window_y = (self.HEIGHT - window_height) // 2
 
-        title_font = pygame.font.Font(None, 48)
-        label_font = pygame.font.Font(None, 36)
+        # Create window surface
+        window_surface = pygame.Surface((window_width, window_height), pygame.SRCALPHA)
 
-        is_victory = not self.game.game_over_flag or self.game.current_time > 0
+        # Layout constants
+        header_height = 50
+        padding = 20
+        row_height = 50
+        row_gap = 12
+        corner_radius = 12
 
-        if is_victory:
-            title_text = title_font.render("Test Complete!", True, (0, 128, 0))
-        else:
-            title_text = title_font.render("Time's up!", True, (200, 0, 0))
+        # Draw rounded rectangle border/shadow
+        border_color = (180, 180, 180)
+        ui.draw_rounded_rect(window_surface, border_color,
+                            (0, 0, window_width, window_height), corner_radius)
 
+        # Draw checkered background for content area (below header)
+        content_y = header_height
+        content_height = window_height - header_height
+        ui.draw_checkered_background(window_surface,
+                                    (2, content_y, window_width - 4, content_height - 2),
+                                    cell_size=20)
+
+        # Clip the corners to maintain rounded shape
+        pygame.draw.circle(window_surface, (0, 0, 0, 0),
+                          (corner_radius, window_height - corner_radius), corner_radius)
+        ui.draw_rounded_rect(window_surface, (255, 255, 255),
+                            (0, window_height - corner_radius * 2,
+                             corner_radius * 2, corner_radius * 2), corner_radius)
+
+        # Draw header with title
+        bold_font_path = get_font_path("2204.ttf")
+        title_font = pygame.font.Font(bold_font_path, 32)
+        label_font = pygame.font.Font(bold_font_path, 22)
+        value_font = pygame.font.Font(bold_font_path, 28)
+        congrats_font = pygame.font.Font(bold_font_path, 28)
+
+        close_btn_rect = ui.draw_result_window_header(
+            window_surface,
+            (0, 0, window_width, header_height),
+            "Результат игры",
+            title_font
+        )
+
+        # Calculate scores
         remaining_time = round(self.game.current_time)
         bonus = 300 + 5 * remaining_time
-
-        title_rect = title_text.get_rect(center=(window_width // 2, 50))
-        window_surface.blit(title_text, title_rect)
-
         total_score = self.game.score + bonus
 
-        result_label = label_font.render("Score:", True, (0, 0, 0))
-        result_label_rect = result_label.get_rect(topleft=(50, 100))
-        window_surface.blit(result_label, result_label_rect)
+        # Draw result rows
+        row_x = padding
+        row_width = window_width - 2 * padding
+        current_y = header_height + padding
 
-        result_value = label_font.render(str(self.game.score), True, (0, 0, 0))
-        result_value_rect = result_value.get_rect(topright=(window_width - 50, 100))
-        window_surface.blit(result_value, result_value_rect)
+        # Row 1: Ваш результат
+        ui.draw_result_row(
+            window_surface,
+            (row_x, current_y, row_width, row_height),
+            "Ваш результат:",
+            self.game.score,
+            label_font,
+            value_font
+        )
+        current_y += row_height + row_gap
 
-        bonus_label = label_font.render("Speed bonus:", True, (0, 0, 0))
-        bonus_label_rect = bonus_label.get_rect(topleft=(50, 150))
-        window_surface.blit(bonus_label, bonus_label_rect)
+        # Row 2: Бонус за скорость
+        ui.draw_result_row(
+            window_surface,
+            (row_x, current_y, row_width, row_height),
+            "Бонус за скорость:",
+            bonus,
+            label_font,
+            value_font
+        )
+        current_y += row_height + row_gap
 
-        bonus_value = label_font.render(str(bonus), True, (0, 0, 0))
-        bonus_value_rect = bonus_value.get_rect(topright=(window_width - 50, 150))
-        window_surface.blit(bonus_value, bonus_value_rect)
+        # Row 3: Итого
+        ui.draw_result_row(
+            window_surface,
+            (row_x, current_y, row_width, row_height),
+            "Итого:",
+            total_score,
+            label_font,
+            value_font
+        )
+        current_y += row_height + row_gap + 5
 
-        total_label = label_font.render("Total:", True, (0, 0, 0))
-        total_label_rect = total_label.get_rect(topleft=(50, 200))
-        window_surface.blit(total_label, total_label_rect)
+        # Congratulation panel
+        congrats_height = 50
+        ui.draw_congratulation_panel(
+            window_surface,
+            (row_x, current_y, row_width, congrats_height),
+            "Поздравляем!",
+            congrats_font
+        )
 
-        total_value = label_font.render(str(total_score), True, (0, 0, 0))
-        total_value_rect = total_value.get_rect(topright=(window_width - 50, 200))
-        window_surface.blit(total_value, total_value_rect)
-
+        # Blit window to screen
         self.screen.blit(window_surface, (window_x, window_y))
         pygame.display.update()
 
+        # Adjust close button rect for screen coordinates
+        close_btn_screen = pygame.Rect(
+            window_x + close_btn_rect.x,
+            window_y + close_btn_rect.y,
+            close_btn_rect.width,
+            close_btn_rect.height
+        )
+
+        # Wait for user interaction
         waiting = True
         while waiting:
             for event in pygame.event.get():
@@ -222,7 +281,10 @@ class TestGameApp:
                     waiting = False
                     pygame.quit()
                     sys.exit()
-                elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if close_btn_screen.collidepoint(event.pos):
+                        waiting = False
+                elif event.type == pygame.KEYDOWN:
                     waiting = False
             pygame.time.delay(100)
 
