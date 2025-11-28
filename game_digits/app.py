@@ -501,6 +501,8 @@ class GameApp:
                 show_result = True
 
             if show_result and not any(tile.is_moving for tile in self.tiles):
+                # Очищаем все анимации чисел перед показом результатов
+                self.score_popups.empty()
                 self.update_display()
                 pygame.display.flip()
                 self.show_result_window()
