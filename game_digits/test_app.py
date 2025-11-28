@@ -37,10 +37,10 @@ class TestGameApp:
         pygame.font.init()
         self.font = pygame.font.Font(None, 36)
 
-        opensans = get_font_path("OpenSans-VariableFont_wdth,wght.ttf")
-        self.font_bold_large = pygame.font.Font(opensans, 26)
-        self.font_bold_medium = pygame.font.Font(opensans, 22)
-        self.font_bold_value = pygame.font.Font(opensans, 36)
+        bold_cyrillic = get_font_path("2204.ttf")
+        self.font_bold_large = pygame.font.Font(bold_cyrillic, 26)
+        self.font_bold_medium = pygame.font.Font(bold_cyrillic, 22)
+        self.font_bold_value = pygame.font.Font(bold_cyrillic, 36)
 
         self.is_paused = False
         self.pause_button_rect = None
