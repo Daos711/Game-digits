@@ -528,6 +528,26 @@ class GameApp:
         show_result = False
         prepare_to_show_result = False
         while running:
+            # Проверяем появление плитки по времени ПЕРЕД отрисовкой
+            # Это обеспечивает синхронизацию с прогресс-баром
+            if self.timer_running and not self.is_paused:
+                elapsed = pygame.time.get_ticks() - self.tile_timer_start
+                if elapsed >= self.tile_timer_interval:
+                    self.game.add_new_tile()
+                    self.remove_arrows_on_occupied_cells()
+                    empty = any(
+                        self.game.board[i][j] is None
+                        for i in range(BOARD_SIZE)
+                        for j in range(BOARD_SIZE)
+                    )
+                    if not empty:
+                        pygame.time.set_timer(self.ADD_TILE_EVENT, 0)
+                        self.timer_running = False
+                    else:
+                        # Перезапускаем таймер для следующего цикла
+                        self.tile_timer_start = pygame.time.get_ticks()
+                        pygame.time.set_timer(self.ADD_TILE_EVENT, self.tile_timer_interval)
+
             # Очищаем и перерисовываем tile_surface каждый кадр
             self.tile_surface.blit(self.background_texture, (0, 0))
             self.tiles.draw(self.tile_surface)
@@ -553,27 +573,6 @@ class GameApp:
                             if dx < 1 and dy < 1:
                                 tile.rect.topleft = target_rect.topleft
                                 self.finalize_move(tile)
-            # Проверяем появление плитки по времени (без ожидания события таймера)
-            # Это обеспечивает синхронизацию с прогресс-баром
-            if self.timer_running and not self.is_paused:
-                elapsed = pygame.time.get_ticks() - self.tile_timer_start
-                if elapsed >= self.tile_timer_interval:
-                    self.game.add_new_tile()
-                    self.remove_arrows_on_occupied_cells()
-                    self.update_display()
-                    empty = any(
-                        self.game.board[i][j] is None
-                        for i in range(BOARD_SIZE)
-                        for j in range(BOARD_SIZE)
-                    )
-                    if not empty:
-                        pygame.time.set_timer(self.ADD_TILE_EVENT, 0)
-                        self.timer_running = False
-                    else:
-                        # Перезапускаем таймер для следующего цикла
-                        self.tile_timer_start = pygame.time.get_ticks()
-                        pygame.time.set_timer(self.ADD_TILE_EVENT, self.tile_timer_interval)
-
             pygame.display.update()
             for event in pygame.event.get():
                 if event.type == self.TILE_APPEAR_EVENT:

@@ -69,9 +69,9 @@ def draw_pause_button(surface, rect, font, text="пауза", is_pressed=False):
     center_x = x + w // 2
     center_y = y + h // 2
 
-    # Позиционируем текст строго по центру
+    # Позиционируем текст строго по центру (с небольшим сдвигом вверх для визуального баланса)
     text_x = center_x - text_surface.get_width() // 2
-    text_y = center_y - text_surface.get_height() // 2
+    text_y = center_y - text_surface.get_height() // 2 - 2
 
     # Тень (смещение на 1 пиксель)
     surface.blit(shadow_text, (text_x + 1, text_y + 1))
