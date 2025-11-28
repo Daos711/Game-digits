@@ -218,3 +218,137 @@ def draw_progress_bar(surface, rect, progress, radius=None):
         temp_surface.blit(mask_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
 
         surface.blit(temp_surface, (x, y))
+
+
+def draw_result_window_header(surface, rect, title, font, close_callback_rect=None):
+    """Draw the yellow header bar with title and close button.
+
+    Args:
+        surface: Pygame surface to draw on
+        rect: (x, y, width, height) of the header
+        title: Title text to display
+        font: Font for the title
+        close_callback_rect: If provided, will be set to the close button rect
+
+    Returns:
+        pygame.Rect of the close button
+    """
+    x, y, w, h = rect
+    radius = 12
+
+    # Header background - yellow RGB(254, 211, 113)
+    header_color = (254, 211, 113)
+
+    # Draw rounded top corners only
+    # Top-left corner
+    pygame.draw.circle(surface, header_color, (x + radius, y + radius), radius)
+    # Top-right corner
+    pygame.draw.circle(surface, header_color, (x + w - radius, y + radius), radius)
+    # Fill the rest of the header
+    pygame.draw.rect(surface, header_color, (x + radius, y, w - 2 * radius, h))
+    pygame.draw.rect(surface, header_color, (x, y + radius, w, h - radius))
+
+    # Title text - RGB(4, 72, 111), centered
+    title_color = (4, 72, 111)
+    title_surface = font.render(title, True, title_color)
+    title_rect = title_surface.get_rect(center=(x + w // 2, y + h // 2))
+    surface.blit(title_surface, title_rect)
+
+    # Close button - yellow circle with white X
+    btn_radius = 14
+    btn_x = x + w - btn_radius - 10
+    btn_y = y + h // 2
+
+    # Yellow circle (slightly darker than header)
+    pygame.draw.circle(surface, (255, 200, 80), (btn_x, btn_y), btn_radius)
+    pygame.draw.circle(surface, (200, 160, 60), (btn_x, btn_y), btn_radius, 2)
+
+    # White X
+    x_size = 6
+    x_color = (255, 255, 255)
+    pygame.draw.line(surface, x_color, (btn_x - x_size, btn_y - x_size),
+                    (btn_x + x_size, btn_y + x_size), 3)
+    pygame.draw.line(surface, x_color, (btn_x - x_size, btn_y + x_size),
+                    (btn_x + x_size, btn_y - x_size), 3)
+
+    return pygame.Rect(btn_x - btn_radius, btn_y - btn_radius, btn_radius * 2, btn_radius * 2)
+
+
+def draw_result_row(surface, rect, label, value, label_font, value_font):
+    """Draw a result row with blue background.
+
+    Args:
+        surface: Pygame surface to draw on
+        rect: (x, y, width, height) of the row
+        label: Text label (e.g., "Ваш результат:")
+        value: Numeric value to display
+        label_font: Font for the label
+        value_font: Font for the value (larger)
+    """
+    x, y, w, h = rect
+    radius = 6
+
+    # Background - RGB(168, 212, 242)
+    bg_color = (168, 212, 242)
+    draw_rounded_rect(surface, bg_color, rect, radius)
+
+    # Text color - RGB(40, 92, 120)
+    text_color = (40, 92, 120)
+
+    # Label on the left
+    label_surface = label_font.render(label, True, text_color)
+    label_rect = label_surface.get_rect(midleft=(x + 15, y + h // 2))
+    surface.blit(label_surface, label_rect)
+
+    # Value on the right (larger font)
+    value_surface = value_font.render(str(value), True, text_color)
+    value_rect = value_surface.get_rect(midright=(x + w - 15, y + h // 2))
+    surface.blit(value_surface, value_rect)
+
+
+def draw_congratulation_panel(surface, rect, text, font):
+    """Draw the congratulation panel with cream background.
+
+    Args:
+        surface: Pygame surface to draw on
+        rect: (x, y, width, height) of the panel
+        text: Text to display (e.g., "Поздравляем!")
+        font: Font for the text
+    """
+    x, y, w, h = rect
+    radius = 6
+
+    # Background - RGB(255, 238, 196)
+    bg_color = (255, 238, 196)
+    draw_rounded_rect(surface, bg_color, rect, radius)
+
+    # Text color - RGB(166, 63, 42)
+    text_color = (166, 63, 42)
+    text_surface = font.render(text, True, text_color)
+    text_rect = text_surface.get_rect(center=(x + w // 2, y + h // 2))
+    surface.blit(text_surface, text_rect)
+
+
+def draw_checkered_background(surface, rect, cell_size=25):
+    """Draw a checkered (grid) background like a school notebook.
+
+    Args:
+        surface: Pygame surface to draw on
+        rect: (x, y, width, height) of the area
+        cell_size: Size of each grid cell
+    """
+    x, y, w, h = rect
+
+    # Fill with white
+    pygame.draw.rect(surface, (255, 255, 255), rect)
+
+    # Draw grid lines (light gray)
+    line_color = (200, 210, 220)
+
+    # Vertical lines
+    for lx in range(x, x + w + 1, cell_size):
+        pygame.draw.line(surface, line_color, (lx, y), (lx, y + h), 1)
+
+    # Horizontal lines
+    for ly in range(y, y + h + 1, cell_size):
+        pygame.draw.line(surface, line_color, (x, ly), (x + w, ly), 1)
