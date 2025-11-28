@@ -196,7 +196,7 @@ def draw_badge(surface, rect, icon_type="clock"):
 def draw_value_bar(surface, rect, value, font):
     """Draw the blue value bar with number inside - like reference."""
     x, y, w, h = rect
-    radius = 8  # Менее скруглённые углы
+    radius = 4  # Более угловатые края
 
     # Голубой градиент (верх темнее, низ светлее - как на референсе)
     color_top = (70, 130, 175)
@@ -220,7 +220,7 @@ def draw_progress_bar(surface, rect, progress, radius=None):
     """Draw progress bar with blue background and two-color yellow fill."""
     x, y, w, h = rect
     if radius is None:
-        radius = 8  # Менее скруглённые углы как у value bar
+        radius = 4  # Более угловатые края как у value bar
 
     # 1. Сначала рисуем синий фон (как у value bar)
     bg_color_top = (70, 130, 175)
