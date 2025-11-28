@@ -7,7 +7,7 @@ import pygame
 
 from game_digits import get_image_path, get_font_path
 from game_digits.constants import (
-    TILE_SIZE, GAP, COLORS, BACKGROUND_COLOR,
+    TILE_SIZE, GAP, COLORS,
     grid_to_pixel, pixel_to_grid, pixel_to_grid_round, create_background_surface
 )
 from game_digits.test_game import TestGame, TEST_BOARD_SIZE

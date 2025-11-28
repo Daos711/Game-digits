@@ -154,45 +154,6 @@ def draw_sun_icon(surface, center, size):
     pygame.draw.circle(surface, (200, 140, 30), (x, y), radius, 2)
 
 
-def draw_badge(surface, rect, icon_type="clock"):
-    """Draw a badge (skewed quadrilateral) with icon inside - like reference."""
-    x, y, w, h = rect
-
-    # Скошенный четырёхугольник (как наклейка)
-    skew = 5  # Смещение для скоса
-    points = [
-        (x + skew, y),           # Верх-лево
-        (x + w, y + skew),       # Верх-право
-        (x + w - skew, y + h),   # Низ-право
-        (x, y + h - skew),       # Низ-лево
-    ]
-
-    # Фон бейджа (тёмно-синий/серо-голубой как на референсе)
-    badge_color = (70, 115, 160)
-    border_color = (100, 145, 185)
-    highlight_color = (130, 170, 210)
-
-    # Заливка фона
-    pygame.draw.polygon(surface, badge_color, points)
-
-    # Светлая рамка сверху и слева (для объёма)
-    pygame.draw.line(surface, highlight_color, points[0], points[1], 2)
-    pygame.draw.line(surface, highlight_color, points[3], points[0], 2)
-
-    # Тёмная рамка снизу и справа
-    pygame.draw.line(surface, (50, 85, 120), points[1], points[2], 2)
-    pygame.draw.line(surface, (50, 85, 120), points[2], points[3], 2)
-
-    # Иконка внутри
-    center = (x + w // 2, y + h // 2)
-    icon_size = min(w, h) - 10
-
-    if icon_type == "clock":
-        draw_clock_icon(surface, center, icon_size)
-    elif icon_type == "sun":
-        draw_sun_icon(surface, center, icon_size)
-
-
 def draw_value_bar(surface, rect, value, font):
     """Draw the blue value bar with number inside - like reference."""
     x, y, w, h = rect
@@ -257,42 +218,3 @@ def draw_progress_bar(surface, rect, progress, radius=None):
         temp_surface.blit(mask_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
 
         surface.blit(temp_surface, (x, y))
-
-
-def draw_mute_button(surface, pos, size, is_muted=False):
-    """Draw mute/unmute speaker icon."""
-    x, y = pos
-
-    # Рисуем динамик
-    speaker_color = (200, 200, 200)
-
-    # Корпус динамика
-    body_points = [
-        (x, y + size // 3),
-        (x + size // 3, y + size // 3),
-        (x + size * 2 // 3, y),
-        (x + size * 2 // 3, y + size),
-        (x + size // 3, y + size * 2 // 3),
-        (x, y + size * 2 // 3),
-    ]
-    pygame.draw.polygon(surface, speaker_color, body_points)
-
-    if is_muted:
-        # Крестик для muted
-        pygame.draw.line(surface, (200, 50, 50), (x + size * 2 // 3 + 5, y + 5), (x + size, y + size - 5), 3)
-        pygame.draw.line(surface, (200, 50, 50), (x + size * 2 // 3 + 5, y + size - 5), (x + size, y + 5), 3)
-    else:
-        # Волны звука
-        for i in range(2):
-            arc_x = x + size * 2 // 3 + 5 + i * 8
-            pygame.draw.arc(surface, speaker_color,
-                          (arc_x, y + size // 4, 10, size // 2),
-                          -math.pi / 3, math.pi / 3, 2)
-
-    return pygame.Rect(x, y, size, size)
-
-
-def draw_section_label(surface, text, pos, font):
-    """Draw section label (Время, Очки) in white bold."""
-    text_surface = font.render(text, True, (255, 255, 255))
-    surface.blit(text_surface, pos)

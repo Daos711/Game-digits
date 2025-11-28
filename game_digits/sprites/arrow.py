@@ -5,15 +5,7 @@ class Arrow(pygame.sprite.Sprite):
     # Кэш для изображений стрелок по направлениям
     arrow_images = {}
 
-    def __init__(
-        self,
-        direction,
-        position,
-        game,
-        tile,
-        color=(101, 151, 237),
-        border_color=(220, 220, 220),
-    ):
+    def __init__(self, direction, position, game, tile):
         super().__init__()
         self.game = game
         self.tile = tile
