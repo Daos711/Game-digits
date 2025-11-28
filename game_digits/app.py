@@ -25,17 +25,18 @@ class GameApp:
         pygame.font.init()
         self.font = pygame.font.Font(None, 36)
         # Жирные шрифты для UI панели (с поддержкой кириллицы)
-        # Poppins-Bold для жирного текста
-        bold_font = get_font_path("Poppins-Bold.ttf")
-        self.font_bold_large = pygame.font.Font(bold_font, 28)
-        self.font_bold_medium = pygame.font.Font(bold_font, 24)
-        self.font_bold_value = pygame.font.Font(bold_font, 38)
+        # OpenSans для текста с кириллицей
+        cyrillic_font = get_font_path("OpenSans-VariableFont_wdth,wght.ttf")
+        self.font_bold_large = pygame.font.Font(cyrillic_font, 28)
+        self.font_bold_medium = pygame.font.Font(cyrillic_font, 24)
+        self.font_bold_value = pygame.font.Font(cyrillic_font, 38)
         # Состояние UI
         self.is_paused = False
         self.pause_button_rect = None
         # Для сохранения времени паузы
         self.pause_start_time = 0
         self.total_pause_time = 0
+        self.paused_progress = 1.0  # Сохранённый прогресс при паузе
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         pygame.display.set_caption("Игра цифры")
         self.icon = pygame.image.load(get_image_path("icon.png"))
@@ -135,9 +136,13 @@ class GameApp:
         progress_x = panel_x + padding
         progress_width = self.panel_width - padding * 2
 
-        if self.timer_running and not self.is_paused:
-            elapsed = pygame.time.get_ticks() - self.tile_timer_start
-            progress = max(0, 1 - elapsed / self.tile_timer_interval)
+        if self.timer_running:
+            if self.is_paused:
+                # На паузе используем сохранённое значение прогресса
+                progress = self.paused_progress
+            else:
+                elapsed = pygame.time.get_ticks() - self.tile_timer_start
+                progress = max(0, 1 - elapsed / self.tile_timer_interval)
         else:
             progress = 1.0
 
@@ -271,6 +276,10 @@ class GameApp:
         if self.is_paused:
             # Остановка игры
             self.pause_start_time = pygame.time.get_ticks()
+            # Сохраняем текущий прогресс
+            if self.timer_running:
+                elapsed = pygame.time.get_ticks() - self.tile_timer_start
+                self.paused_progress = max(0, 1 - elapsed / self.tile_timer_interval)
             # Останавливаем таймер обратного отсчёта
             pygame.time.set_timer(self.COUNTDOWN_EVENT, 0)
             # Останавливаем таймер появления плиток
@@ -279,15 +288,21 @@ class GameApp:
             # Возобновление игры
             pause_duration = pygame.time.get_ticks() - self.pause_start_time
             self.total_pause_time += pause_duration
-            # Корректируем время начала таймера плиток
+
+            # Сначала рассчитываем оставшееся время ДО модификации tile_timer_start
+            remaining_time = 0
             if self.timer_running:
+                elapsed_before_pause = self.pause_start_time - self.tile_timer_start
+                remaining_time = self.tile_timer_interval - elapsed_before_pause
+                # Теперь корректируем время начала таймера плиток
                 self.tile_timer_start += pause_duration
+
             # Возобновляем таймер обратного отсчёта
             pygame.time.set_timer(self.COUNTDOWN_EVENT, 1000)
+
             # Возобновляем таймер появления плиток если он был активен
-            if self.timer_running:
-                remaining = self.tile_timer_interval - (self.pause_start_time - self.tile_timer_start)
-                pygame.time.set_timer(self.ADD_TILE_EVENT, max(100, remaining))
+            if self.timer_running and remaining_time > 0:
+                pygame.time.set_timer(self.ADD_TILE_EVENT, max(100, int(remaining_time)))
 
     def handle_mouse_click(self, pos):
         for arrow in self.arrows:
@@ -557,8 +572,9 @@ class GameApp:
                         pygame.time.set_timer(self.ADD_TILE_EVENT, 0)
                         self.timer_running = False
                     else:
-                        # Перезапускаем таймер для прогресс-бара
+                        # Явно перезапускаем таймер для синхронизации с прогресс-баром
                         self.tile_timer_start = pygame.time.get_ticks()
+                        pygame.time.set_timer(self.ADD_TILE_EVENT, self.tile_timer_interval)
                 elif event.type == self.COUNTDOWN_EVENT:
                     self.game.handle_countdown()
                 else:
