@@ -62,14 +62,21 @@ def draw_pause_button(surface, rect, font, text="пауза", is_pressed=False):
     draw_gradient_rounded_rect(surface, rect, color_top, color_bottom, radius)
 
     # Белый жирный текст строго по центру с небольшой тенью
-    # Тень текста
-    shadow_text = font.render(text, True, (140, 95, 0))
-    shadow_rect = shadow_text.get_rect(center=(x + w // 2 + 1, y + h // 2 + 1))
-    surface.blit(shadow_text, shadow_rect)
-    # Основной текст (строго по центру)
     text_surface = font.render(text, True, (255, 255, 255))
-    text_rect = text_surface.get_rect(center=(x + w // 2, y + h // 2))
-    surface.blit(text_surface, text_rect)
+    shadow_text = font.render(text, True, (140, 95, 0))
+
+    # Вычисляем центр кнопки
+    center_x = x + w // 2
+    center_y = y + h // 2
+
+    # Позиционируем текст строго по центру
+    text_x = center_x - text_surface.get_width() // 2
+    text_y = center_y - text_surface.get_height() // 2
+
+    # Тень (смещение на 1 пиксель)
+    surface.blit(shadow_text, (text_x + 1, text_y + 1))
+    # Основной текст
+    surface.blit(text_surface, (text_x, text_y))
 
     return pygame.Rect(x, y, w, h)
 

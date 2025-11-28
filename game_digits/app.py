@@ -553,13 +553,11 @@ class GameApp:
                             if dx < 1 and dy < 1:
                                 tile.rect.topleft = target_rect.topleft
                                 self.finalize_move(tile)
-            pygame.display.update()
-            for event in pygame.event.get():
-                if event.type == self.TILE_APPEAR_EVENT:
-                    # Spawn next tile in appearance animation
-                    self.game.spawn_next_tile()
-                    self.update_display()
-                elif event.type == self.ADD_TILE_EVENT:
+            # Проверяем появление плитки по времени (без ожидания события таймера)
+            # Это обеспечивает синхронизацию с прогресс-баром
+            if self.timer_running and not self.is_paused:
+                elapsed = pygame.time.get_ticks() - self.tile_timer_start
+                if elapsed >= self.tile_timer_interval:
                     self.game.add_new_tile()
                     self.remove_arrows_on_occupied_cells()
                     self.update_display()
@@ -572,9 +570,19 @@ class GameApp:
                         pygame.time.set_timer(self.ADD_TILE_EVENT, 0)
                         self.timer_running = False
                     else:
-                        # Явно перезапускаем таймер для синхронизации с прогресс-баром
+                        # Перезапускаем таймер для следующего цикла
                         self.tile_timer_start = pygame.time.get_ticks()
                         pygame.time.set_timer(self.ADD_TILE_EVENT, self.tile_timer_interval)
+
+            pygame.display.update()
+            for event in pygame.event.get():
+                if event.type == self.TILE_APPEAR_EVENT:
+                    # Spawn next tile in appearance animation
+                    self.game.spawn_next_tile()
+                    self.update_display()
+                elif event.type == self.ADD_TILE_EVENT:
+                    # Событие таймера - игнорируем, т.к. обрабатываем по времени выше
+                    pass
                 elif event.type == self.COUNTDOWN_EVENT:
                     self.game.handle_countdown()
                 else:
