@@ -515,12 +515,20 @@ class GameApp:
 
     def update_display(self):
         self.tile_surface.blit(self.background_texture, (0, 0))
-        self.tiles.draw(self.tile_surface)
-        # Обновляем и рисуем анимацию очков (под стрелками)
+        # Рисуем сначала статичные плитки
+        for tile in self.tiles:
+            if not tile.is_moving:
+                self.tile_surface.blit(tile.image, tile.rect)
+        # Обновляем и рисуем анимацию очков
         self.score_popups.update()
         for popup in self.score_popups:
             popup.draw(self.tile_surface)
-        self.arrows.draw(self.tile_surface)  # Стрелки поверх всего
+        # Стрелки
+        self.arrows.draw(self.tile_surface)
+        # Движущиеся плитки поверх стрелок
+        for tile in self.tiles:
+            if tile.is_moving:
+                self.tile_surface.blit(tile.image, tile.rect)
         self.draw_background()
         pygame.display.update()
 
@@ -550,14 +558,21 @@ class GameApp:
 
             # Очищаем и перерисовываем tile_surface каждый кадр
             self.tile_surface.blit(self.background_texture, (0, 0))
-            self.tiles.draw(self.tile_surface)
+            # Рисуем сначала статичные плитки
+            for tile in self.tiles:
+                if not tile.is_moving:
+                    self.tile_surface.blit(tile.image, tile.rect)
             # Обновляем и рисуем анимацию очков в каждом кадре (только если не пауза)
             if not self.is_paused:
                 self.score_popups.update()
             for popup in self.score_popups:
                 popup.draw(self.tile_surface)
-            # Рисуем стрелки поверх
+            # Рисуем стрелки
             self.arrows.draw(self.tile_surface)
+            # Рисуем движущиеся плитки поверх стрелок
+            for tile in self.tiles:
+                if tile.is_moving:
+                    self.tile_surface.blit(tile.image, tile.rect)
             self.draw_background()
             # Движение плиток только если не пауза
             if not self.is_paused:
