@@ -505,6 +505,8 @@ class GameApp:
         if self.game.selected_tile == tile:
             self.game.deselect_tile()
             self.arrows.empty()
+        # Удаляем стрелки на занятых ячейках (плитка могла приехать на чужую стрелку)
+        self.remove_arrows_on_occupied_cells()
         delta_x = abs(new_x - old_x)
         delta_y = abs(new_y - old_y)
         cells_moved = delta_x + delta_y
