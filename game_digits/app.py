@@ -41,6 +41,10 @@ class GameApp:
         self.timer_running = False
         self.tile_timer_start = 0  # Время начала таймера для прогресс-бара
         self.COUNTDOWN_EVENT = self.game.COUNTDOWN_EVENT
+        self.TILE_APPEAR_EVENT = self.game.TILE_APPEAR_EVENT
+
+        # Start tile appearance animation
+        self.game.start_tile_appearance()
 
     def draw_background(self):
         for i in range(0, 960, self.background_tile.get_width()):
@@ -198,6 +202,9 @@ class GameApp:
         if event.type == pygame.QUIT:
             return False
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            # Block interaction during tile appearance animation
+            if self.game.is_initializing:
+                return True
             pos = pygame.mouse.get_pos()
             pos = (pos[0] - self.offset[0], pos[1] - self.offset[1])
             self.handle_mouse_click(pos)
@@ -451,7 +458,11 @@ class GameApp:
                             self.finalize_move(tile)
             pygame.display.update()
             for event in pygame.event.get():
-                if event.type == self.ADD_TILE_EVENT:
+                if event.type == self.TILE_APPEAR_EVENT:
+                    # Spawn next tile in appearance animation
+                    self.game.spawn_next_tile()
+                    self.update_display()
+                elif event.type == self.ADD_TILE_EVENT:
                     self.game.add_new_tile()
                     self.remove_arrows_on_occupied_cells()
                     self.update_display()

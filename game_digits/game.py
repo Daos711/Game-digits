@@ -3,10 +3,12 @@ import pygame
 
 from game_digits.constants import COLORS, BOARD_SIZE
 from game_digits.sprites import Tile
+from game_digits.patterns import get_random_pattern
 
 
 class Game:
     COUNTDOWN_EVENT = pygame.USEREVENT + 2
+    TILE_APPEAR_EVENT = pygame.USEREVENT + 3
 
     def __init__(self, tiles, time_limit=300):
         self.tiles = tiles
@@ -19,10 +21,47 @@ class Game:
         self.original_color = None
         self.game_over_flag = False
         self.COLORS = COLORS
-        self.initialize_tiles()
         self.prepare_to_end = False
 
+        # Tile appearance animation state
+        self.is_initializing = True
+        self.tile_appear_delay = 25  # ms between tile appearances
+        self.pending_tiles = []  # List of (position, number) to appear
+        self.current_pattern_name = None
+        self.prepare_tile_appearance()
+
+    def prepare_tile_appearance(self):
+        """Prepare tiles for animated appearance."""
+        pattern_name, positions = get_random_pattern()
+        self.current_pattern_name = pattern_name
+
+        # Generate random numbers for each position
+        self.pending_tiles = []
+        for pos in positions:
+            number = random.randint(1, 9)
+            self.pending_tiles.append((pos, number))
+
+    def start_tile_appearance(self):
+        """Start the tile appearance animation timer."""
+        pygame.time.set_timer(self.TILE_APPEAR_EVENT, self.tile_appear_delay)
+
+    def spawn_next_tile(self):
+        """Spawn the next tile in the appearance sequence."""
+        if not self.pending_tiles:
+            # All tiles spawned
+            pygame.time.set_timer(self.TILE_APPEAR_EVENT, 0)
+            self.is_initializing = False
+            return None
+
+        pos, number = self.pending_tiles.pop(0)
+        row, col = pos
+        tile = Tile(number, (row, col), COLORS[number])
+        self.board[row][col] = tile
+        self.tiles.add(tile)
+        return tile
+
     def initialize_tiles(self):
+        """Legacy method - now tiles appear via animation."""
         for i in range(BOARD_SIZE):
             for j in range(BOARD_SIZE):
                 number = random.randint(1, 9)
