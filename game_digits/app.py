@@ -25,13 +25,11 @@ class GameApp:
         pygame.font.init()
         self.font = pygame.font.Font(None, 36)
         # Жирные шрифты для UI панели
-        # OpenSans для кириллицы (Время, Очки, пауза)
-        cyrillic_font = get_font_path("OpenSans-VariableFont_wdth,wght.ttf")
-        self.font_bold_large = pygame.font.Font(cyrillic_font, 28)   # "Время", "Очки"
-        self.font_bold_medium = pygame.font.Font(cyrillic_font, 24)  # "пауза"
-        # Poppins-Bold для цифр (жирнее)
-        bold_font = get_font_path("Poppins-Bold.ttf")
-        self.font_bold_value = pygame.font.Font(bold_font, 36)   # цифры
+        # OpenSans-Bold для кириллицы (Время, Очки, пауза)
+        bold_cyrillic = get_font_path("2204.ttf")
+        self.font_bold_large = pygame.font.Font(bold_cyrillic, 26)   # "Время", "Очки"
+        self.font_bold_medium = pygame.font.Font(bold_cyrillic, 22)  # "пауза"
+        self.font_bold_value = pygame.font.Font(bold_cyrillic, 36)   # цифры
         # Состояние UI
         self.is_paused = False
         self.pause_button_rect = None
