@@ -24,31 +24,46 @@ class Tile(pygame.sprite.Sprite):
     def draw_tile(self, text_color):
         self.image.fill(self.color)
 
-        # Эффект объёма: тень на правой и нижней гранях
-        shadow_width = 6  # Толщина тени
-        # Вычисляем более тёмный цвет для тени (на 50% темнее)
-        shadow_color = (
-            max(0, int(self.color[0] * 0.5)),
-            max(0, int(self.color[1] * 0.5)),
-            max(0, int(self.color[2] * 0.5))
-        )
-        # Правая грань (вертикальная полоса) - внутри бордера
+        # === НАСТРАИВАЕМЫЕ ПАРАМЕТРЫ ===
+        bevel = 4                # Толщина фаски (3-6 оптимально)
+        light_factor = 1.25      # Множитель для светлой грани (1.1-1.4)
+        dark_factor = 0.65       # Множитель для тёмной грани (0.5-0.8)
+
+        def clamp(x: int) -> int:
+            return max(0, min(255, x))
+
+        # Цвета для подсветки и тени
+        light = tuple(clamp(int(c * light_factor)) for c in self.color)
+        dark = tuple(clamp(int(c * dark_factor)) for c in self.color)
+
+        w, h = self.image.get_size()
+
+        # Верхняя грань (подсветка)
+        pygame.draw.rect(self.image, light, (0, 0, w, bevel))
+        # Левая грань (подсветка)
+        pygame.draw.rect(self.image, light, (0, 0, bevel, h))
+
+        # Нижняя грань (тень)
+        pygame.draw.rect(self.image, dark, (0, h - bevel, w, bevel))
+        # Правая грань (тень)
+        pygame.draw.rect(self.image, dark, (w - bevel, 0, bevel, h))
+
+        # Внутренняя ровная часть (центр тайла)
         pygame.draw.rect(
-            self.image, shadow_color,
-            (TILE_SIZE - shadow_width - 2, 2, shadow_width, TILE_SIZE - 4)
-        )
-        # Нижняя грань (горизонтальная полоса) - внутри бордера
-        pygame.draw.rect(
-            self.image, shadow_color,
-            (2, TILE_SIZE - shadow_width - 2, TILE_SIZE - 4, shadow_width)
+            self.image,
+            self.color,
+            (bevel, bevel, w - 2 * bevel, h - 2 * bevel),
         )
 
-        pygame.draw.rect(self.image, TILE_BORDER_COLOR, self.image.get_rect(), 2)
+        # Тонкая рамка по контуру
+        pygame.draw.rect(self.image, TILE_BORDER_COLOR, self.image.get_rect(), 1)
+
+        # Текст
         font = pygame.font.Font(
             get_font_path("OpenSans-VariableFont_wdth,wght.ttf"), 40
         )
         text = font.render(str(self.number), True, text_color)
-        text_rect = text.get_rect(center=(TILE_SIZE // 2, TILE_SIZE // 2))
+        text_rect = text.get_rect(center=(w // 2, h // 2))
         self.image.blit(text, text_rect)
 
     def update_color(self, new_color, text_color=(255, 255, 202)):
