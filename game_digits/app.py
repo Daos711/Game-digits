@@ -142,7 +142,12 @@ class GameApp:
                 progress = self.paused_progress
             else:
                 elapsed = pygame.time.get_ticks() - self.tile_timer_start
-                progress = max(0, 1 - elapsed / self.tile_timer_interval)
+                if elapsed >= self.tile_timer_interval:
+                    # Время истекло - показываем полный бар (не пустой!)
+                    # Плитка появится в начале следующего кадра
+                    progress = 1.0
+                else:
+                    progress = 1 - elapsed / self.tile_timer_interval
         else:
             progress = 1.0
 
