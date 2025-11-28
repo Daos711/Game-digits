@@ -1,22 +1,8 @@
 import random
 import pygame
 
+from game_digits.constants import COLORS, BOARD_SIZE
 from game_digits.sprites import Tile
-
-TILE_SIZE = 64
-GAP = 3
-OFFSET = (23, 23)
-COLORS = {
-    1: (250, 130, 124),
-    2: (98, 120, 255),
-    3: (249, 204, 122),
-    4: (127, 254, 138),
-    5: (251, 94, 223),
-    6: (126, 253, 205),
-    7: (239, 255, 127),
-    8: (174, 121, 251),
-    9: (255, 152, 123),
-}
 
 
 class Game:
@@ -24,7 +10,7 @@ class Game:
 
     def __init__(self, tiles, time_limit=300):
         self.tiles = tiles
-        self.board = [[None for _ in range(10)] for _ in range(10)]
+        self.board = [[None for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
         self.score = 0
         self.time_limit = time_limit
         self.current_time = time_limit
@@ -37,8 +23,8 @@ class Game:
         self.prepare_to_end = False
 
     def initialize_tiles(self):
-        for i in range(10):
-            for j in range(10):
+        for i in range(BOARD_SIZE):
+            for j in range(BOARD_SIZE):
                 number = random.randint(1, 9)
                 tile = Tile(number, (i, j), COLORS[number])
                 self.board[i][j] = tile
@@ -58,10 +44,15 @@ class Game:
             self.original_color = None
 
     def remove_tiles(self, tile1, tile2):
+        """
+        Удаляет пару плиток если они подходят.
+        Возвращает None если удаление не удалось,
+        или список позиций от первой плитки ко второй для анимации очков.
+        """
         if tile1 is None or tile2 is None:
-            return False
+            return None
         if tile1.is_moving or tile2.is_moving:
-            return False
+            return None
         x1, y1 = tile1.position
         x2, y2 = tile2.position
         if tile1.number == tile2.number or tile1.number + tile2.number == 10:
@@ -74,7 +65,10 @@ class Game:
                     self.board[x2][y2] = None
                     self.tiles.remove(tile1, tile2)
                     self.post_remove_actions()
-                    return True
+                    # Возвращаем путь от первой плитки ко второй
+                    step = 1 if y2 > y1 else -1
+                    positions = [(x1, j) for j in range(y1, y2 + step, step)]
+                    return positions
             elif y1 == y2:  # Плитки на одной горизонтальной линии
                 if abs(x1 - x2) == 1 or all(
                     self.board[i][y1] is None for i in range(min(x1, x2) + 1, max(x1, x2))
@@ -84,12 +78,15 @@ class Game:
                     self.board[x2][y2] = None
                     self.tiles.remove(tile1, tile2)
                     self.post_remove_actions()
-                    return True
-        return False
+                    # Возвращаем путь от первой плитки ко второй
+                    step = 1 if x2 > x1 else -1
+                    positions = [(i, y1) for i in range(x1, x2 + step, step)]
+                    return positions
+        return None
 
     def add_new_tile(self):
         empty_positions = [
-            (i, j) for i in range(10) for j in range(10) if self.board[i][j] is None
+            (i, j) for i in range(BOARD_SIZE) for j in range(BOARD_SIZE) if self.board[i][j] is None
         ]
         if empty_positions:
             position = random.choice(empty_positions)
@@ -148,7 +145,9 @@ class Game:
             new_position = (x, y + 1)
         a, b = new_position[0], new_position[1]
         if 0 <= a < len(self.board) and 0 <= b < len(self.board[0]):
-            if self.board[a][b] is None:
+            cell = self.board[a][b]
+            # Клетка свободна или занята движущейся плиткой (которая уходит)
+            if cell is None or cell.is_moving:
                 return True
         return False
 
