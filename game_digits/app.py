@@ -4,6 +4,7 @@ import pygame
 from game_digits import get_image_path
 from game_digits.constants import (
     TILE_SIZE, GAP, COLORS, BOARD_SIZE, BACKGROUND_COLOR,
+    MOVE_MS_PER_CELL, TARGET_FPS,
     grid_to_pixel, pixel_to_grid, pixel_to_grid_round
 )
 from game_digits.game import Game
@@ -14,8 +15,10 @@ class GameApp:
     def __init__(self):
         self.WIDTH, self.HEIGHT = 953, 713
         self.frame = 10
-        self.speed = 1
         self.window = self.HEIGHT - 20
+        # Time-based движение
+        self.clock = pygame.time.Clock()
+        self.pixels_per_cell = TILE_SIZE + GAP  # 67 пикселей на ячейку
         self.panel_width, self.panel_height = 240, self.HEIGHT
         self.tile_size, self.gap = TILE_SIZE, GAP
         self.offset = (23, 23)
@@ -294,6 +297,16 @@ class GameApp:
             if popup.grid_position in grid_positions:
                 popup.kill()
 
+    def remove_arrows_on_occupied_cells(self):
+        """Удаляет стрелки, находящиеся на занятых ячейках."""
+        for arrow in list(self.arrows):
+            # Вычисляем grid позицию стрелки
+            arrow_row, arrow_col = pixel_to_grid(arrow.rect.x, arrow.rect.y)
+            # Если ячейка занята - удаляем стрелку
+            if (0 <= arrow_row < BOARD_SIZE and 0 <= arrow_col < BOARD_SIZE
+                    and self.game.board[arrow_row][arrow_col] is not None):
+                arrow.kill()
+
     def get_arrow_position(self, tile_position, direction):
         x, y = tile_position
         if direction == "up":
@@ -313,16 +326,21 @@ class GameApp:
                     return other
         return None
 
-    def move_tile(self, tile, direction):
+    def move_tile(self, tile, direction, delta_ms):
         target_rect = tile.target_move(direction, self.game.board)
         dx = target_rect.topleft[0] - tile.rect.topleft[0]
         dy = target_rect.topleft[1] - tile.rect.topleft[1]
-        if dx == 0:
-            step_y = self.speed * (1 if dy > 0 else -1)
-            tile.rect.y += step_y
-        elif dy == 0:
-            step_x = self.speed * (1 if dx > 0 else -1)
-            tile.rect.x += step_x
+
+        # Вычисляем скорость: пикселей за миллисекунду
+        pixels_per_ms = self.pixels_per_cell / MOVE_MS_PER_CELL
+        step = pixels_per_ms * delta_ms
+
+        if dx == 0 and dy != 0:
+            move_amount = min(step, abs(dy))
+            tile.rect.y += move_amount * (1 if dy > 0 else -1)
+        elif dy == 0 and dx != 0:
+            move_amount = min(step, abs(dx))
+            tile.rect.x += move_amount * (1 if dx > 0 else -1)
 
         # Проверяем, покинула ли плитка ячейку (для анимации -N)
         if hasattr(tile, 'last_grid_pos'):
@@ -417,6 +435,9 @@ class GameApp:
         show_result = False
         prepare_to_show_result = False
         while running:
+            # Ограничиваем FPS и получаем delta time
+            delta_ms = self.clock.tick(TARGET_FPS)
+
             # Очищаем и перерисовываем tile_surface каждый кадр
             self.tile_surface.fill(BACKGROUND_COLOR)
             self.tiles.draw(self.tile_surface)
@@ -431,14 +452,19 @@ class GameApp:
                 if tile.is_moving:
                     direction = tile.current_direction
                     if direction:
-                        self.move_tile(tile, direction)
+                        self.move_tile(tile, direction, delta_ms)
                         target_rect = tile.target_move(direction, self.game.board)
-                        if tile.rect.topleft == target_rect.topleft:
+                        # Проверяем достижение цели с допуском (для float координат)
+                        dx = abs(tile.rect.x - target_rect.x)
+                        dy = abs(tile.rect.y - target_rect.y)
+                        if dx < 1 and dy < 1:
+                            tile.rect.topleft = target_rect.topleft
                             self.finalize_move(tile)
             pygame.display.update()
             for event in pygame.event.get():
                 if event.type == self.ADD_TILE_EVENT:
                     self.game.add_new_tile()
+                    self.remove_arrows_on_occupied_cells()
                     self.update_display()
                     empty = any(
                         self.game.board[i][j] is None

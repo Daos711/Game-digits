@@ -20,6 +20,10 @@ COLORS = {
 BACKGROUND_COLOR = (249, 246, 247)
 TILE_BORDER_COLOR = (71, 74, 72)
 
+# Анимация движения
+MOVE_MS_PER_CELL = 100  # Миллисекунд на одну ячейку
+TARGET_FPS = 60  # Целевой FPS
+
 
 def grid_to_pixel(row, col):
     """Преобразует координаты сетки в пиксельные координаты (topleft)."""
