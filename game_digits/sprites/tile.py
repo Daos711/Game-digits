@@ -25,35 +25,21 @@ class Tile(pygame.sprite.Sprite):
         self.image.fill(self.color)
 
         # === НАСТРАИВАЕМЫЕ ПАРАМЕТРЫ ===
-        bevel = 4                # Толщина фаски (3-6 оптимально)
-        light_factor = 1.25      # Множитель для светлой грани (1.1-1.4)
-        dark_factor = 0.65       # Множитель для тёмной грани (0.5-0.8)
+        bevel = 3                # Толщина фаски (3-6 оптимально)
+        dark_factor = 0.4        # Множитель для тёмной грани (0.5-0.8)
 
         def clamp(x: int) -> int:
             return max(0, min(255, x))
 
-        # Цвета для подсветки и тени
-        light = tuple(clamp(int(c * light_factor)) for c in self.color)
+        # Цвет для тени
         dark = tuple(clamp(int(c * dark_factor)) for c in self.color)
 
         w, h = self.image.get_size()
-
-        # Верхняя грань (подсветка)
-        pygame.draw.rect(self.image, light, (0, 0, w, bevel))
-        # Левая грань (подсветка)
-        pygame.draw.rect(self.image, light, (0, 0, bevel, h))
 
         # Нижняя грань (тень)
         pygame.draw.rect(self.image, dark, (0, h - bevel, w, bevel))
         # Правая грань (тень)
         pygame.draw.rect(self.image, dark, (w - bevel, 0, bevel, h))
-
-        # Внутренняя ровная часть (центр тайла)
-        pygame.draw.rect(
-            self.image,
-            self.color,
-            (bevel, bevel, w - 2 * bevel, h - 2 * bevel),
-        )
 
         # Тонкая рамка по контуру
         pygame.draw.rect(self.image, TILE_BORDER_COLOR, self.image.get_rect(), 1)
