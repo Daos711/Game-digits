@@ -283,7 +283,7 @@ def draw_close_button(surface, rect, is_pressed=False):
     x_size = min(w, h) // 4  # Size of X arms
 
     # Thick X lines
-    line_width = 3
+    line_width = 4
     pygame.draw.line(surface, x_color, (center_x - x_size, center_y - x_size),
                     (center_x + x_size, center_y + x_size), line_width)
     pygame.draw.line(surface, x_color, (center_x - x_size, center_y + x_size),
@@ -518,13 +518,13 @@ def draw_new_game_button(surface, rect, font, is_pressed=False):
     text = "Новая игра"
     text_surface = font.render(text, True, (247, 255, 247))
 
-    # Shadow
+    # Shadow (moved up 3 pixels)
     shadow_surface = font.render(text, True, (120, 86, 0))
-    shadow_rect = shadow_surface.get_rect(center=(x + w // 2 + 1, y + h // 2 + 1 + y_offset))
+    shadow_rect = shadow_surface.get_rect(center=(x + w // 2 + 1, y + h // 2 - 2 + y_offset))
     surface.blit(shadow_surface, shadow_rect)
 
-    # Main text
-    text_rect = text_surface.get_rect(center=(x + w // 2, y + h // 2 + y_offset))
+    # Main text (moved up 3 pixels)
+    text_rect = text_surface.get_rect(center=(x + w // 2, y + h // 2 - 3 + y_offset))
     surface.blit(text_surface, text_rect)
 
     return pygame.Rect(x, y, w, h)

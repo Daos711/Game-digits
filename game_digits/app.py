@@ -206,7 +206,7 @@ class GameApp:
         # Fonts
         bold_font_path = get_font_path("2204.ttf")
         title_font = pygame.font.Font(bold_font_path, 32)
-        label_font = pygame.font.Font(bold_font_path, 22)
+        label_font = pygame.font.Font(bold_font_path, 24)
         value_font = pygame.font.Font(bold_font_path, 28)
         button_font = pygame.font.Font(bold_font_path, 28)
 
