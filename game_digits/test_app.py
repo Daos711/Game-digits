@@ -1,6 +1,6 @@
 """
-Test mode application for mechanics testing.
-Small board with 10 tiles (5 pairs).
+Test mode application for quick result window testing.
+10x10 board with 6 tiles (3 pairs).
 """
 import sys
 import pygame
@@ -16,7 +16,7 @@ from game_digits import ui_components as ui
 
 
 class TestGameApp:
-    """Test mode app with smaller board (5x5) and 10 tiles."""
+    """Test mode app with 10x10 board and 6 tiles (3 pairs)."""
 
     def __init__(self):
         # Window size adjusted for smaller board
@@ -49,7 +49,7 @@ class TestGameApp:
         self.paused_progress = 1.0
 
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
-        pygame.display.set_caption("Test Mode - 10 Tiles")
+        pygame.display.set_caption("Test Mode - 6 Tiles (3 pairs)")
         self.icon = pygame.image.load(get_image_path("icon.png"))
         pygame.display.set_icon(self.icon)
 
