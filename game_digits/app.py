@@ -186,6 +186,11 @@ class GameApp:
         Returns:
             bool: True if user wants to start new game, False to exit
         """
+        # Animation timing constants (in milliseconds)
+        WINDOW_FADE_IN_DURATION = 200   # Fade in окна и затемнения
+        ROW_APPEAR_DELAY = 1000         # Интервал между появлением строк (1с)
+        NUMBER_ANIMATION_DURATION = 2500  # Анимация набегания числа (2.5с)
+
         # Window dimensions
         window_width, window_height = 420, 340
         window_x = (self.WIDTH - window_width) // 2
@@ -196,7 +201,7 @@ class GameApp:
         padding = 20
         row_height = 50
         row_gap = 12
-        corner_radius = 12
+        corner_radius = 10  # Радиус скругления 10
 
         # Calculate scores
         remaining_time = round(self.game.current_time)
@@ -206,13 +211,22 @@ class GameApp:
         # Fonts
         bold_font_path = get_font_path("2204.ttf")
         title_font = pygame.font.Font(bold_font_path, 32)
-        label_font = pygame.font.Font(bold_font_path, 26)  # Increased from 24
-        value_font = pygame.font.Font(bold_font_path, 30)  # Increased from 28
+        label_font = pygame.font.Font(bold_font_path, 26)
+        value_font = pygame.font.Font(bold_font_path, 30)
         button_font = pygame.font.Font(bold_font_path, 28)
 
         # Button state tracking
         new_game_pressed = False
         close_pressed = False
+
+        # Animation state
+        animation_start_time = pygame.time.get_ticks()
+        visible_rows = 0  # 0, 1, 2, or 3
+        animated_total = 0
+        total_animation_started = False
+        total_animation_start_time = 0
+        rows_animation_started = False
+        rows_animation_start_time = 0
 
         # Button positions (relative to window)
         new_game_btn_rel = pygame.Rect(
@@ -222,13 +236,19 @@ class GameApp:
             50
         )
 
-        def draw_window():
-            """Draw the complete result window."""
-            # Dark overlay
-            overlay = pygame.Surface((self.WIDTH, self.HEIGHT))
-            overlay.set_alpha(128)
-            overlay.fill((0, 0, 0))
-            self.screen.blit(overlay, (0, 0))
+        def draw_window(rows_to_show=3, current_total=None, opacity=255, overlay_alpha=128):
+            """Draw the complete result window with animation state."""
+            # Сначала перерисовываем игровую сцену
+            self.tile_surface.blit(self.background_texture, (0, 0))
+            for popup in self.score_popups:
+                popup.draw(self.tile_surface)
+            self.draw_background()
+
+            # Затемнение фона с плавным появлением
+            if overlay_alpha > 0:
+                overlay = pygame.Surface((self.WIDTH, self.HEIGHT), pygame.SRCALPHA)
+                overlay.fill((0, 0, 0, overlay_alpha))
+                self.screen.blit(overlay, (0, 0))
 
             # Create window surface
             window_surface = pygame.Surface((window_width, window_height), pygame.SRCALPHA)
@@ -251,51 +271,62 @@ class GameApp:
                 border_color=(145, 179, 163)
             )
 
-            # Draw result rows
+            # Draw result rows based on animation state
             row_x = padding
             row_width = window_width - 2 * padding
             current_y = header_height + padding
 
             # Row 1: Ваш результат
-            ui.draw_result_row(
-                window_surface,
-                (row_x, current_y, row_width, row_height),
-                "Ваш результат:",
-                self.game.score,
-                label_font,
-                value_font
-            )
+            if rows_to_show >= 1:
+                ui.draw_result_row(
+                    window_surface,
+                    (row_x, current_y, row_width, row_height),
+                    "Ваш результат:",
+                    self.game.score,
+                    label_font,
+                    value_font
+                )
             current_y += row_height + row_gap
 
             # Row 2: Бонус за скорость
-            ui.draw_result_row(
-                window_surface,
-                (row_x, current_y, row_width, row_height),
-                "Бонус за скорость:",
-                bonus,
-                label_font,
-                value_font
-            )
+            if rows_to_show >= 2:
+                ui.draw_result_row(
+                    window_surface,
+                    (row_x, current_y, row_width, row_height),
+                    "Бонус за скорость:",
+                    bonus,
+                    label_font,
+                    value_font
+                )
             current_y += row_height + row_gap
 
-            # Row 3: Итого
-            ui.draw_result_row(
-                window_surface,
-                (row_x, current_y, row_width, row_height),
-                "Итого:",
-                total_score,
-                label_font,
-                value_font
-            )
+            # Row 3: Итого (с анимацией числа)
+            if rows_to_show >= 3:
+                display_total = current_total if current_total is not None else total_score
+                ui.draw_result_row(
+                    window_surface,
+                    (row_x, current_y, row_width, row_height),
+                    "Итого:",
+                    display_total,
+                    label_font,
+                    value_font
+                )
             current_y += row_height + row_gap + 5
 
-            # "Новая игра" button instead of "Поздравляем!"
-            new_game_btn_rect = ui.draw_new_game_button(
-                window_surface,
-                (new_game_btn_rel.x, new_game_btn_rel.y, new_game_btn_rel.width, new_game_btn_rel.height),
-                button_font,
-                is_pressed=new_game_pressed
-            )
+            # "Новая игра" button (показываем только когда анимация закончена)
+            if rows_to_show >= 3 and current_total == total_score:
+                new_game_btn_rect = ui.draw_new_game_button(
+                    window_surface,
+                    (new_game_btn_rel.x, new_game_btn_rel.y, new_game_btn_rel.width, new_game_btn_rel.height),
+                    button_font,
+                    is_pressed=new_game_pressed
+                )
+            else:
+                new_game_btn_rect = pygame.Rect(0, 0, 0, 0)
+
+            # Apply opacity to window
+            if opacity < 255:
+                window_surface.set_alpha(opacity)
 
             # Blit window to screen
             self.screen.blit(window_surface, (window_x, window_y))
@@ -303,8 +334,8 @@ class GameApp:
 
             return close_btn_rect, new_game_btn_rect
 
-        # Initial draw
-        close_btn_rect, new_game_btn_rect = draw_window()
+        # Initial draw (transparent window for fade-in)
+        close_btn_rect, new_game_btn_rect = draw_window(rows_to_show=0, opacity=0, overlay_alpha=0)
 
         # Adjust button rects for screen coordinates
         close_btn_screen = pygame.Rect(
@@ -323,39 +354,91 @@ class GameApp:
         # Wait for user interaction
         waiting = True
         start_new_game = False
+        animation_complete = False
 
         while waiting:
+            current_time = pygame.time.get_ticks()
+            elapsed = current_time - animation_start_time
+
+            # Фаза 1: Fade-in окна и затемнения (без строк)
+            if elapsed < WINDOW_FADE_IN_DURATION:
+                # Плавное появление от 0 до 255 (окно) и от 0 до 128 (затемнение)
+                progress = elapsed / WINDOW_FADE_IN_DURATION
+                window_opacity = int(255 * progress)
+                overlay_alpha = int(128 * progress)
+                visible_rows = 0
+            else:
+                window_opacity = 255
+                overlay_alpha = 128
+                # Фаза 2: После fade-in начинаем отсчёт для появления строк
+                if not rows_animation_started:
+                    rows_animation_started = True
+                    rows_animation_start_time = current_time
+
+                # Анимация появления строк (каждая через 1с)
+                if rows_animation_started:
+                    rows_elapsed = current_time - rows_animation_start_time
+                    if rows_elapsed < ROW_APPEAR_DELAY:
+                        visible_rows = 1
+                    elif rows_elapsed < ROW_APPEAR_DELAY * 2:
+                        visible_rows = 2
+                    else:
+                        visible_rows = 3
+                        # Запускаем анимацию числа когда появляется 3-я строка
+                        if not total_animation_started:
+                            total_animation_started = True
+                            total_animation_start_time = current_time
+
+            # Анимация набегающего числа в "Итого"
+            if total_animation_started:
+                anim_elapsed = current_time - total_animation_start_time
+                if anim_elapsed >= NUMBER_ANIMATION_DURATION:
+                    animated_total = total_score
+                    animation_complete = True
+                else:
+                    # Easing функция для плавного замедления в конце
+                    progress = anim_elapsed / NUMBER_ANIMATION_DURATION
+                    # Ease-out quad: 1 - (1 - t)^2
+                    eased_progress = 1 - (1 - progress) ** 2
+                    animated_total = int(total_score * eased_progress)
+            else:
+                animated_total = 0
+
+            # Перерисовка с текущим состоянием анимации
+            close_btn_rect, new_game_btn_rect = draw_window(
+                rows_to_show=visible_rows,
+                current_total=animated_total if visible_rows >= 3 else None,
+                opacity=window_opacity,
+                overlay_alpha=overlay_alpha
+            )
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     waiting = False
                     pygame.quit()
                     sys.exit()
-                elif event.type == pygame.MOUSEBUTTONDOWN:
+                elif event.type == pygame.MOUSEBUTTONDOWN and animation_complete:
                     pos = event.pos
                     # Check close button
                     if close_btn_screen.collidepoint(pos):
                         close_pressed = True
-                        draw_window()
                     # Check new game button
                     elif new_game_btn_screen.collidepoint(pos):
                         new_game_pressed = True
-                        draw_window()
-                elif event.type == pygame.MOUSEBUTTONUP:
+                elif event.type == pygame.MOUSEBUTTONUP and animation_complete:
                     pos = event.pos
                     # Check close button release
                     if close_pressed and close_btn_screen.collidepoint(pos):
                         waiting = False
-                        start_new_game = True  # Close also starts new game
+                        start_new_game = True
                     # Check new game button release
                     elif new_game_pressed and new_game_btn_screen.collidepoint(pos):
                         waiting = False
                         start_new_game = True
                     # Reset pressed states
-                    if close_pressed or new_game_pressed:
-                        close_pressed = False
-                        new_game_pressed = False
-                        draw_window()
-                elif event.type == pygame.KEYDOWN:
+                    close_pressed = False
+                    new_game_pressed = False
+                elif event.type == pygame.KEYDOWN and animation_complete:
                     if event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
                         waiting = False
                         start_new_game = True
