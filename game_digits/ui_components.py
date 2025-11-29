@@ -641,44 +641,54 @@ def draw_checkered_content_area(surface, rect, header_height, corner_radius=12, 
     """
     x, y, w, h = rect
 
-    # Draw checkered background starting AT header boundary
-    # Rounded top corners at the boundary - header shows through corner areas
+    # Draw checkered background starting ABOVE header boundary
+    # so rounded corners overlap header - header fills the corner gaps
+    overlap = corner_radius  # How much checkered overlaps into header
+    content_y = header_height - overlap
+    content_h = h - content_y
+
     draw_checkered_background_rounded(
         surface,
-        (x, header_height, w, h - header_height),
+        (x, content_y, w, content_h),
         cell_size=cell_size,
-        top_radius=corner_radius,  # Rounded corners at boundary with header
+        top_radius=corner_radius,
         bottom_radius=corner_radius
     )
 
-    # Draw border around the content area (below header only)
-    content_y = header_height
-    content_h = h - header_height
+    # Draw border with rounded corners at TOP and BOTTOM
+    # Border starts at same position as checkered (overlapping header)
     bx, by, bw, bh = x, content_y, w, content_h
     r = min(corner_radius, bh // 2, bw // 2)
 
-    # Draw border as a rounded rect outline (no fill) - cleaner than individual lines
     # Create a temporary surface for the border
     border_surface = pygame.Surface((bw, bh), pygame.SRCALPHA)
 
-    # Draw rounded rect border by drawing outer and subtracting inner
+    # Draw all four edges and corners
     for thickness in range(border_width):
-        # Top edge (straight line under header)
-        pygame.draw.line(border_surface, border_color, (0, thickness), (bw, thickness), 1)
-        # Left edge
-        pygame.draw.line(border_surface, border_color, (thickness, 0), (thickness, bh - r), 1)
-        # Right edge
-        pygame.draw.line(border_surface, border_color, (bw - 1 - thickness, 0), (bw - 1 - thickness, bh - r), 1)
-        # Bottom edge (between corners)
+        # Top edge (between top corners)
+        pygame.draw.line(border_surface, border_color, (r, thickness), (bw - r, thickness), 1)
+        # Bottom edge (between bottom corners)
         pygame.draw.line(border_surface, border_color, (r, bh - 1 - thickness), (bw - r, bh - 1 - thickness), 1)
+        # Left edge (between corners)
+        pygame.draw.line(border_surface, border_color, (thickness, r), (thickness, bh - r), 1)
+        # Right edge (between corners)
+        pygame.draw.line(border_surface, border_color, (bw - 1 - thickness, r), (bw - 1 - thickness, bh - r), 1)
 
-    # Bottom corners - draw as filled quarter circles for clean look
+    # All four corner arcs
     for thickness in range(border_width):
-        # Bottom-left corner arc
+        # Top-left corner
+        pygame.draw.arc(border_surface, border_color,
+                       (thickness, thickness, (r - thickness) * 2, (r - thickness) * 2),
+                       math.pi / 2, math.pi, 1)
+        # Top-right corner
+        pygame.draw.arc(border_surface, border_color,
+                       (bw - r * 2 + thickness, thickness, (r - thickness) * 2, (r - thickness) * 2),
+                       0, math.pi / 2, 1)
+        # Bottom-left corner
         pygame.draw.arc(border_surface, border_color,
                        (thickness, bh - r * 2 + thickness, (r - thickness) * 2, (r - thickness) * 2),
                        math.pi, 3 * math.pi / 2, 1)
-        # Bottom-right corner arc
+        # Bottom-right corner
         pygame.draw.arc(border_surface, border_color,
                        (bw - r * 2 + thickness, bh - r * 2 + thickness, (r - thickness) * 2, (r - thickness) * 2),
                        3 * math.pi / 2, 2 * math.pi, 1)
