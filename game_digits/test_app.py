@@ -53,8 +53,8 @@ class TestGameApp:
         self.icon = pygame.image.load(get_image_path("icon.png"))
         pygame.display.set_icon(self.icon)
 
-        self.grid_cell_size = 25
-        self.grid_line_color = (200, 200, 200)
+        self.grid_cell_size = 18  # Мельче клетки
+        self.grid_line_color = (218, 236, 241)  # Светло-голубые линии
 
         self.arrows = pygame.sprite.Group()
         self.tiles = pygame.sprite.Group()
@@ -155,19 +155,15 @@ class TestGameApp:
         ui.draw_sun_icon(self.screen, (icon_x + icon_size // 2, current_y + icon_size // 2), icon_size)
 
     def show_result_window(self):
-        """Display the game result window with final score."""
-        overlay = pygame.Surface((self.WIDTH, self.HEIGHT))
-        overlay.set_alpha(128)
-        overlay.fill((0, 0, 0))
-        self.screen.blit(overlay, (0, 0))
+        """Display the game result window with final score.
 
+        Returns:
+            bool: True if user wants to start new game, False to exit
+        """
         # Window dimensions
         window_width, window_height = 420, 340
         window_x = (self.WIDTH - window_width) // 2
         window_y = (self.HEIGHT - window_height) // 2
-
-        # Create window surface
-        window_surface = pygame.Surface((window_width, window_height), pygame.SRCALPHA)
 
         # Layout constants
         header_height = 50
@@ -176,105 +172,141 @@ class TestGameApp:
         row_gap = 12
         corner_radius = 12
 
-        # Draw rounded rectangle border/shadow
-        border_color = (180, 180, 180)
-        ui.draw_rounded_rect(window_surface, border_color,
-                            (0, 0, window_width, window_height), corner_radius)
-
-        # Draw checkered background for content area (below header)
-        content_y = header_height
-        content_height = window_height - header_height
-        ui.draw_checkered_background(window_surface,
-                                    (2, content_y, window_width - 4, content_height - 2),
-                                    cell_size=20)
-
-        # Clip the corners to maintain rounded shape
-        pygame.draw.circle(window_surface, (0, 0, 0, 0),
-                          (corner_radius, window_height - corner_radius), corner_radius)
-        ui.draw_rounded_rect(window_surface, (255, 255, 255),
-                            (0, window_height - corner_radius * 2,
-                             corner_radius * 2, corner_radius * 2), corner_radius)
-
-        # Draw header with title
-        bold_font_path = get_font_path("2204.ttf")
-        title_font = pygame.font.Font(bold_font_path, 32)
-        label_font = pygame.font.Font(bold_font_path, 22)
-        value_font = pygame.font.Font(bold_font_path, 28)
-        congrats_font = pygame.font.Font(bold_font_path, 28)
-
-        close_btn_rect = ui.draw_result_window_header(
-            window_surface,
-            (0, 0, window_width, header_height),
-            "Результат игры",
-            title_font
-        )
-
         # Calculate scores
         remaining_time = round(self.game.current_time)
         bonus = 300 + 5 * remaining_time
         total_score = self.game.score + bonus
 
-        # Draw result rows
-        row_x = padding
-        row_width = window_width - 2 * padding
-        current_y = header_height + padding
+        # Fonts
+        bold_font_path = get_font_path("2204.ttf")
+        title_font = pygame.font.Font(bold_font_path, 32)
+        label_font = pygame.font.Font(bold_font_path, 22)
+        value_font = pygame.font.Font(bold_font_path, 28)
+        button_font = pygame.font.Font(bold_font_path, 28)
 
-        # Row 1: Ваш результат
-        ui.draw_result_row(
-            window_surface,
-            (row_x, current_y, row_width, row_height),
-            "Ваш результат:",
-            self.game.score,
-            label_font,
-            value_font
-        )
-        current_y += row_height + row_gap
+        # Button state tracking
+        new_game_pressed = False
+        close_pressed = False
 
-        # Row 2: Бонус за скорость
-        ui.draw_result_row(
-            window_surface,
-            (row_x, current_y, row_width, row_height),
-            "Бонус за скорость:",
-            bonus,
-            label_font,
-            value_font
-        )
-        current_y += row_height + row_gap
-
-        # Row 3: Итого
-        ui.draw_result_row(
-            window_surface,
-            (row_x, current_y, row_width, row_height),
-            "Итого:",
-            total_score,
-            label_font,
-            value_font
-        )
-        current_y += row_height + row_gap + 5
-
-        # Congratulation panel
-        congrats_height = 50
-        ui.draw_congratulation_panel(
-            window_surface,
-            (row_x, current_y, row_width, congrats_height),
-            "Поздравляем!",
-            congrats_font
+        # Button positions (relative to window)
+        new_game_btn_rel = pygame.Rect(
+            padding,
+            header_height + padding + (row_height + row_gap) * 3 + 5,
+            window_width - 2 * padding,
+            50
         )
 
-        # Blit window to screen
-        self.screen.blit(window_surface, (window_x, window_y))
-        pygame.display.update()
+        def draw_window():
+            """Draw the complete result window."""
+            # Dark overlay
+            overlay = pygame.Surface((self.WIDTH, self.HEIGHT))
+            overlay.set_alpha(128)
+            overlay.fill((0, 0, 0))
+            self.screen.blit(overlay, (0, 0))
 
-        # Adjust close button rect for screen coordinates
+            # Create window surface
+            window_surface = pygame.Surface((window_width, window_height), pygame.SRCALPHA)
+
+            # Draw rounded rectangle border/shadow
+            border_color = (180, 180, 180)
+            ui.draw_rounded_rect(window_surface, border_color,
+                                (0, 0, window_width, window_height), corner_radius)
+
+            # Draw checkered background for content area (below header)
+            content_y = header_height
+            content_height = window_height - header_height
+            ui.draw_checkered_background(window_surface,
+                                        (2, content_y, window_width - 4, content_height - 2),
+                                        cell_size=18)
+
+            # Clip the corners to maintain rounded shape
+            pygame.draw.circle(window_surface, (0, 0, 0, 0),
+                              (corner_radius, window_height - corner_radius), corner_radius)
+            ui.draw_rounded_rect(window_surface, (255, 255, 255),
+                                (0, window_height - corner_radius * 2,
+                                 corner_radius * 2, corner_radius * 2), corner_radius)
+
+            # Draw header with title
+            close_btn_rect = ui.draw_result_window_header(
+                window_surface,
+                (0, 0, window_width, header_height),
+                "Результат игры",
+                title_font
+            )
+
+            # Draw result rows
+            row_x = padding
+            row_width = window_width - 2 * padding
+            current_y = header_height + padding
+
+            # Row 1: Ваш результат
+            ui.draw_result_row(
+                window_surface,
+                (row_x, current_y, row_width, row_height),
+                "Ваш результат:",
+                self.game.score,
+                label_font,
+                value_font
+            )
+            current_y += row_height + row_gap
+
+            # Row 2: Бонус за скорость
+            ui.draw_result_row(
+                window_surface,
+                (row_x, current_y, row_width, row_height),
+                "Бонус за скорость:",
+                bonus,
+                label_font,
+                value_font
+            )
+            current_y += row_height + row_gap
+
+            # Row 3: Итого
+            ui.draw_result_row(
+                window_surface,
+                (row_x, current_y, row_width, row_height),
+                "Итого:",
+                total_score,
+                label_font,
+                value_font
+            )
+            current_y += row_height + row_gap + 5
+
+            # "Новая игра" button instead of "Поздравляем!"
+            new_game_btn_rect = ui.draw_new_game_button(
+                window_surface,
+                (new_game_btn_rel.x, new_game_btn_rel.y, new_game_btn_rel.width, new_game_btn_rel.height),
+                button_font,
+                is_pressed=new_game_pressed
+            )
+
+            # Blit window to screen
+            self.screen.blit(window_surface, (window_x, window_y))
+            pygame.display.update()
+
+            return close_btn_rect, new_game_btn_rect
+
+        # Initial draw
+        close_btn_rect, new_game_btn_rect = draw_window()
+
+        # Adjust button rects for screen coordinates
         close_btn_screen = pygame.Rect(
             window_x + close_btn_rect.x,
             window_y + close_btn_rect.y,
             close_btn_rect.width,
             close_btn_rect.height
         )
+        new_game_btn_screen = pygame.Rect(
+            window_x + new_game_btn_rel.x,
+            window_y + new_game_btn_rel.y,
+            new_game_btn_rel.width,
+            new_game_btn_rel.height
+        )
 
         # Wait for user interaction
         waiting = True
+        start_new_game = False
+
         while waiting:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -282,11 +314,63 @@ class TestGameApp:
                     pygame.quit()
                     sys.exit()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if close_btn_screen.collidepoint(event.pos):
+                    pos = event.pos
+                    # Check close button
+                    if close_btn_screen.collidepoint(pos):
+                        close_pressed = True
+                        draw_window()
+                    # Check new game button
+                    elif new_game_btn_screen.collidepoint(pos):
+                        new_game_pressed = True
+                        draw_window()
+                elif event.type == pygame.MOUSEBUTTONUP:
+                    pos = event.pos
+                    # Check close button release
+                    if close_pressed and close_btn_screen.collidepoint(pos):
                         waiting = False
+                        start_new_game = True
+                    # Check new game button release
+                    elif new_game_pressed and new_game_btn_screen.collidepoint(pos):
+                        waiting = False
+                        start_new_game = True
+                    # Reset pressed states
+                    if close_pressed or new_game_pressed:
+                        close_pressed = False
+                        new_game_pressed = False
+                        draw_window()
                 elif event.type == pygame.KEYDOWN:
-                    waiting = False
-            pygame.time.delay(100)
+                    if event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                        waiting = False
+                        start_new_game = True
+
+            pygame.time.delay(16)
+
+        return start_new_game
+
+    def reset_game(self):
+        """Reset the game state to start a new game."""
+        # Clear all sprites
+        self.arrows.empty()
+        self.tiles.empty()
+        self.score_popups.empty()
+
+        # Reset game state
+        self.game = TestGame(self.tiles, time_limit=60)
+
+        # Reset timer state
+        self.timer_running = False
+        self.is_paused = False
+        self.pause_start_time = 0
+        self.total_pause_time = 0
+        self.paused_progress = 1.0
+
+        # Recreate background texture
+        tile_area = self.board_size * TILE_SIZE + (self.board_size + 1) * GAP
+        self.background_texture = create_background_surface(tile_area, tile_area)
+        self.tile_surface.blit(self.background_texture, (0, 0))
+
+        # Start tile appearance animation
+        self.game.start_tile_appearance()
 
     def handle_event(self, event):
         if event.type == pygame.QUIT:
@@ -544,5 +628,11 @@ class TestGameApp:
                 self.score_popups.empty()
                 self.update_display()
                 pygame.display.flip()
-                self.show_result_window()
-                running = False
+                start_new_game = self.show_result_window()
+                if start_new_game:
+                    # Reset game and continue
+                    self.reset_game()
+                    show_result = False
+                    prepare_to_show_result = False
+                else:
+                    running = False

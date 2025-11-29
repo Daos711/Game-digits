@@ -220,6 +220,78 @@ def draw_progress_bar(surface, rect, progress, radius=None):
         surface.blit(temp_surface, (x, y))
 
 
+def draw_close_button(surface, rect, is_pressed=False):
+    """Draw a square glossy close button with X.
+
+    Args:
+        surface: Pygame surface to draw on
+        rect: (x, y, width, height) of the button
+        is_pressed: If True, draw pressed state
+
+    Returns:
+        pygame.Rect of the button
+    """
+    x, y, w, h = rect
+    radius = 8  # Сильно скруглённые углы для квадратной кнопки
+
+    # Colors - RGB(208, 152, 6) base
+    if is_pressed:
+        color_top = (180, 132, 6)       # Darker when pressed
+        color_bottom = (140, 100, 4)
+        y_offset = 1
+    else:
+        color_top = (230, 175, 30)      # Lighter top for gloss
+        color_bottom = (176, 126, 2)    # Darker bottom
+        y_offset = 0
+
+    # Create temp surface for the button
+    btn_surface = pygame.Surface((w, h), pygame.SRCALPHA)
+
+    # Draw glossy gradient
+    for row in range(h):
+        progress = row / h
+        # Upper half lighter, lower half darker
+        if progress < 0.5:
+            t = progress * 2
+            r = int(color_top[0] + (208 - color_top[0]) * t)
+            g = int(color_top[1] + (152 - color_top[1]) * t)
+            b = int(color_top[2] + (6 - color_top[2]) * t)
+        else:
+            t = (progress - 0.5) * 2
+            r = int(208 + (color_bottom[0] - 208) * t)
+            g = int(152 + (color_bottom[1] - 152) * t)
+            b = int(6 + (color_bottom[2] - 6) * t)
+        pygame.draw.line(btn_surface, (r, g, b), (0, row), (w, row))
+
+    # Apply rounded corner mask
+    mask = pygame.Surface((w, h), pygame.SRCALPHA)
+    draw_rounded_rect(mask, (255, 255, 255, 255), (0, 0, w, h), radius)
+    btn_surface.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+
+    # Blit button
+    surface.blit(btn_surface, (x, y + y_offset))
+
+    # Draw light border
+    border_color = (255, 220, 120)
+    # Top border (lighter)
+    pygame.draw.line(surface, border_color, (x + radius, y + y_offset), (x + w - radius, y + y_offset), 1)
+
+    # Draw X - RGB(243, 241, 153) light cream-yellow
+    x_color = (243, 241, 153)
+    center_x = x + w // 2
+    center_y = y + h // 2 + y_offset
+    x_size = min(w, h) // 4  # Size of X arms
+
+    # Thick X lines
+    line_width = 3
+    pygame.draw.line(surface, x_color, (center_x - x_size, center_y - x_size),
+                    (center_x + x_size, center_y + x_size), line_width)
+    pygame.draw.line(surface, x_color, (center_x - x_size, center_y + x_size),
+                    (center_x + x_size, center_y - x_size), line_width)
+
+    return pygame.Rect(x, y, w, h)
+
+
 def draw_result_window_header(surface, rect, title, font, close_callback_rect=None):
     """Draw the yellow header bar with title and close button.
 
@@ -254,28 +326,41 @@ def draw_result_window_header(surface, rect, title, font, close_callback_rect=No
     title_rect = title_surface.get_rect(center=(x + w // 2, y + h // 2))
     surface.blit(title_surface, title_rect)
 
-    # Close button - yellow circle with white X
-    btn_radius = 14
-    btn_x = x + w - btn_radius - 10
-    btn_y = y + h // 2
+    # Close button - square with rounded corners
+    btn_size = 32
+    btn_margin = 8
+    btn_x = x + w - btn_size - btn_margin
+    btn_y = y + (h - btn_size) // 2
 
-    # Yellow circle (slightly darker than header)
-    pygame.draw.circle(surface, (255, 200, 80), (btn_x, btn_y), btn_radius)
-    pygame.draw.circle(surface, (200, 160, 60), (btn_x, btn_y), btn_radius, 2)
+    close_rect = draw_close_button(surface, (btn_x, btn_y, btn_size, btn_size))
 
-    # White X
-    x_size = 6
-    x_color = (255, 255, 255)
-    pygame.draw.line(surface, x_color, (btn_x - x_size, btn_y - x_size),
-                    (btn_x + x_size, btn_y + x_size), 3)
-    pygame.draw.line(surface, x_color, (btn_x - x_size, btn_y + x_size),
-                    (btn_x + x_size, btn_y - x_size), 3)
+    return close_rect
 
-    return pygame.Rect(btn_x - btn_radius, btn_y - btn_radius, btn_radius * 2, btn_radius * 2)
+
+def draw_rounded_rect_alpha(surface, color, rect, radius, alpha=180):
+    """Draw a rounded rectangle with alpha transparency."""
+    x, y, w, h = rect
+    radius = min(radius, h // 2, w // 2)
+
+    # Create a temporary surface with alpha
+    temp = pygame.Surface((w, h), pygame.SRCALPHA)
+
+    # Color with alpha
+    color_alpha = (*color, alpha)
+
+    # Draw rounded rectangle on temp surface
+    pygame.draw.rect(temp, color_alpha, (radius, 0, w - 2 * radius, h))
+    pygame.draw.rect(temp, color_alpha, (0, radius, w, h - 2 * radius))
+    pygame.draw.circle(temp, color_alpha, (radius, radius), radius)
+    pygame.draw.circle(temp, color_alpha, (w - radius, radius), radius)
+    pygame.draw.circle(temp, color_alpha, (radius, h - radius), radius)
+    pygame.draw.circle(temp, color_alpha, (w - radius, h - radius), radius)
+
+    surface.blit(temp, (x, y))
 
 
 def draw_result_row(surface, rect, label, value, label_font, value_font):
-    """Draw a result row with blue background.
+    """Draw a result row with semi-transparent blue background.
 
     Args:
         surface: Pygame surface to draw on
@@ -288,9 +373,9 @@ def draw_result_row(surface, rect, label, value, label_font, value_font):
     x, y, w, h = rect
     radius = 6
 
-    # Background - RGB(168, 212, 242)
+    # Background - RGB(168, 212, 242) with transparency
     bg_color = (168, 212, 242)
-    draw_rounded_rect(surface, bg_color, rect, radius)
+    draw_rounded_rect_alpha(surface, bg_color, rect, radius, alpha=200)
 
     # Text color - RGB(40, 92, 120)
     text_color = (40, 92, 120)
@@ -329,7 +414,107 @@ def draw_congratulation_panel(surface, rect, text, font):
     surface.blit(text_surface, text_rect)
 
 
-def draw_checkered_background(surface, rect, cell_size=25):
+def draw_new_game_button(surface, rect, font, is_pressed=False):
+    """Draw glossy yellow-orange 'Новая игра' button.
+
+    Args:
+        surface: Pygame surface to draw on
+        rect: (x, y, width, height) of the button
+        font: Font for the button text
+        is_pressed: If True, draw pressed state
+
+    Returns:
+        pygame.Rect of the button
+    """
+    x, y, w, h = rect
+    radius = 20  # Сильно скруглённые углы
+
+    # Colors
+    if is_pressed:
+        color_top = (220, 183, 97)      # Darker when pressed
+        color_bottom = (146, 106, 2)
+        border_color = (180, 130, 40)
+        y_offset = 2  # Shift down when pressed
+    else:
+        color_top = (250, 213, 117)     # RGB(250, 213, 117) - светлая верхняя часть
+        color_bottom = (176, 126, 2)    # RGB(176, 126, 2) - тёмная нижняя часть
+        border_color = (255, 230, 150)  # Светлая кайма
+        y_offset = 0
+
+    # Create temp surface for the button
+    btn_surface = pygame.Surface((w, h), pygame.SRCALPHA)
+
+    # Draw glossy effect with curved boundary
+    for row in range(h):
+        # Create curved boundary - the dividing line is an arc
+        # Peak is at center, edges are lower
+        center_x = w // 2
+        curve_factor = 0.3  # How pronounced the curve is
+        # For each column, calculate where the boundary would be
+        progress = row / h
+
+        # Upper portion is lighter, lower is darker
+        # The boundary follows a smooth curve
+        boundary_progress = 0.4 + curve_factor * math.sin(math.pi * 0.5)
+
+        if progress < boundary_progress:
+            # Upper part - interpolate from top to mid
+            t = progress / boundary_progress
+            r = int(color_top[0] + (color_bottom[0] - color_top[0]) * t * 0.3)
+            g = int(color_top[1] + (color_bottom[1] - color_top[1]) * t * 0.3)
+            b = int(color_top[2] + (color_bottom[2] - color_top[2]) * t * 0.3)
+        else:
+            # Lower part - interpolate from mid to bottom
+            t = (progress - boundary_progress) / (1 - boundary_progress)
+            mid_r = int(color_top[0] + (color_bottom[0] - color_top[0]) * 0.3)
+            mid_g = int(color_top[1] + (color_bottom[1] - color_top[1]) * 0.3)
+            mid_b = int(color_top[2] + (color_bottom[2] - color_top[2]) * 0.3)
+            r = int(mid_r + (color_bottom[0] - mid_r) * t)
+            g = int(mid_g + (color_bottom[1] - mid_g) * t)
+            b = int(mid_b + (color_bottom[2] - mid_b) * t)
+
+        pygame.draw.line(btn_surface, (r, g, b), (0, row), (w, row))
+
+    # Apply rounded corner mask
+    mask = pygame.Surface((w, h), pygame.SRCALPHA)
+    draw_rounded_rect(mask, (255, 255, 255, 255), (0, 0, w, h), radius)
+    btn_surface.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+
+    # Draw border
+    # Draw rounded rect outline by drawing two rects
+    border_surface = pygame.Surface((w, h), pygame.SRCALPHA)
+    draw_rounded_rect(border_surface, (*border_color, 255), (0, 0, w, h), radius)
+    draw_rounded_rect(border_surface, (0, 0, 0, 0), (2, 2, w - 4, h - 4), radius - 2)
+
+    # Blit button to surface
+    surface.blit(btn_surface, (x, y + y_offset))
+
+    # Draw light border outline
+    # Top and left edges lighter
+    for i in range(2):
+        pygame.draw.arc(surface, border_color, (x + i, y + y_offset + i, radius * 2, radius * 2),
+                       math.pi / 2, math.pi, 1)
+        pygame.draw.arc(surface, border_color, (x + w - radius * 2 - i, y + y_offset + i, radius * 2, radius * 2),
+                       0, math.pi / 2, 1)
+        pygame.draw.line(surface, border_color, (x + radius, y + y_offset + i), (x + w - radius, y + y_offset + i), 1)
+
+    # Text - white, bold, centered
+    text = "Новая игра"
+    text_surface = font.render(text, True, (255, 255, 255))
+
+    # Shadow
+    shadow_surface = font.render(text, True, (120, 86, 0))
+    shadow_rect = shadow_surface.get_rect(center=(x + w // 2 + 1, y + h // 2 + 1 + y_offset))
+    surface.blit(shadow_surface, shadow_rect)
+
+    # Main text
+    text_rect = text_surface.get_rect(center=(x + w // 2, y + h // 2 + y_offset))
+    surface.blit(text_surface, text_rect)
+
+    return pygame.Rect(x, y, w, h)
+
+
+def draw_checkered_background(surface, rect, cell_size=18):
     """Draw a checkered (grid) background like a school notebook.
 
     Args:
@@ -342,8 +527,8 @@ def draw_checkered_background(surface, rect, cell_size=25):
     # Fill with white
     pygame.draw.rect(surface, (255, 255, 255), rect)
 
-    # Draw grid lines (light gray)
-    line_color = (200, 210, 220)
+    # Draw grid lines - RGB(218, 236, 241) light blue
+    line_color = (218, 236, 241)
 
     # Vertical lines
     for lx in range(x, x + w + 1, cell_size):
