@@ -374,15 +374,20 @@ def draw_result_row(surface, rect, label, value, label_font, value_font):
     x, y, w, h = rect
     radius = 6
 
-    # Draw border first (as filled rounded rect), then background on top
+    # Draw on temp surface to preserve transparency
     border_color = (100, 170, 210)
     bg_color = (168, 212, 242)
 
-    # Border (full size)
-    draw_rounded_rect_alpha(surface, border_color, rect, radius, alpha=255)
-    # Background (1 pixel smaller on each side)
-    inner_rect = (x + 1, y + 1, w - 2, h - 2)
-    draw_rounded_rect_alpha(surface, bg_color, inner_rect, radius - 1, alpha=150)
+    temp = pygame.Surface((w, h), pygame.SRCALPHA)
+
+    # Draw border (full rounded rect)
+    draw_rounded_rect(temp, border_color, (0, 0, w, h), radius)
+    # Draw background on top (1 pixel smaller)
+    draw_rounded_rect(temp, bg_color, (1, 1, w - 2, h - 2), max(1, radius - 1))
+
+    # Apply transparency to the whole thing
+    temp.set_alpha(150)
+    surface.blit(temp, (x, y))
 
     # Text color - RGB(40, 92, 120)
     text_color = (40, 92, 120)
