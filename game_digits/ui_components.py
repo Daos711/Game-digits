@@ -514,12 +514,12 @@ def draw_new_game_button(surface, rect, font, is_pressed=False):
                        0, math.pi / 2, 1)
         pygame.draw.line(surface, border_color, (x + radius, y + y_offset + i), (x + w - radius, y + y_offset + i), 1)
 
-    # Text - burgundy/maroon for warm contrast on yellow-orange button
+    # Text - dark blue for contrast on yellow-orange button
     text = "Новая игра"
-    text_surface = font.render(text, True, (128, 0, 32))
+    text_surface = font.render(text, True, (20, 60, 120))
 
-    # Shadow - lighter for depth effect
-    shadow_surface = font.render(text, True, (255, 220, 180))
+    # Shadow - light yellow for depth effect
+    shadow_surface = font.render(text, True, (255, 230, 150))
     shadow_rect = shadow_surface.get_rect(center=(x + w // 2 + 1, y + h // 2 - 2 + y_offset))
     surface.blit(shadow_surface, shadow_rect)
 
@@ -642,12 +642,13 @@ def draw_checkered_content_area(surface, rect, header_height, corner_radius=12, 
     x, y, w, h = rect
 
     # Draw checkered background for the ENTIRE window (including under header)
-    # This fills the rounded corners that would otherwise be empty
+    # Top corners are SQUARE to fill the gaps under header's rounded corners
+    # Bottom corners are rounded
     draw_checkered_background_rounded(
         surface,
         (x, y, w, h),
         cell_size=cell_size,
-        top_radius=corner_radius,
+        top_radius=0,  # Square top corners fill gaps under header
         bottom_radius=corner_radius
     )
 
