@@ -373,9 +373,25 @@ def draw_result_row(surface, rect, label, value, label_font, value_font):
     x, y, w, h = rect
     radius = 6
 
-    # Background - RGB(168, 212, 242) with transparency
+    # Background - RGB(168, 212, 242) with more transparency
     bg_color = (168, 212, 242)
-    draw_rounded_rect_alpha(surface, bg_color, rect, radius, alpha=200)
+    draw_rounded_rect_alpha(surface, bg_color, rect, radius, alpha=130)
+
+    # Draw blue border - RGB(100, 170, 210) more expressive blue
+    border_color = (100, 170, 210)
+    # Top edge
+    pygame.draw.line(surface, border_color, (x + radius, y), (x + w - radius, y), 1)
+    # Bottom edge
+    pygame.draw.line(surface, border_color, (x + radius, y + h - 1), (x + w - radius, y + h - 1), 1)
+    # Left edge
+    pygame.draw.line(surface, border_color, (x, y + radius), (x, y + h - radius), 1)
+    # Right edge
+    pygame.draw.line(surface, border_color, (x + w - 1, y + radius), (x + w - 1, y + h - radius), 1)
+    # Corners
+    pygame.draw.arc(surface, border_color, (x, y, radius * 2, radius * 2), math.pi / 2, math.pi, 1)
+    pygame.draw.arc(surface, border_color, (x + w - radius * 2, y, radius * 2, radius * 2), 0, math.pi / 2, 1)
+    pygame.draw.arc(surface, border_color, (x, y + h - radius * 2, radius * 2, radius * 2), math.pi, 3 * math.pi / 2, 1)
+    pygame.draw.arc(surface, border_color, (x + w - radius * 2, y + h - radius * 2, radius * 2, radius * 2), 3 * math.pi / 2, 2 * math.pi, 1)
 
     # Text color - RGB(40, 92, 120)
     text_color = (40, 92, 120)
@@ -498,9 +514,9 @@ def draw_new_game_button(surface, rect, font, is_pressed=False):
                        0, math.pi / 2, 1)
         pygame.draw.line(surface, border_color, (x + radius, y + y_offset + i), (x + w - radius, y + y_offset + i), 1)
 
-    # Text - white, bold, centered
+    # Text - light mint white RGB(247, 255, 247), bold, centered
     text = "Новая игра"
-    text_surface = font.render(text, True, (255, 255, 255))
+    text_surface = font.render(text, True, (247, 255, 247))
 
     # Shadow
     shadow_surface = font.render(text, True, (120, 86, 0))

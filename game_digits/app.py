@@ -245,14 +245,6 @@ class GameApp:
                                         (2, content_y, window_width - 4, content_height - 2),
                                         cell_size=18)
 
-            # Clip the corners to maintain rounded shape
-            # Bottom-left corner
-            pygame.draw.circle(window_surface, (0, 0, 0, 0),
-                              (corner_radius, window_height - corner_radius), corner_radius)
-            ui.draw_rounded_rect(window_surface, (255, 255, 255),
-                                (0, window_height - corner_radius * 2,
-                                 corner_radius * 2, corner_radius * 2), corner_radius)
-
             # Draw header with title
             close_btn_rect = ui.draw_result_window_header(
                 window_surface,
