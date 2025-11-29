@@ -206,8 +206,8 @@ class GameApp:
         # Fonts
         bold_font_path = get_font_path("2204.ttf")
         title_font = pygame.font.Font(bold_font_path, 32)
-        label_font = pygame.font.Font(bold_font_path, 24)
-        value_font = pygame.font.Font(bold_font_path, 28)
+        label_font = pygame.font.Font(bold_font_path, 26)  # Increased from 24
+        value_font = pygame.font.Font(bold_font_path, 30)  # Increased from 28
         button_font = pygame.font.Font(bold_font_path, 28)
 
         # Button state tracking
@@ -233,17 +233,15 @@ class GameApp:
             # Create window surface
             window_surface = pygame.Surface((window_width, window_height), pygame.SRCALPHA)
 
-            # Draw rounded rectangle border/shadow
-            border_color = (180, 180, 180)
-            ui.draw_rounded_rect(window_surface, border_color,
-                                (0, 0, window_width, window_height), corner_radius)
-
-            # Draw checkered background for content area (below header)
-            content_y = header_height
-            content_height = window_height - header_height
-            ui.draw_checkered_background(window_surface,
-                                        (2, content_y, window_width - 4, content_height - 2),
-                                        cell_size=18)
+            # Draw checkered content area with rounded corners and border
+            ui.draw_checkered_content_area(
+                window_surface,
+                (0, 0, window_width, window_height),
+                header_height,
+                corner_radius=corner_radius,
+                cell_size=18,
+                border_color=(145, 179, 163)
+            )
 
             # Draw header with title
             close_btn_rect = ui.draw_result_window_header(

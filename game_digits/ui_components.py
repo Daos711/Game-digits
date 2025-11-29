@@ -373,9 +373,9 @@ def draw_result_row(surface, rect, label, value, label_font, value_font):
     x, y, w, h = rect
     radius = 6
 
-    # Background - RGB(168, 212, 242) with more transparency
+    # Background - RGB(168, 212, 242) with transparency 150
     bg_color = (168, 212, 242)
-    draw_rounded_rect_alpha(surface, bg_color, rect, radius, alpha=130)
+    draw_rounded_rect_alpha(surface, bg_color, rect, radius, alpha=150)
 
     # Draw blue border - RGB(100, 170, 210) more expressive blue
     border_color = (100, 170, 210)
@@ -514,9 +514,9 @@ def draw_new_game_button(surface, rect, font, is_pressed=False):
                        0, math.pi / 2, 1)
         pygame.draw.line(surface, border_color, (x + radius, y + y_offset + i), (x + w - radius, y + y_offset + i), 1)
 
-    # Text - light mint white RGB(247, 255, 247), bold, centered
+    # Text - slightly duller mint white RGB(225, 235, 220), bold, centered
     text = "Новая игра"
-    text_surface = font.render(text, True, (247, 255, 247))
+    text_surface = font.render(text, True, (225, 235, 220))
 
     # Shadow (moved up 3 pixels)
     shadow_surface = font.render(text, True, (120, 86, 0))
@@ -553,3 +553,120 @@ def draw_checkered_background(surface, rect, cell_size=18):
     # Horizontal lines
     for ly in range(y, y + h + 1, cell_size):
         pygame.draw.line(surface, line_color, (x, ly), (x + w, ly), 1)
+
+
+def draw_checkered_background_rounded(surface, rect, cell_size=18, top_radius=12, bottom_radius=12):
+    """Draw a checkered (grid) background with rounded corners.
+
+    Args:
+        surface: Pygame surface to draw on
+        rect: (x, y, width, height) of the area
+        cell_size: Size of each grid cell
+        top_radius: Radius for top corners (0 for square)
+        bottom_radius: Radius for bottom corners (0 for square)
+    """
+    x, y, w, h = rect
+
+    # Create temp surface for the checkered pattern
+    temp_surface = pygame.Surface((w, h), pygame.SRCALPHA)
+
+    # Fill with white
+    temp_surface.fill((255, 255, 255, 255))
+
+    # Draw grid lines - RGB(218, 236, 241) light blue
+    line_color = (218, 236, 241, 255)
+
+    # Vertical lines
+    for lx in range(0, w + 1, cell_size):
+        pygame.draw.line(temp_surface, line_color, (lx, 0), (lx, h), 1)
+
+    # Horizontal lines
+    for ly in range(0, h + 1, cell_size):
+        pygame.draw.line(temp_surface, line_color, (0, ly), (w, ly), 1)
+
+    # Create mask for rounded corners
+    mask_surface = pygame.Surface((w, h), pygame.SRCALPHA)
+    mask_surface.fill((0, 0, 0, 0))
+
+    # Draw the mask with selective rounded corners
+    top_r = min(top_radius, h // 2, w // 2)
+    bot_r = min(bottom_radius, h // 2, w // 2)
+
+    # Main rectangle parts
+    pygame.draw.rect(mask_surface, (255, 255, 255, 255),
+                     (top_r, 0, w - 2 * top_r, top_r))  # Top middle
+    pygame.draw.rect(mask_surface, (255, 255, 255, 255),
+                     (0, top_r, w, h - top_r - bot_r))  # Middle
+    pygame.draw.rect(mask_surface, (255, 255, 255, 255),
+                     (bot_r, h - bot_r, w - 2 * bot_r, bot_r))  # Bottom middle
+
+    # Top corners
+    if top_r > 0:
+        pygame.draw.circle(mask_surface, (255, 255, 255, 255), (top_r, top_r), top_r)
+        pygame.draw.circle(mask_surface, (255, 255, 255, 255), (w - top_r, top_r), top_r)
+    else:
+        pygame.draw.rect(mask_surface, (255, 255, 255, 255), (0, 0, w, 1))
+
+    # Bottom corners
+    if bot_r > 0:
+        pygame.draw.circle(mask_surface, (255, 255, 255, 255), (bot_r, h - bot_r), bot_r)
+        pygame.draw.circle(mask_surface, (255, 255, 255, 255), (w - bot_r, h - bot_r), bot_r)
+    else:
+        pygame.draw.rect(mask_surface, (255, 255, 255, 255), (0, h - 1, w, 1))
+
+    # Apply mask to checkered pattern
+    temp_surface.blit(mask_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+
+    # Blit to main surface
+    surface.blit(temp_surface, (x, y))
+
+
+def draw_checkered_content_area(surface, rect, header_height, corner_radius=12, cell_size=18,
+                                 border_color=(145, 179, 163)):
+    """Draw the content area with checkered background, rounded corners, and border.
+
+    This draws the entire content area below the header with:
+    - Rounded corners at top (where it meets header) and bottom
+    - Checkered pattern extending to all corners
+    - Border around the entire checkered area
+
+    Args:
+        surface: Pygame surface to draw on
+        rect: (x, y, width, height) of the entire window
+        header_height: Height of the header (checkered area starts below this)
+        corner_radius: Radius for rounded corners
+        cell_size: Size of each grid cell
+        border_color: Color of the border around checkered area
+    """
+    x, y, w, h = rect
+    content_y = header_height
+    content_h = h - header_height
+
+    # Draw checkered background with rounded corners
+    draw_checkered_background_rounded(
+        surface,
+        (x, content_y, w, content_h),
+        cell_size=cell_size,
+        top_radius=corner_radius,
+        bottom_radius=corner_radius
+    )
+
+    # Draw border around the checkered area
+    border_rect = (x, content_y, w, content_h)
+    bx, by, bw, bh = border_rect
+    r = min(corner_radius, bh // 2, bw // 2)
+
+    # Top edge
+    pygame.draw.line(surface, border_color, (bx + r, by), (bx + bw - r, by), 1)
+    # Bottom edge
+    pygame.draw.line(surface, border_color, (bx + r, by + bh - 1), (bx + bw - r, by + bh - 1), 1)
+    # Left edge
+    pygame.draw.line(surface, border_color, (bx, by + r), (bx, by + bh - r), 1)
+    # Right edge
+    pygame.draw.line(surface, border_color, (bx + bw - 1, by + r), (bx + bw - 1, by + bh - r), 1)
+
+    # Corner arcs
+    pygame.draw.arc(surface, border_color, (bx, by, r * 2, r * 2), math.pi / 2, math.pi, 1)
+    pygame.draw.arc(surface, border_color, (bx + bw - r * 2, by, r * 2, r * 2), 0, math.pi / 2, 1)
+    pygame.draw.arc(surface, border_color, (bx, by + bh - r * 2, r * 2, r * 2), math.pi, 3 * math.pi / 2, 1)
+    pygame.draw.arc(surface, border_color, (bx + bw - r * 2, by + bh - r * 2, r * 2, r * 2), 3 * math.pi / 2, 2 * math.pi, 1)
