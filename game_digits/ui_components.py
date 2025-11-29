@@ -367,7 +367,7 @@ def draw_result_row(surface, rect, label, value, label_font, value_font):
         value_font: Font for the value (larger)
     """
     x, y, w, h = rect
-    radius = 6
+    radius = 10
     border_width = 2
 
     # Create temp surface for proper alpha handling
