@@ -343,19 +343,14 @@ def draw_rounded_rect_alpha(surface, color, rect, radius, alpha=180):
     x, y, w, h = rect
     radius = min(radius, h // 2, w // 2)
 
-    # Create a temporary surface with alpha
+    # Create a temporary surface and draw opaque rounded rect
     temp = pygame.Surface((w, h), pygame.SRCALPHA)
 
-    # Color with alpha
-    color_alpha = (*color, alpha)
+    # Draw opaque rounded rectangle using the standard function
+    draw_rounded_rect(temp, (*color, 255), (0, 0, w, h), radius)
 
-    # Draw rounded rectangle on temp surface
-    pygame.draw.rect(temp, color_alpha, (radius, 0, w - 2 * radius, h))
-    pygame.draw.rect(temp, color_alpha, (0, radius, w, h - 2 * radius))
-    pygame.draw.circle(temp, color_alpha, (radius, radius), radius)
-    pygame.draw.circle(temp, color_alpha, (w - radius, radius), radius)
-    pygame.draw.circle(temp, color_alpha, (radius, h - radius), radius)
-    pygame.draw.circle(temp, color_alpha, (w - radius, h - radius), radius)
+    # Apply alpha to the entire surface
+    temp.set_alpha(alpha)
 
     surface.blit(temp, (x, y))
 
@@ -374,20 +369,9 @@ def draw_result_row(surface, rect, label, value, label_font, value_font):
     x, y, w, h = rect
     radius = 6
 
-    # Draw on temp surface to preserve transparency
-    border_color = (100, 170, 210)
+    # Draw background with transparency
     bg_color = (168, 212, 242)
-
-    temp = pygame.Surface((w, h), pygame.SRCALPHA)
-
-    # Draw border (full rounded rect)
-    draw_rounded_rect(temp, border_color, (0, 0, w, h), radius)
-    # Draw background on top (1 pixel smaller)
-    draw_rounded_rect(temp, bg_color, (1, 1, w - 2, h - 2), max(1, radius - 1))
-
-    # Apply transparency to the whole thing
-    temp.set_alpha(150)
-    surface.blit(temp, (x, y))
+    draw_rounded_rect_alpha(surface, bg_color, rect, radius, alpha=170)
 
     # Text color - RGB(40, 92, 120)
     text_color = (40, 92, 120)
