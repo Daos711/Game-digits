@@ -514,12 +514,12 @@ def draw_new_game_button(surface, rect, font, is_pressed=False):
                        0, math.pi / 2, 1)
         pygame.draw.line(surface, border_color, (x + radius, y + y_offset + i), (x + w - radius, y + y_offset + i), 1)
 
-    # Text - pure white for good contrast on yellow-orange button
+    # Text - burgundy/maroon for warm contrast on yellow-orange button
     text = "Новая игра"
-    text_surface = font.render(text, True, (255, 255, 255))
+    text_surface = font.render(text, True, (128, 0, 32))
 
-    # Shadow - darker brown for depth
-    shadow_surface = font.render(text, True, (100, 70, 0))
+    # Shadow - lighter for depth effect
+    shadow_surface = font.render(text, True, (255, 220, 180))
     shadow_rect = shadow_surface.get_rect(center=(x + w // 2 + 1, y + h // 2 - 2 + y_offset))
     surface.blit(shadow_surface, shadow_rect)
 
@@ -654,20 +654,33 @@ def draw_checkered_content_area(surface, rect, header_height, corner_radius=12, 
     # Draw border around the content area (below header only)
     content_y = header_height
     content_h = h - header_height
-    border_rect = (x, content_y, w, content_h)
-    bx, by, bw, bh = border_rect
+    bx, by, bw, bh = x, content_y, w, content_h
     r = min(corner_radius, bh // 2, bw // 2)
-    bw_half = border_width // 2
 
-    # Top edge (no rounded corners - straight line under header)
-    pygame.draw.line(surface, border_color, (bx, by), (bx + bw, by), border_width)
-    # Bottom edge
-    pygame.draw.line(surface, border_color, (bx + r, by + bh - bw_half), (bx + bw - r, by + bh - bw_half), border_width)
-    # Left edge
-    pygame.draw.line(surface, border_color, (bx + bw_half, by), (bx + bw_half, by + bh - r), border_width)
-    # Right edge
-    pygame.draw.line(surface, border_color, (bx + bw - bw_half - 1, by), (bx + bw - bw_half - 1, by + bh - r), border_width)
+    # Draw border as a rounded rect outline (no fill) - cleaner than individual lines
+    # Create a temporary surface for the border
+    border_surface = pygame.Surface((bw, bh), pygame.SRCALPHA)
 
-    # Bottom corner arcs only (top corners are under header)
-    pygame.draw.arc(surface, border_color, (bx, by + bh - r * 2, r * 2, r * 2), math.pi, 3 * math.pi / 2, border_width)
-    pygame.draw.arc(surface, border_color, (bx + bw - r * 2, by + bh - r * 2, r * 2, r * 2), 3 * math.pi / 2, 2 * math.pi, border_width)
+    # Draw rounded rect border by drawing outer and subtracting inner
+    for thickness in range(border_width):
+        # Top edge (straight line under header)
+        pygame.draw.line(border_surface, border_color, (0, thickness), (bw, thickness), 1)
+        # Left edge
+        pygame.draw.line(border_surface, border_color, (thickness, 0), (thickness, bh - r), 1)
+        # Right edge
+        pygame.draw.line(border_surface, border_color, (bw - 1 - thickness, 0), (bw - 1 - thickness, bh - r), 1)
+        # Bottom edge (between corners)
+        pygame.draw.line(border_surface, border_color, (r, bh - 1 - thickness), (bw - r, bh - 1 - thickness), 1)
+
+    # Bottom corners - draw as filled quarter circles for clean look
+    for thickness in range(border_width):
+        # Bottom-left corner arc
+        pygame.draw.arc(border_surface, border_color,
+                       (thickness, bh - r * 2 + thickness, (r - thickness) * 2, (r - thickness) * 2),
+                       math.pi, 3 * math.pi / 2, 1)
+        # Bottom-right corner arc
+        pygame.draw.arc(border_surface, border_color,
+                       (bw - r * 2 + thickness, bh - r * 2 + thickness, (r - thickness) * 2, (r - thickness) * 2),
+                       3 * math.pi / 2, 2 * math.pi, 1)
+
+    surface.blit(border_surface, (bx, by))
