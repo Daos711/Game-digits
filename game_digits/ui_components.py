@@ -368,17 +368,21 @@ def draw_result_row(surface, rect, label, value, label_font, value_font):
     """
     x, y, w, h = rect
     radius = 6
+    border_width = 2
 
     # Create temp surface for proper alpha handling
     temp = pygame.Surface((w, h), pygame.SRCALPHA)
 
-    # Draw background using pygame's built-in border_radius for proper rounded corners
-    bg_color = (168, 212, 242)
-    pygame.draw.rect(temp, (*bg_color, 255), (0, 0, w, h), border_radius=radius)
+    # Draw border first (filled rounded rect)
+    border_color = (120, 170, 190)  # Darker border for visibility
+    draw_rounded_rect(temp, (*border_color, 255), (0, 0, w, h), radius)
 
-    # Draw thin border with color (148, 189, 206)
-    border_color = (148, 189, 206)
-    pygame.draw.rect(temp, (*border_color, 255), (0, 0, w, h), width=1, border_radius=radius)
+    # Draw background on top (smaller by border_width)
+    bg_color = (168, 212, 242)
+    inner_radius = max(1, radius - border_width)
+    draw_rounded_rect(temp, (*bg_color, 255),
+                      (border_width, border_width, w - 2 * border_width, h - 2 * border_width),
+                      inner_radius)
 
     # Apply transparency
     temp.set_alpha(170)
