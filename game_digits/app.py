@@ -671,6 +671,13 @@ class GameApp:
         for other in self.tiles:
             if other != tile and other.is_moving:
                 if tile.rect.colliderect(other.rect):
+                    # Проверяем, не разъезжаются ли плитки
+                    # Если они движутся в противоположных направлениях вдоль одной оси - это не коллизия
+                    dir1 = tile.current_direction
+                    dir2 = other.current_direction
+                    opposite_pairs = [("up", "down"), ("down", "up"), ("left", "right"), ("right", "left")]
+                    if (dir1, dir2) in opposite_pairs:
+                        continue  # Плитки разъезжаются, не коллизия
                     return other
         return None
 
@@ -707,6 +714,9 @@ class GameApp:
         collided = self.check_collision(tile)
         if collided:
             self.resolve_collision(tile, collided)
+
+        # Удаляем стрелки на ячейках где сейчас находится движущаяся плитка
+        self.remove_arrows_on_occupied_cells()
 
         self.update_display()
 
@@ -875,9 +885,8 @@ class GameApp:
             if self.game.game_over_flag:
                 show_result = True
 
-            if show_result and not any(tile.is_moving for tile in self.tiles):
-                # Очищаем все анимации чисел перед показом результатов
-                self.score_popups.empty()
+            if show_result and not any(tile.is_moving for tile in self.tiles) and len(self.score_popups) == 0:
+                # Анимации очков закончились - показываем результат
                 self.update_display()
                 pygame.display.flip()
                 start_new_game = self.show_result_window()

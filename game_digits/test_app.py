@@ -555,6 +555,29 @@ class TestGameApp:
             if popup.grid_position in grid_positions:
                 popup.kill()
 
+    def remove_arrows_on_occupied_cells(self):
+        """Удаляет стрелки, находящиеся на занятых ячейках."""
+        # Позиции, где сейчас визуально находятся движущиеся плитки (1-2 ячейки)
+        occupied_by_moving = set()
+        cell_size = TILE_SIZE + GAP
+        for tile in self.tiles:
+            if tile.is_moving:
+                left_col = (tile.rect.x - GAP) // cell_size
+                top_row = (tile.rect.y - GAP) // cell_size
+                right_col = (tile.rect.x + TILE_SIZE - 1 - GAP) // cell_size
+                bottom_row = (tile.rect.y + TILE_SIZE - 1 - GAP) // cell_size
+                for row in range(max(0, top_row), min(self.board_size, bottom_row + 1)):
+                    for col in range(max(0, left_col), min(self.board_size, right_col + 1)):
+                        occupied_by_moving.add((row, col))
+        for arrow in list(self.arrows):
+            # Вычисляем grid позицию стрелки
+            arrow_row, arrow_col = pixel_to_grid(arrow.rect.x, arrow.rect.y)
+            # Если ячейка занята (статичной плиткой или движущейся) - удаляем стрелку
+            if (0 <= arrow_row < self.board_size and 0 <= arrow_col < self.board_size
+                    and (self.game.board[arrow_row][arrow_col] is not None
+                         or (arrow_row, arrow_col) in occupied_by_moving)):
+                arrow.kill()
+
     def get_arrow_position(self, tile_position, direction):
         x, y = tile_position
         if direction == "up":
@@ -635,6 +658,9 @@ class TestGameApp:
                 self.score_popups.add(popup)
                 tile.last_grid_pos = current_pos
 
+        # Удаляем стрелки на ячейках где сейчас находится движущаяся плитка
+        self.remove_arrows_on_occupied_cells()
+
         self.update_display()
 
     def update_display(self):
@@ -698,8 +724,8 @@ class TestGameApp:
             if self.game.game_over_flag:
                 show_result = True
 
-            if show_result and not any(tile.is_moving for tile in self.tiles):
-                self.score_popups.empty()
+            if show_result and not any(tile.is_moving for tile in self.tiles) and len(self.score_popups) == 0:
+                # Анимации очков закончились - показываем результат
                 self.update_display()
                 pygame.display.flip()
                 start_new_game = self.show_result_window()
