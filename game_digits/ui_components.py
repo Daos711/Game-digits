@@ -160,9 +160,9 @@ def draw_value_bar(surface, rect, value, font):
     x, y, w, h = rect
     radius = 4  # Более угловатые края
 
-    # Голубой градиент (верх темнее, низ светлее - как на референсе)
-    color_top = (70, 130, 175)
-    color_bottom = (110, 170, 210)
+    # Голубой градиент сверху вниз (из оригинала)
+    color_top = (44, 133, 183)
+    color_bottom = (89, 184, 237)
 
     # Рисуем основную полоску
     draw_gradient_rounded_rect(surface, rect, color_top, color_bottom, radius)
@@ -185,8 +185,8 @@ def draw_progress_bar(surface, rect, progress, radius=None):
         radius = 4  # Более угловатые края как у value bar
 
     # 1. Сначала рисуем синий фон (как у value bar)
-    bg_color_top = (70, 130, 175)
-    bg_color_bottom = (110, 170, 210)
+    bg_color_top = (44, 133, 183)
+    bg_color_bottom = (89, 184, 237)
     draw_gradient_rounded_rect(surface, rect, bg_color_top, bg_color_bottom, radius)
 
     # 2. Затем рисуем жёлтую заполненную часть поверх
