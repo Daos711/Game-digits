@@ -65,8 +65,9 @@ class GameApp:
         score_window_rect = pygame.Rect(
             self.HEIGHT + 10, 10, self.panel_width - 20, 100
         )
-        pygame.draw.rect(self.screen, (255, 255, 255), score_window_rect)
-        pygame.draw.rect(self.screen, (0, 0, 0), score_window_rect, 2)
+        border_radius = 12
+        pygame.draw.rect(self.screen, (255, 255, 255), score_window_rect, border_radius=border_radius)
+        pygame.draw.rect(self.screen, (30, 60, 90), score_window_rect, 3, border_radius=border_radius)
 
         score_label = self.font.render("Очки", True, (0, 0, 0))
         label_rect = score_label.get_rect(
@@ -84,8 +85,8 @@ class GameApp:
         time_window_rect = pygame.Rect(
             self.HEIGHT + 10, 120, self.panel_width - 20, 100
         )
-        pygame.draw.rect(self.screen, (255, 255, 255), time_window_rect)
-        pygame.draw.rect(self.screen, (0, 0, 0), time_window_rect, 2)
+        pygame.draw.rect(self.screen, (255, 255, 255), time_window_rect, border_radius=border_radius)
+        pygame.draw.rect(self.screen, (30, 60, 90), time_window_rect, 3, border_radius=border_radius)
 
         time_label = self.font.render("Время", True, (0, 0, 0))
         label_rect = time_label.get_rect(
@@ -104,9 +105,10 @@ class GameApp:
             progress_rect = pygame.Rect(
                 self.HEIGHT + 10, 230, self.panel_width - 20, 20
             )
+            progress_radius = 8
             # Фон прогресс-бара (серый)
-            pygame.draw.rect(self.screen, (200, 200, 200), progress_rect)
-            pygame.draw.rect(self.screen, (0, 0, 0), progress_rect, 2)
+            pygame.draw.rect(self.screen, (200, 200, 200), progress_rect, border_radius=progress_radius)
+            pygame.draw.rect(self.screen, (30, 60, 90), progress_rect, 2, border_radius=progress_radius)
 
             # Вычисляем прогресс (уменьшается справа налево)
             elapsed = pygame.time.get_ticks() - self.tile_timer_start
@@ -118,7 +120,7 @@ class GameApp:
                     progress_rect.left + 2, progress_rect.top + 2,
                     bar_width, progress_rect.height - 4
                 )
-                pygame.draw.rect(self.screen, (247, 204, 74), bar_rect)  # Желтый
+                pygame.draw.rect(self.screen, (247, 204, 74), bar_rect, border_radius=progress_radius - 2)  # Желтый
 
     def show_result_window(self):
         overlay = pygame.Surface((self.WIDTH, self.HEIGHT))
@@ -127,14 +129,16 @@ class GameApp:
         self.screen.blit(overlay, (0, 0))
 
         window_width, window_height = 400, 300
-        window_surface = pygame.Surface((window_width, window_height))
-        window_surface.fill((255, 255, 255))
-        pygame.draw.rect(
-            window_surface, (0, 0, 0), (0, 0, window_width, window_height), 2
-        )
-
         window_x = (self.WIDTH - window_width) // 2
         window_y = (self.HEIGHT - window_height) // 2
+
+        # Создаём surface с альфа-каналом для скруглённых углов
+        window_surface = pygame.Surface((window_width, window_height), pygame.SRCALPHA)
+        border_radius = 16
+        # Белый фон со скруглёнными углами
+        pygame.draw.rect(window_surface, (255, 255, 255), (0, 0, window_width, window_height), border_radius=border_radius)
+        # Выразительная тёмная рамка
+        pygame.draw.rect(window_surface, (30, 60, 90), (0, 0, window_width, window_height), 4, border_radius=border_radius)
 
         title_font = pygame.font.Font(None, 48)
         label_font = pygame.font.Font(None, 36)
