@@ -641,14 +641,18 @@ def draw_checkered_content_area(surface, rect, header_height, corner_radius=12, 
     """
     x, y, w, h = rect
 
-    # Draw checkered background for the ENTIRE window (including under header)
-    # Top corners are SQUARE to fill the gaps under header's rounded corners
-    # Bottom corners are rounded
+    # Draw checkered background starting ABOVE header boundary
+    # so rounded top corners extend into header area, filling gaps
+    # The overlap amount equals corner_radius so corners fill the header gaps
+    overlap = corner_radius
+    content_y = header_height - overlap
+    content_h = h - content_y
+
     draw_checkered_background_rounded(
         surface,
-        (x, y, w, h),
+        (x, content_y, w, content_h),
         cell_size=cell_size,
-        top_radius=0,  # Square top corners fill gaps under header
+        top_radius=corner_radius,  # Rounded top corners extend into header
         bottom_radius=corner_radius
     )
 
