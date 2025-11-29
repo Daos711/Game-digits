@@ -58,17 +58,22 @@ class Tile(pygame.sprite.Sprite):
 
     def target_move(self, direction, board):
         x, y = self.position
+
+        def cell_is_passable(cell):
+            # Ячейка проходима если пуста или занята движущейся плиткой (она уезжает)
+            return cell is None or cell.is_moving
+
         if direction == "up":
-            while x > 0 and board[x - 1][y] is None:
+            while x > 0 and cell_is_passable(board[x - 1][y]):
                 x -= 1
         elif direction == "down":
-            while x < len(board) - 1 and board[x + 1][y] is None:
+            while x < len(board) - 1 and cell_is_passable(board[x + 1][y]):
                 x += 1
         elif direction == "left":
-            while y > 0 and board[x][y - 1] is None:
+            while y > 0 and cell_is_passable(board[x][y - 1]):
                 y -= 1
         elif direction == "right":
-            while y < len(board[0]) - 1 and board[x][y + 1] is None:
+            while y < len(board[0]) - 1 and cell_is_passable(board[x][y + 1]):
                 y += 1
 
         target_x, target_y = grid_to_pixel(x, y)
