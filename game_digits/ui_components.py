@@ -648,11 +648,17 @@ def draw_checkered_content_area(surface, rect, header_height, corner_radius=12, 
     """
     x, y, w, h = rect
 
-    # Draw checkered background starting ABOVE header boundary
-    # so rounded corners overlap header - header fills the corner gaps
-    overlap = corner_radius  # How much checkered overlaps into header
-    content_y = header_height - overlap
-    content_h = h - content_y
+    # Draw checkered background starting AT header boundary
+    # with rounded top corners visible (not covered by header)
+    content_y = header_height
+    content_h = h - header_height
+
+    # Fill corner gaps with header color so they show through rounded corners
+    header_color = (254, 211, 113)
+    # Left corner fill
+    pygame.draw.rect(surface, header_color, (x, content_y, corner_radius, corner_radius))
+    # Right corner fill
+    pygame.draw.rect(surface, header_color, (x + w - corner_radius, content_y, corner_radius, corner_radius))
 
     draw_checkered_background_rounded(
         surface,
@@ -663,7 +669,6 @@ def draw_checkered_content_area(surface, rect, header_height, corner_radius=12, 
     )
 
     # Draw border with rounded corners at TOP and BOTTOM
-    # Border starts at same position as checkered (overlapping header)
     bx, by, bw, bh = x, content_y, w, content_h
     r = min(corner_radius, bh // 2, bw // 2)
 
