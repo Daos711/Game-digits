@@ -1,18 +1,26 @@
+"""
+Test game mode with minimal tiles for mechanics testing.
+"""
 import random
 import pygame
 
-from game_digits.constants import COLORS, BOARD_SIZE, pixel_to_grid, TILE_SIZE, GAP
+from game_digits.constants import COLORS
 from game_digits.sprites import Tile
-from game_digits.patterns import get_random_pattern
 
 
-class Game:
+# Test mode board size (same as main game for proper testing)
+TEST_BOARD_SIZE = 10
+
+
+class TestGame:
+    """Simplified game with 6 tiles (3 pairs) for quick result window testing."""
+
     COUNTDOWN_EVENT = pygame.USEREVENT + 2
     TILE_APPEAR_EVENT = pygame.USEREVENT + 3
 
-    def __init__(self, tiles, time_limit=300):
+    def __init__(self, tiles, time_limit=60):
         self.tiles = tiles
-        self.board = [[None for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
+        self.board = [[None for _ in range(TEST_BOARD_SIZE)] for _ in range(TEST_BOARD_SIZE)]
         self.score = 0
         self.time_limit = time_limit
         self.current_time = time_limit
@@ -25,20 +33,40 @@ class Game:
 
         # Tile appearance animation state
         self.is_initializing = True
-        self.tile_appear_delay = 25  # ms between tile appearances
-        self.pending_tiles = []  # List of (position, number) to appear
-        self.current_pattern_name = None
+        self.tile_appear_delay = 50  # ms between tile appearances
+        self.pending_tiles = []
+        self.current_pattern_name = "test_pattern"
         self.prepare_tile_appearance()
 
     def prepare_tile_appearance(self):
-        """Prepare tiles for animated appearance."""
-        pattern_name, positions = get_random_pattern()
-        self.current_pattern_name = pattern_name
+        """Prepare 6 tiles (3 pairs) for animated appearance in center of board."""
+        # Generate 3 pairs of numbers that sum to 10
+        pairs = [
+            (1, 9),
+            (2, 8),
+            (3, 7),
+        ]
 
-        # Generate random numbers for each position
+        # Create list of all numbers from pairs
+        numbers = []
+        for a, b in pairs:
+            numbers.append(a)
+            numbers.append(b)
+
+        # Shuffle numbers
+        random.shuffle(numbers)
+
+        # Place tiles in center of 10x10 board (2 rows x 3 cols in center)
+        # Center positions: rows 4-5, cols 3-5
+        positions = [
+            (4, 3), (4, 4), (4, 5),
+            (5, 3), (5, 4), (5, 5),
+        ]
+
+        # Create pending tiles
         self.pending_tiles = []
-        for pos in positions:
-            number = random.randint(1, 9)
+        for i, pos in enumerate(positions):
+            number = numbers[i]
             self.pending_tiles.append((pos, number))
 
     def start_tile_appearance(self):
@@ -48,7 +76,6 @@ class Game:
     def spawn_next_tile(self):
         """Spawn the next tile in the appearance sequence."""
         if not self.pending_tiles:
-            # All tiles spawned
             pygame.time.set_timer(self.TILE_APPEAR_EVENT, 0)
             self.is_initializing = False
             return None
@@ -59,15 +86,6 @@ class Game:
         self.board[row][col] = tile
         self.tiles.add(tile)
         return tile
-
-    def initialize_tiles(self):
-        """Legacy method - now tiles appear via animation."""
-        for i in range(BOARD_SIZE):
-            for j in range(BOARD_SIZE):
-                number = random.randint(1, 9)
-                tile = Tile(number, (i, j), COLORS[number])
-                self.board[i][j] = tile
-                self.tiles.add(tile)
 
     def select_tile(self, tile):
         if self.selected_tile:
@@ -83,19 +101,17 @@ class Game:
             self.original_color = None
 
     def remove_tiles(self, tile1, tile2):
-        """
-        Удаляет пару плиток если они подходят.
-        Возвращает None если удаление не удалось,
-        или список позиций от первой плитки ко второй для анимации очков.
-        """
+        """Remove a pair of tiles if valid."""
         if tile1 is None or tile2 is None:
             return None
         if tile1.is_moving or tile2.is_moving:
             return None
+
         x1, y1 = tile1.position
         x2, y2 = tile2.position
+
         if tile1.number == tile2.number or tile1.number + tile2.number == 10:
-            if x1 == x2:  # Плитки на одной вертикальной линии
+            if x1 == x2:  # Same row
                 if abs(y1 - y2) == 1 or all(
                     self.board[x1][j] is None for j in range(min(y1, y2) + 1, max(y1, y2))
                 ):
@@ -104,11 +120,10 @@ class Game:
                     self.board[x2][y2] = None
                     self.tiles.remove(tile1, tile2)
                     self.post_remove_actions()
-                    # Возвращаем путь от первой плитки ко второй
                     step = 1 if y2 > y1 else -1
                     positions = [(x1, j) for j in range(y1, y2 + step, step)]
                     return positions
-            elif y1 == y2:  # Плитки на одной горизонтальной линии
+            elif y1 == y2:  # Same column
                 if abs(x1 - x2) == 1 or all(
                     self.board[i][y1] is None for i in range(min(x1, x2) + 1, max(x1, x2))
                 ):
@@ -117,52 +132,10 @@ class Game:
                     self.board[x2][y2] = None
                     self.tiles.remove(tile1, tile2)
                     self.post_remove_actions()
-                    # Возвращаем путь от первой плитки ко второй
                     step = 1 if x2 > x1 else -1
                     positions = [(i, y1) for i in range(x1, x2 + step, step)]
                     return positions
         return None
-
-    def add_new_tile(self):
-        # Собираем все занятые позиции для спавна
-        occupied_positions = set()
-        for tile in self.tiles:
-            if tile.is_moving:
-                # Движущаяся плитка может занимать 1-2 ячейки
-                # Вычисляем какие ячейки пересекает rect плитки
-                cell_size = TILE_SIZE + GAP
-                # Левый верхний угол
-                left_col = (tile.rect.x - GAP) // cell_size
-                top_row = (tile.rect.y - GAP) // cell_size
-                # Правый нижний угол
-                right_col = (tile.rect.x + TILE_SIZE - 1 - GAP) // cell_size
-                bottom_row = (tile.rect.y + TILE_SIZE - 1 - GAP) // cell_size
-                # Добавляем все ячейки которые плитка пересекает
-                for row in range(max(0, top_row), min(BOARD_SIZE, bottom_row + 1)):
-                    for col in range(max(0, left_col), min(BOARD_SIZE, right_col + 1)):
-                        occupied_positions.add((row, col))
-            else:
-                # Позиция неподвижной плитки
-                occupied_positions.add(tile.position)
-
-        empty_positions = [
-            (i, j) for i in range(BOARD_SIZE) for j in range(BOARD_SIZE)
-            if self.board[i][j] is None and (i, j) not in occupied_positions
-        ]
-        if empty_positions:
-            position = random.choice(empty_positions)
-            existing_numbers = set(tile.number for tile in self.tiles)
-            possible_numbers = set()
-            for num in existing_numbers:
-                pair = 10 - num
-                possible_numbers.add(num)
-                possible_numbers.add(pair)
-            if possible_numbers:
-                number = random.choice(list(possible_numbers))
-                color = self.COLORS[number]
-                new_tile = Tile(number, position, color)
-                self.tiles.add(new_tile)
-                self.board[position[0]][position[1]] = new_tile
 
     def start_timer(self):
         if not self.timer_started:
@@ -186,6 +159,7 @@ class Game:
     def post_remove_actions(self):
         if not self.timer_started:
             self.start_timer()
+        # Check if all tiles removed
         if not any(tile for row in self.board for tile in row):
             self.prepare_to_end = True
             self.stop_timer()
@@ -205,9 +179,8 @@ class Game:
         elif direction == "right":
             new_position = (x, y + 1)
         a, b = new_position[0], new_position[1]
-        if 0 <= a < len(self.board) and 0 <= b < len(self.board[0]):
+        if 0 <= a < TEST_BOARD_SIZE and 0 <= b < TEST_BOARD_SIZE:
             cell = self.board[a][b]
-            # Клетка свободна или занята движущейся плиткой (которая уходит)
             if cell is None or cell.is_moving:
                 return True
         return False
