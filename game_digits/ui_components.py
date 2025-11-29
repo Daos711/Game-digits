@@ -377,28 +377,9 @@ def draw_result_row(surface, rect, label, value, label_font, value_font):
     bg_color = (168, 212, 242)
     draw_rounded_rect_alpha(surface, bg_color, rect, radius, alpha=150)
 
-    # Draw blue border using pygame.draw.rect for clean edges
+    # Draw blue border as simple rounded rect outline
     border_color = (100, 170, 210)
-
-    # Draw border as unfilled rounded rect
-    # Top edge
-    pygame.draw.line(surface, border_color, (x + radius, y), (x + w - radius - 1, y), 1)
-    # Bottom edge
-    pygame.draw.line(surface, border_color, (x + radius, y + h - 1), (x + w - radius - 1, y + h - 1), 1)
-    # Left edge
-    pygame.draw.line(surface, border_color, (x, y + radius), (x, y + h - radius - 1), 1)
-    # Right edge
-    pygame.draw.line(surface, border_color, (x + w - 1, y + radius), (x + w - 1, y + h - radius - 1), 1)
-
-    # Corners using anti-aliased circles for cleaner look
-    # Top-left
-    pygame.draw.arc(surface, border_color, (x, y, radius * 2, radius * 2), math.pi / 2, math.pi, 1)
-    # Top-right
-    pygame.draw.arc(surface, border_color, (x + w - radius * 2, y, radius * 2, radius * 2), 0, math.pi / 2, 1)
-    # Bottom-left
-    pygame.draw.arc(surface, border_color, (x, y + h - radius * 2, radius * 2, radius * 2), math.pi, 3 * math.pi / 2, 1)
-    # Bottom-right
-    pygame.draw.arc(surface, border_color, (x + w - radius * 2, y + h - radius * 2, radius * 2, radius * 2), 3 * math.pi / 2, 2 * math.pi, 1)
+    pygame.draw.rect(surface, border_color, rect, width=1, border_radius=radius)
 
     # Text color - RGB(40, 92, 120)
     text_color = (40, 92, 120)
