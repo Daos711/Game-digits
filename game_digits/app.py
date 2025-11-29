@@ -671,13 +671,26 @@ class GameApp:
         for other in self.tiles:
             if other != tile and other.is_moving:
                 if tile.rect.colliderect(other.rect):
-                    # Проверяем, не разъезжаются ли плитки
-                    # Если они движутся в противоположных направлениях вдоль одной оси - это не коллизия
                     dir1 = tile.current_direction
                     dir2 = other.current_direction
+
+                    # Если движутся в противоположных направлениях - разъезжаются
                     opposite_pairs = [("up", "down"), ("down", "up"), ("left", "right"), ("right", "left")]
                     if (dir1, dir2) in opposite_pairs:
-                        continue  # Плитки разъезжаются, не коллизия
+                        continue
+
+                    # Если движутся в одном направлении - одна догоняет другую, не коллизия
+                    if dir1 == dir2:
+                        continue
+
+                    # Если движутся перпендикулярно - проверяем кто куда едет
+                    # Если other уезжает из области куда едет tile - не коллизия
+                    tile_target = tile.target_move(dir1, self.game.board)
+                    other_start = other.position  # откуда уехала other
+                    tile_target_pos = pixel_to_grid(tile_target.x, tile_target.y)
+                    if other_start == tile_target_pos:
+                        continue  # other уезжает оттуда куда едет tile
+
                     return other
         return None
 
