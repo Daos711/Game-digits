@@ -377,24 +377,28 @@ def draw_result_row(surface, rect, label, value, label_font, value_font):
     bg_color = (168, 212, 242)
     draw_rounded_rect_alpha(surface, bg_color, rect, radius, alpha=150)
 
-    # Draw blue border - RGB(100, 170, 210) more expressive blue
+    # Draw blue border using pygame.draw.rect for clean edges
     border_color = (100, 170, 210)
-    # Use w-1 for right edge consistency
-    right_x = x + w - 1
-    bottom_y = y + h - 1
+
+    # Draw border as unfilled rounded rect
     # Top edge
-    pygame.draw.line(surface, border_color, (x + radius, y), (right_x - radius, y), 1)
+    pygame.draw.line(surface, border_color, (x + radius, y), (x + w - radius - 1, y), 1)
     # Bottom edge
-    pygame.draw.line(surface, border_color, (x + radius, bottom_y), (right_x - radius, bottom_y), 1)
+    pygame.draw.line(surface, border_color, (x + radius, y + h - 1), (x + w - radius - 1, y + h - 1), 1)
     # Left edge
-    pygame.draw.line(surface, border_color, (x, y + radius), (x, bottom_y - radius), 1)
+    pygame.draw.line(surface, border_color, (x, y + radius), (x, y + h - radius - 1), 1)
     # Right edge
-    pygame.draw.line(surface, border_color, (right_x, y + radius), (right_x, bottom_y - radius), 1)
-    # Corners - adjust right/bottom arcs to align with edges
+    pygame.draw.line(surface, border_color, (x + w - 1, y + radius), (x + w - 1, y + h - radius - 1), 1)
+
+    # Corners using anti-aliased circles for cleaner look
+    # Top-left
     pygame.draw.arc(surface, border_color, (x, y, radius * 2, radius * 2), math.pi / 2, math.pi, 1)
-    pygame.draw.arc(surface, border_color, (right_x - radius * 2 + 1, y, radius * 2, radius * 2), 0, math.pi / 2, 1)
-    pygame.draw.arc(surface, border_color, (x, bottom_y - radius * 2 + 1, radius * 2, radius * 2), math.pi, 3 * math.pi / 2, 1)
-    pygame.draw.arc(surface, border_color, (right_x - radius * 2 + 1, bottom_y - radius * 2 + 1, radius * 2, radius * 2), 3 * math.pi / 2, 2 * math.pi, 1)
+    # Top-right
+    pygame.draw.arc(surface, border_color, (x + w - radius * 2, y, radius * 2, radius * 2), 0, math.pi / 2, 1)
+    # Bottom-left
+    pygame.draw.arc(surface, border_color, (x, y + h - radius * 2, radius * 2, radius * 2), math.pi, 3 * math.pi / 2, 1)
+    # Bottom-right
+    pygame.draw.arc(surface, border_color, (x + w - radius * 2, y + h - radius * 2, radius * 2, radius * 2), 3 * math.pi / 2, 2 * math.pi, 1)
 
     # Text color - RGB(40, 92, 120)
     text_color = (40, 92, 120)

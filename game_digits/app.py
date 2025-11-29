@@ -233,7 +233,15 @@ class GameApp:
             # Create window surface
             window_surface = pygame.Surface((window_width, window_height), pygame.SRCALPHA)
 
-            # Draw checkered FIRST with rounded corners
+            # Draw header FIRST
+            close_btn_rect = ui.draw_result_window_header(
+                window_surface,
+                (0, 0, window_width, header_height),
+                "Результат игры",
+                title_font
+            )
+
+            # Draw checkered ON TOP with rounded corners visible
             ui.draw_checkered_content_area(
                 window_surface,
                 (0, 0, window_width, window_height),
@@ -241,14 +249,6 @@ class GameApp:
                 corner_radius=corner_radius,
                 cell_size=18,
                 border_color=(145, 179, 163)
-            )
-
-            # Draw header ON TOP - fills the gaps from rounded corners
-            close_btn_rect = ui.draw_result_window_header(
-                window_surface,
-                (0, 0, window_width, header_height),
-                "Результат игры",
-                title_font
             )
 
             # Draw result rows
