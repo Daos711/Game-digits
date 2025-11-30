@@ -866,16 +866,20 @@ class GameApp:
 
             # Добавляем плитку когда бар опустел
             if pending_tile_spawn:
-                pending_tile_spawn = False
-                self.game.add_new_tile()
-                self.remove_arrows_on_occupied_cells()
-                empty = any(
-                    self.game.board[i][j] is None
-                    for i in range(BOARD_SIZE)
-                    for j in range(BOARD_SIZE)
-                )
-                if not empty:
-                    self.timer_running = False
+                spawn_result = self.game.add_new_tile()
+                if spawn_result == 'pending':
+                    # Движущиеся плитки блокируют спавн - попробуем позже
+                    pass  # pending_tile_spawn остаётся True
+                else:
+                    pending_tile_spawn = False
+                    self.remove_arrows_on_occupied_cells()
+                    empty = any(
+                        self.game.board[i][j] is None
+                        for i in range(BOARD_SIZE)
+                        for j in range(BOARD_SIZE)
+                    )
+                    if not empty:
+                        self.timer_running = False
 
             for event in pygame.event.get():
                 if event.type == self.TILE_APPEAR_EVENT:
