@@ -800,6 +800,7 @@ class TestGameApp:
             if self.game.prepare_to_end:
                 self.game.prepare_to_end = False
                 prepare_to_show_result = True
+                self.timer_running = False  # Останавливаем прогресс-бар
             elif prepare_to_show_result:
                 prepare_to_show_result = False
                 show_result = True
