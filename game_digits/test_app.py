@@ -530,20 +530,38 @@ class TestGameApp:
             self.score_popups.add(popup)
 
     def draw_arrows_for_tile(self, tile):
+        # Позиции, где визуально находятся движущиеся плитки
+        # НО исключаем стартовую позицию - плитка оттуда уезжает
+        occupied_by_moving = set()
+        cell_size = TILE_SIZE + GAP
+        for t in self.tiles:
+            if t.is_moving:
+                left_col = (t.rect.x - GAP) // cell_size
+                top_row = (t.rect.y - GAP) // cell_size
+                right_col = (t.rect.x + TILE_SIZE - 1 - GAP) // cell_size
+                bottom_row = (t.rect.y + TILE_SIZE - 1 - GAP) // cell_size
+                for row in range(max(0, top_row), min(self.board_size, bottom_row + 1)):
+                    for col in range(max(0, left_col), min(self.board_size, right_col + 1)):
+                        if (row, col) != t.position:
+                            occupied_by_moving.add((row, col))
+
         arrow_grid_positions = []
         for direction in ["up", "down", "left", "right"]:
             if self.game.can_move(tile, direction):
                 arrow_position = self.get_arrow_position(tile.rect.topleft, direction)
-                self.arrows.add(Arrow(direction, arrow_position, self.game, tile))
                 row, col = tile.position
                 if direction == "up":
-                    arrow_grid_positions.append((row - 1, col))
+                    arrow_row, arrow_col = row - 1, col
                 elif direction == "down":
-                    arrow_grid_positions.append((row + 1, col))
+                    arrow_row, arrow_col = row + 1, col
                 elif direction == "left":
-                    arrow_grid_positions.append((row, col - 1))
+                    arrow_row, arrow_col = row, col - 1
                 elif direction == "right":
-                    arrow_grid_positions.append((row, col + 1))
+                    arrow_row, arrow_col = row, col + 1
+                # Не добавляем стрелку если позиция занята движущейся плиткой
+                if (arrow_row, arrow_col) not in occupied_by_moving:
+                    self.arrows.add(Arrow(direction, arrow_position, self.game, tile))
+                    arrow_grid_positions.append((arrow_row, arrow_col))
 
         self.remove_popups_at_positions(arrow_grid_positions)
         self.update_display()
