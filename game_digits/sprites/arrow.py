@@ -1,4 +1,5 @@
 import pygame
+import pygame.gfxdraw
 
 
 class Arrow(pygame.sprite.Sprite):
@@ -18,46 +19,76 @@ class Arrow(pygame.sprite.Sprite):
         if direction in cls.arrow_images:
             return cls.arrow_images[direction].copy()
 
-        # Создаем базовую стрелку (направлена вправо)
-        # Цвета по референсу
-        fill_color = (127, 160, 216)      # #7FA0D8 - приглушённый синий
-        inner_stroke = (144, 149, 156)    # #90959C - тёмно-серая внутренняя обводка
-        outer_glow = (245, 245, 245)      # #F5F5F5 - светлый внешний ореол
+        # Цвета с оригинала (пипеткой)
+        fill_color = (127, 157, 214)       # Основной синий цвет заливки
+        dark_outline = (100, 106, 115)     # Тёмно-серая внутренняя обводка
+        light_outline = (250, 250, 252)    # Светлый внешний кант
 
         image = pygame.Surface((65, 65), pygame.SRCALPHA)
 
-        # Тонкая аккуратная стрелка (хвост уже, кончик острее)
-        # Стрелка направлена вправо, центрирована в 65x65
-        # Хвост: узкий прямоугольник, наконечник: острый треугольник
-        tail_top = 28
-        tail_bottom = 37
-        tail_left = 12
-        tail_right = 38
-        tip_x = 54
-        tip_y = 32  # центр по вертикали
-        wing_top = 22
-        wing_bottom = 43
+        # Изящная тонкая стрелка (как в оригинале)
+        # Центр по вертикали = 32
+        center_y = 32
 
-        # Точки стрелки (по часовой стрелке)
+        # Хвост: узкий (высота ~7px)
+        tail_half_height = 3
+        tail_left = 14
+        tail_right = 36
+
+        # Крылья: выступают больше хвоста
+        wing_half_height = 9
+
+        # Острие
+        tip_x = 52
+
+        # Точки основной стрелки
         points = [
-            (tail_left, tail_top),      # верхний левый угол хвоста
-            (tail_right, tail_top),     # верхний правый угол хвоста
-            (tail_right, wing_top),     # верхнее крыло
-            (tip_x, tip_y),             # острие
-            (tail_right, wing_bottom),  # нижнее крыло
-            (tail_right, tail_bottom),  # нижний правый угол хвоста
-            (tail_left, tail_bottom),   # нижний левый угол хвоста
+            (tail_left, center_y - tail_half_height),   # верх хвоста слева
+            (tail_right, center_y - tail_half_height),  # верх хвоста справа
+            (tail_right, center_y - wing_half_height),  # верхнее крыло
+            (tip_x, center_y),                          # острие
+            (tail_right, center_y + wing_half_height),  # нижнее крыло
+            (tail_right, center_y + tail_half_height),  # низ хвоста справа
+            (tail_left, center_y + tail_half_height),   # низ хвоста слева
         ]
 
-        # Внешний ореол (рисуем сначала, он будет под основной стрелкой)
-        pygame.draw.polygon(image, outer_glow, points)
-        pygame.draw.lines(image, outer_glow, True, points, 4)
+        # Функция для смещения точек (для обводок)
+        def offset_points(pts, offset):
+            """Смещает точки наружу для создания обводки."""
+            result = []
+            for i, (x, y) in enumerate(pts):
+                # Вычисляем направление смещения
+                if x == tail_left:
+                    # Левый край - смещаем влево
+                    new_x = x - offset
+                elif x == tip_x:
+                    # Острие - смещаем вправо
+                    new_x = x + offset
+                else:
+                    new_x = x
 
-        # Основная заливка стрелки
-        pygame.draw.polygon(image, fill_color, points)
+                if y < center_y:
+                    new_y = y - offset
+                elif y > center_y:
+                    new_y = y + offset
+                else:
+                    new_y = y
+                result.append((new_x, new_y))
+            return result
 
-        # Внутренняя тёмная обводка (1px)
-        pygame.draw.lines(image, inner_stroke, True, points, 1)
+        # 1. Внешний светлый кант (самый большой контур)
+        outer_points = offset_points(points, 2)
+        pygame.gfxdraw.filled_polygon(image, outer_points, light_outline)
+        pygame.gfxdraw.aapolygon(image, outer_points, light_outline)
+
+        # 2. Тёмная обводка (средний контур)
+        mid_points = offset_points(points, 1)
+        pygame.gfxdraw.filled_polygon(image, mid_points, dark_outline)
+        pygame.gfxdraw.aapolygon(image, mid_points, dark_outline)
+
+        # 3. Основная синяя заливка (внутренний контур)
+        pygame.gfxdraw.filled_polygon(image, points, fill_color)
+        pygame.gfxdraw.aapolygon(image, points, fill_color)
 
         # Вращаем изображение в зависимости от направления
         if direction == "up":
