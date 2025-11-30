@@ -35,7 +35,6 @@ class TestGameApp:
 
         pygame.init()
         pygame.font.init()
-        self.font = pygame.font.Font(None, 36)
 
         bold_cyrillic = get_font_path("2204.ttf")
         self.font_bold_large = pygame.font.Font(bold_cyrillic, 26)

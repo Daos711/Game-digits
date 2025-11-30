@@ -23,7 +23,6 @@ class GameApp:
         self.COLORS = COLORS
         pygame.init()
         pygame.font.init()
-        self.font = pygame.font.Font(None, 36)
         # Жирные шрифты для UI панели
         # OpenSans-Bold для кириллицы (Время, Очки, пауза)
         bold_cyrillic = get_font_path("2204.ttf")
