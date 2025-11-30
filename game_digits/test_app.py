@@ -576,6 +576,7 @@ class TestGameApp:
     def remove_arrows_on_occupied_cells(self):
         """Удаляет стрелки, находящиеся на занятых ячейках."""
         # Позиции, где сейчас визуально находятся движущиеся плитки (1-2 ячейки)
+        # Исключаем стартовые позиции - плитки оттуда уезжают
         occupied_by_moving = set()
         cell_size = TILE_SIZE + GAP
         for tile in self.tiles:
@@ -586,15 +587,20 @@ class TestGameApp:
                 bottom_row = (tile.rect.y + TILE_SIZE - 1 - GAP) // cell_size
                 for row in range(max(0, top_row), min(self.board_size, bottom_row + 1)):
                     for col in range(max(0, left_col), min(self.board_size, right_col + 1)):
-                        occupied_by_moving.add((row, col))
+                        # Исключаем стартовую позицию - плитка оттуда уезжает
+                        if (row, col) != tile.position:
+                            occupied_by_moving.add((row, col))
         for arrow in list(self.arrows):
             # Вычисляем grid позицию стрелки
             arrow_row, arrow_col = pixel_to_grid(arrow.rect.x, arrow.rect.y)
-            # Если ячейка занята (статичной плиткой или движущейся) - удаляем стрелку
-            if (0 <= arrow_row < self.board_size and 0 <= arrow_col < self.board_size
-                    and (self.game.board[arrow_row][arrow_col] is not None
-                         or (arrow_row, arrow_col) in occupied_by_moving)):
-                arrow.kill()
+            if 0 <= arrow_row < self.board_size and 0 <= arrow_col < self.board_size:
+                cell = self.game.board[arrow_row][arrow_col]
+                # Удаляем стрелку если:
+                # 1. Ячейка занята статичной плиткой (не движущейся)
+                # 2. Или ячейка физически занята движущейся плиткой (кроме стартовой позиции)
+                is_static_tile = cell is not None and not cell.is_moving
+                if is_static_tile or (arrow_row, arrow_col) in occupied_by_moving:
+                    arrow.kill()
 
     def get_arrow_position(self, tile_position, direction):
         x, y = tile_position
