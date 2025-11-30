@@ -711,11 +711,13 @@ class TestGameApp:
         dx = target_rect.topleft[0] - tile.rect.topleft[0]
         dy = target_rect.topleft[1] - tile.rect.topleft[1]
 
-        if dx == 0:
-            step_y = self.speed * (1 if dy > 0 else -1)
+        if dx == 0 and dy != 0:
+            # Ограничиваем шаг чтобы не перескочить цель
+            step_y = min(self.speed, abs(dy)) * (1 if dy > 0 else -1)
             tile.rect.y += step_y
-        elif dy == 0:
-            step_x = self.speed * (1 if dx > 0 else -1)
+        elif dy == 0 and dx != 0:
+            # Ограничиваем шаг чтобы не перескочить цель
+            step_x = min(self.speed, abs(dx)) * (1 if dx > 0 else -1)
             tile.rect.x += step_x
 
         if hasattr(tile, 'last_grid_pos'):
