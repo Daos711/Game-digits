@@ -148,6 +148,9 @@ class GameApp:
                 if self.bar_phase == 'emptying':
                     # Бар уменьшается от 1 до 0
                     progress = max(0, 1 - elapsed / self.bar_empty_duration)
+                elif self.bar_phase == 'waiting_spawn':
+                    # Бар на нуле, ждём спавна
+                    progress = 0
                 else:  # filling
                     # Бар увеличивается от 0 до 1
                     progress = min(1, elapsed / self.bar_fill_duration)
@@ -509,6 +512,8 @@ class GameApp:
                 elapsed = pygame.time.get_ticks() - self.bar_phase_start
                 if self.bar_phase == 'emptying':
                     self.paused_progress = max(0, 1 - elapsed / self.bar_empty_duration)
+                elif self.bar_phase == 'waiting_spawn':
+                    self.paused_progress = 0
                 else:  # filling
                     self.paused_progress = min(1, elapsed / self.bar_fill_duration)
             # Останавливаем таймер обратного отсчёта
@@ -820,10 +825,12 @@ class GameApp:
                     # Проверяем: бар опустел?
                     if elapsed >= self.bar_empty_duration:
                         pending_tile_spawn = True
-                        # Переходим к фазе заполнения
-                        self.bar_phase = 'filling'
-                        self.bar_phase_start = pygame.time.get_ticks()
-                else:  # filling
+                        # Ждём спавна - бар остаётся на 0
+                        self.bar_phase = 'waiting_spawn'
+                elif self.bar_phase == 'waiting_spawn':
+                    # Бар ждёт на 0 пока спавн не произойдёт
+                    pass
+                elif self.bar_phase == 'filling':
                     # Проверяем: бар заполнился?
                     if elapsed >= self.bar_fill_duration:
                         # Переходим к фазе опустошения
@@ -868,10 +875,13 @@ class GameApp:
             if pending_tile_spawn:
                 spawn_result = self.game.add_new_tile()
                 if spawn_result == 'pending':
-                    # Движущиеся плитки блокируют спавн - попробуем позже
-                    pass  # pending_tile_spawn остаётся True
+                    # Движущиеся плитки блокируют спавн - ждём
+                    pass  # pending_tile_spawn остаётся True, бар на 0
                 else:
                     pending_tile_spawn = False
+                    # Спавн произошёл - запускаем фазу заполнения бара
+                    self.bar_phase = 'filling'
+                    self.bar_phase_start = pygame.time.get_ticks()
                     self.remove_arrows_on_occupied_cells()
                     empty = any(
                         self.game.board[i][j] is None
