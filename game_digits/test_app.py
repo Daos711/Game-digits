@@ -68,6 +68,11 @@ class TestGameApp:
 
         # No auto-add tiles in test mode
         self.timer_running = False
+        # Двухфазный таймер: опустошение + заполнение (для тестирования прогресс-бара)
+        self.bar_empty_duration = 9800   # 9.8 секунд - бар пустеет
+        self.bar_fill_duration = 500     # 0.5 секунд - бар заполняется
+        self.bar_phase = 'emptying'      # 'emptying' или 'filling'
+        self.bar_phase_start = 0         # Время начала текущей фазы
 
         self.COUNTDOWN_EVENT = self.game.COUNTDOWN_EVENT
         self.TILE_APPEAR_EVENT = self.game.TILE_APPEAR_EVENT
@@ -137,7 +142,31 @@ class TestGameApp:
             self.font_bold_value
         )
         ui.draw_clock_icon(self.screen, (icon_x + icon_size // 2, current_y + icon_size // 2), icon_size)
-        current_y += icon_size + 25
+        current_y += icon_size + 15
+
+        # === Прогресс-бар ===
+        progress_height = 22
+        progress_x = panel_x + padding
+        progress_width = self.panel_width - padding * 2
+
+        if self.timer_running:
+            if self.is_paused:
+                progress = self.paused_progress
+            else:
+                elapsed = pygame.time.get_ticks() - self.bar_phase_start
+                if self.bar_phase == 'emptying':
+                    progress = max(0, 1 - elapsed / self.bar_empty_duration)
+                else:  # filling
+                    progress = min(1, elapsed / self.bar_fill_duration)
+        else:
+            progress = self.paused_progress
+
+        ui.draw_progress_bar(
+            self.screen,
+            (progress_x, current_y, progress_width, progress_height),
+            progress
+        )
+        current_y += progress_height + 25
 
         # Score label
         score_label = self.font_bold_large.render("Очки", True, (255, 255, 255))
@@ -512,6 +541,11 @@ class TestGameApp:
                 self.spawn_score_animation(positions)
                 self.update_display()
                 self.game.selected_tile = None
+                # Запускаем таймер при первом удалении пары
+                if not self.timer_running:
+                    self.timer_running = True
+                    self.bar_phase = 'emptying'
+                    self.bar_phase_start = pygame.time.get_ticks()
                 return
 
         self.arrows.empty()
@@ -800,6 +834,14 @@ class TestGameApp:
             if self.game.prepare_to_end:
                 self.game.prepare_to_end = False
                 prepare_to_show_result = True
+                # Сохраняем текущий прогресс перед остановкой
+                if self.timer_running:
+                    elapsed = pygame.time.get_ticks() - self.bar_phase_start
+                    if self.bar_phase == 'emptying':
+                        self.paused_progress = max(0, 1 - elapsed / self.bar_empty_duration)
+                    else:  # filling
+                        self.paused_progress = min(1, elapsed / self.bar_fill_duration)
+                self.timer_running = False  # Останавливаем прогресс-бар
             elif prepare_to_show_result:
                 prepare_to_show_result = False
                 show_result = True

@@ -154,7 +154,8 @@ class GameApp:
                     # Бар увеличивается от 0 до 1
                     progress = min(1, elapsed / self.bar_fill_duration)
         else:
-            progress = 1.0
+            # Таймер не запущен - используем сохранённый прогресс (или 1.0 в начале игры)
+            progress = self.paused_progress
 
         ui.draw_progress_bar(
             self.screen,
@@ -933,6 +934,16 @@ class GameApp:
             if self.game.prepare_to_end:
                 self.game.prepare_to_end = False
                 prepare_to_show_result = True
+                # Сохраняем текущий прогресс перед остановкой
+                if self.timer_running:
+                    elapsed = pygame.time.get_ticks() - self.bar_phase_start
+                    if self.bar_phase == 'emptying':
+                        self.paused_progress = max(0, 1 - elapsed / self.bar_empty_duration)
+                    elif self.bar_phase == 'waiting_spawn':
+                        self.paused_progress = 0
+                    else:  # filling
+                        self.paused_progress = min(1, elapsed / self.bar_fill_duration)
+                self.timer_running = False  # Останавливаем прогресс-бар
             elif prepare_to_show_result:
                 prepare_to_show_result = False
                 show_result = True
