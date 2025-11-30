@@ -530,8 +530,19 @@ class TestGameApp:
             self.score_popups.add(popup)
 
     def draw_arrows_for_tile(self, tile):
-        # Стрелки появляются везде кроме статичных плиток
-        # Если движущаяся плитка наедет на стрелку - remove_arrows_on_occupied_cells() её уберёт
+        # Вычисляем ячейки где ФИЗИЧЕСКИ находятся движущиеся плитки (1-2 ячейки)
+        occupied_by_moving = set()
+        cell_size = TILE_SIZE + GAP
+        for t in self.tiles:
+            if t.is_moving:
+                left_col = (t.rect.x - GAP) // cell_size
+                top_row = (t.rect.y - GAP) // cell_size
+                right_col = (t.rect.x + TILE_SIZE - 1 - GAP) // cell_size
+                bottom_row = (t.rect.y + TILE_SIZE - 1 - GAP) // cell_size
+                for row in range(max(0, top_row), min(self.board_size, bottom_row + 1)):
+                    for col in range(max(0, left_col), min(self.board_size, right_col + 1)):
+                        occupied_by_moving.add((row, col))
+
         arrow_grid_positions = []
         for direction in ["up", "down", "left", "right"]:
             if self.game.can_move(tile, direction):
@@ -545,8 +556,10 @@ class TestGameApp:
                     arrow_row, arrow_col = row, col - 1
                 elif direction == "right":
                     arrow_row, arrow_col = row, col + 1
-                self.arrows.add(Arrow(direction, arrow_position, self.game, tile))
-                arrow_grid_positions.append((arrow_row, arrow_col))
+                # Стрелка не появляется где физически находится движущаяся плитка
+                if (arrow_row, arrow_col) not in occupied_by_moving:
+                    self.arrows.add(Arrow(direction, arrow_position, self.game, tile))
+                    arrow_grid_positions.append((arrow_row, arrow_col))
 
         self.remove_popups_at_positions(arrow_grid_positions)
         self.update_display()
