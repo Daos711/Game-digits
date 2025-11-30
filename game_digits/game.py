@@ -124,10 +124,17 @@ class Game:
         return None
 
     def add_new_tile(self):
+        """
+        Добавляет новую плитку на свободную позицию.
+        Возвращает True если плитка успешно добавлена, False если нет свободных позиций.
+        """
         # Собираем все занятые позиции для спавна
         occupied_positions = set()
+        has_moving_tiles = False
+
         for tile in self.tiles:
             if tile.is_moving:
+                has_moving_tiles = True
                 # Движущаяся плитка может занимать 1-2 ячейки
                 # Вычисляем какие ячейки пересекает rect плитки
                 cell_size = TILE_SIZE + GAP
@@ -149,6 +156,7 @@ class Game:
             (i, j) for i in range(BOARD_SIZE) for j in range(BOARD_SIZE)
             if self.board[i][j] is None and (i, j) not in occupied_positions
         ]
+
         if empty_positions:
             position = random.choice(empty_positions)
             existing_numbers = set(tile.number for tile in self.tiles)
@@ -163,6 +171,11 @@ class Game:
                 new_tile = Tile(number, position, color)
                 self.tiles.add(new_tile)
                 self.board[position[0]][position[1]] = new_tile
+                return True
+
+        # Не удалось заспавнить - возвращаем информацию есть ли движущиеся плитки
+        # (если есть, можно попробовать позже когда они остановятся)
+        return False if not has_moving_tiles else 'pending'
 
     def start_timer(self):
         if not self.timer_started:
