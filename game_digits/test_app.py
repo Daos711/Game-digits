@@ -589,6 +589,58 @@ class TestGameApp:
         elif direction == "right":
             return (x + self.tile_size + self.gap, y)
 
+    def check_collision(self, tile):
+        """Проверяет столкновение с другими движущимися плитками."""
+        for other in self.tiles:
+            if other != tile and other.is_moving:
+                if tile.rect.colliderect(other.rect):
+                    dir1 = tile.current_direction
+                    dir2 = other.current_direction
+
+                    # Проверяем противоположные направления
+                    horizontal_opposite = (dir1, dir2) in [("left", "right"), ("right", "left")]
+                    vertical_opposite = (dir1, dir2) in [("up", "down"), ("down", "up")]
+
+                    # Порог для определения "одной линии" - половина размера ячейки
+                    threshold = (TILE_SIZE + GAP) // 2
+
+                    if horizontal_opposite:
+                        # Проверяем по Y: на одной строке или параллельно?
+                        if abs(tile.rect.y - other.rect.y) <= threshold:
+                            # Лоб в лоб на одной строке - столкновение!
+                            return other
+                        else:
+                            # Параллельные пути - пропускаем
+                            continue
+
+                    if vertical_opposite:
+                        # Проверяем по X: на одном столбце или параллельно?
+                        if abs(tile.rect.x - other.rect.x) <= threshold:
+                            # Лоб в лоб на одном столбце - столкновение!
+                            return other
+                        else:
+                            # Параллельные пути - пропускаем
+                            continue
+
+                    # Если движутся в одном направлении - одна догоняет другую, не коллизия
+                    if dir1 == dir2:
+                        continue
+
+                    # Если движутся перпендикулярно - проверяем кто куда едет
+                    tile_target = tile.target_move(dir1, self.game.board)
+                    other_start = other.position
+                    tile_target_pos = pixel_to_grid(tile_target.x, tile_target.y)
+                    if other_start == tile_target_pos:
+                        continue
+
+                    return other
+        return None
+
+    def resolve_collision(self, tile1, tile2):
+        """Останавливает обе плитки при столкновении."""
+        self.snap_to_grid(tile1)
+        self.snap_to_grid(tile2)
+
     def snap_to_grid(self, tile):
         grid_row, grid_col = pixel_to_grid_round(tile.rect.topleft[0], tile.rect.topleft[1])
         grid_col = max(0, min(self.board_size - 1, grid_col))
@@ -657,6 +709,11 @@ class TestGameApp:
                 tile.move_animation_group.add(popup)
                 self.score_popups.add(popup)
                 tile.last_grid_pos = current_pos
+
+        # Проверяем коллизию с другими движущимися плитками
+        collided = self.check_collision(tile)
+        if collided:
+            self.resolve_collision(tile, collided)
 
         # Удаляем стрелки на ячейках где сейчас находится движущаяся плитка
         self.remove_arrows_on_occupied_cells()

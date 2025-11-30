@@ -683,11 +683,12 @@ class GameApp:
                     horizontal_opposite = (dir1, dir2) in [("left", "right"), ("right", "left")]
                     vertical_opposite = (dir1, dir2) in [("up", "down"), ("down", "up")]
 
+                    # Порог для определения "одной линии" - половина размера ячейки
+                    threshold = (TILE_SIZE + GAP) // 2
+
                     if horizontal_opposite:
-                        # Проверяем: на одной строке (лоб в лоб) или параллельно?
-                        tile_row = pixel_to_grid(tile.rect.x, tile.rect.y)[0]
-                        other_row = pixel_to_grid(other.rect.x, other.rect.y)[0]
-                        if tile_row == other_row:
+                        # Проверяем по Y: на одной строке или параллельно?
+                        if abs(tile.rect.y - other.rect.y) <= threshold:
                             # Лоб в лоб на одной строке - столкновение!
                             return other
                         else:
@@ -695,10 +696,8 @@ class GameApp:
                             continue
 
                     if vertical_opposite:
-                        # Проверяем: на одном столбце (лоб в лоб) или параллельно?
-                        tile_col = pixel_to_grid(tile.rect.x, tile.rect.y)[1]
-                        other_col = pixel_to_grid(other.rect.x, other.rect.y)[1]
-                        if tile_col == other_col:
+                        # Проверяем по X: на одном столбце или параллельно?
+                        if abs(tile.rect.x - other.rect.x) <= threshold:
                             # Лоб в лоб на одном столбце - столкновение!
                             return other
                         else:
