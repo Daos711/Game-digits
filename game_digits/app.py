@@ -15,7 +15,7 @@ class GameApp:
     def __init__(self):
         self.WIDTH, self.HEIGHT = 953, 713
         self.frame = 10
-        self.speed = 1
+        self.speed = 10  # ~5 ячеек за 13 кадров при 24fps, пересчитано на 60fps
         self.window = self.HEIGHT - 20
         self.panel_width, self.panel_height = 240, self.HEIGHT
         self.tile_size, self.gap = TILE_SIZE, GAP
@@ -598,39 +598,33 @@ class GameApp:
         # Исключаем стартовую позицию - плитка оттуда уезжает
         occupied_by_moving = set()
         cell_size = TILE_SIZE + GAP
-        moving_tiles_info = []  # DEBUG
         for t in self.tiles:
             if t.is_moving:
                 left_col = (t.rect.x - GAP) // cell_size
                 top_row = (t.rect.y - GAP) // cell_size
                 right_col = (t.rect.x + TILE_SIZE - 1 - GAP) // cell_size
                 bottom_row = (t.rect.y + TILE_SIZE - 1 - GAP) // cell_size
-                moving_tiles_info.append(f"tile{t.number} pos={t.position} rect_cells=({top_row}-{bottom_row}, {left_col}-{right_col})")  # DEBUG
                 for row in range(max(0, top_row), min(BOARD_SIZE, bottom_row + 1)):
                     for col in range(max(0, left_col), min(BOARD_SIZE, right_col + 1)):
                         # Исключаем стартовую позицию - плитка оттуда уезжает
                         if (row, col) != t.position:
                             occupied_by_moving.add((row, col))
-        print(f"DEBUG draw_arrows: tile={tile.number} pos={tile.position}, moving={moving_tiles_info}, occupied={occupied_by_moving}")  # DEBUG
 
         arrow_grid_positions = []
         for direction in ["up", "down", "left", "right"]:
-            can = self.game.can_move(tile, direction)
-            row, col = tile.position
-            if direction == "up":
-                arrow_row, arrow_col = row - 1, col
-            elif direction == "down":
-                arrow_row, arrow_col = row + 1, col
-            elif direction == "left":
-                arrow_row, arrow_col = row, col - 1
-            elif direction == "right":
-                arrow_row, arrow_col = row, col + 1
-            in_occupied = (arrow_row, arrow_col) in occupied_by_moving
-            print(f"  {direction}: can_move={can}, arrow_pos=({arrow_row},{arrow_col}), in_occupied={in_occupied}")  # DEBUG
-            if can:
+            if self.game.can_move(tile, direction):
                 arrow_position = self.get_arrow_position(tile.rect.topleft, direction)
+                row, col = tile.position
+                if direction == "up":
+                    arrow_row, arrow_col = row - 1, col
+                elif direction == "down":
+                    arrow_row, arrow_col = row + 1, col
+                elif direction == "left":
+                    arrow_row, arrow_col = row, col - 1
+                elif direction == "right":
+                    arrow_row, arrow_col = row, col + 1
                 # Стрелка не появляется где физически находится движущаяся плитка
-                if not in_occupied:
+                if (arrow_row, arrow_col) not in occupied_by_moving:
                     self.arrows.add(Arrow(direction, arrow_position, self.game, tile))
                     arrow_grid_positions.append((arrow_row, arrow_col))
         # Удаляем popup-ы которые перекрываются стрелками

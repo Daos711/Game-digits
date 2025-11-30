@@ -28,7 +28,7 @@ class TestGameApp:
         self.WIDTH = self.window + 2 * self.frame + self.panel_width
         self.HEIGHT = self.window + 2 * self.frame
 
-        self.speed = 1
+        self.speed = 10  # ~5 ячеек за 13 кадров при 24fps, пересчитано на 60fps
         self.tile_size, self.gap = TILE_SIZE, GAP
         self.offset = (23, 23)
         self.COLORS = COLORS
