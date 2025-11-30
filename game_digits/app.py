@@ -595,6 +595,7 @@ class GameApp:
 
     def draw_arrows_for_tile(self, tile):
         # Вычисляем ячейки где ФИЗИЧЕСКИ находятся движущиеся плитки (1-2 ячейки)
+        # Исключаем стартовую позицию - плитка оттуда уезжает
         occupied_by_moving = set()
         cell_size = TILE_SIZE + GAP
         for t in self.tiles:
@@ -605,7 +606,9 @@ class GameApp:
                 bottom_row = (t.rect.y + TILE_SIZE - 1 - GAP) // cell_size
                 for row in range(max(0, top_row), min(BOARD_SIZE, bottom_row + 1)):
                     for col in range(max(0, left_col), min(BOARD_SIZE, right_col + 1)):
-                        occupied_by_moving.add((row, col))
+                        # Исключаем стартовую позицию - плитка оттуда уезжает
+                        if (row, col) != t.position:
+                            occupied_by_moving.add((row, col))
 
         arrow_grid_positions = []
         for direction in ["up", "down", "left", "right"]:
