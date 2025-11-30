@@ -1,7 +1,7 @@
 import random
 import pygame
 
-from game_digits.constants import COLORS, BOARD_SIZE, pixel_to_grid, TILE_SIZE, GAP
+from game_digits.constants import COLORS, BOARD_SIZE, TILE_SIZE, GAP
 from game_digits.sprites import Tile
 from game_digits.patterns import get_random_pattern
 
@@ -59,15 +59,6 @@ class Game:
         self.board[row][col] = tile
         self.tiles.add(tile)
         return tile
-
-    def initialize_tiles(self):
-        """Legacy method - now tiles appear via animation."""
-        for i in range(BOARD_SIZE):
-            for j in range(BOARD_SIZE):
-                number = random.randint(1, 9)
-                tile = Tile(number, (i, j), COLORS[number])
-                self.board[i][j] = tile
-                self.tiles.add(tile)
 
     def select_tile(self, tile):
         if self.selected_tile:

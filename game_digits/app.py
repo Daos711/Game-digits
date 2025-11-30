@@ -15,7 +15,7 @@ class GameApp:
     def __init__(self):
         self.WIDTH, self.HEIGHT = 953, 713
         self.frame = 10
-        self.speed = 1
+        self.speed = 2
         self.window = self.HEIGHT - 20
         self.panel_width, self.panel_height = 240, self.HEIGHT
         self.tile_size, self.gap = TILE_SIZE, GAP
@@ -23,7 +23,6 @@ class GameApp:
         self.COLORS = COLORS
         pygame.init()
         pygame.font.init()
-        self.font = pygame.font.Font(None, 36)
         # Жирные шрифты для UI панели
         # OpenSans-Bold для кириллицы (Время, Очки, пауза)
         bold_cyrillic = get_font_path("2204.ttf")
@@ -595,24 +594,26 @@ class GameApp:
             self.score_popups.add(popup)
 
     def draw_arrows_for_tile(self, tile):
-        # Позиции, где сейчас визуально находятся движущиеся плитки (1-2 ячейки)
+        # Вычисляем ячейки где ФИЗИЧЕСКИ находятся движущиеся плитки (1-2 ячейки)
+        # Исключаем стартовую позицию - плитка оттуда уезжает
         occupied_by_moving = set()
         cell_size = TILE_SIZE + GAP
         for t in self.tiles:
             if t.is_moving:
-                # Вычисляем все ячейки которые пересекает rect плитки
                 left_col = (t.rect.x - GAP) // cell_size
                 top_row = (t.rect.y - GAP) // cell_size
                 right_col = (t.rect.x + TILE_SIZE - 1 - GAP) // cell_size
                 bottom_row = (t.rect.y + TILE_SIZE - 1 - GAP) // cell_size
                 for row in range(max(0, top_row), min(BOARD_SIZE, bottom_row + 1)):
                     for col in range(max(0, left_col), min(BOARD_SIZE, right_col + 1)):
-                        occupied_by_moving.add((row, col))
+                        # Исключаем стартовую позицию - плитка оттуда уезжает
+                        if (row, col) != t.position:
+                            occupied_by_moving.add((row, col))
+
         arrow_grid_positions = []
         for direction in ["up", "down", "left", "right"]:
             if self.game.can_move(tile, direction):
                 arrow_position = self.get_arrow_position(tile.rect.topleft, direction)
-                # Вычисляем grid позицию стрелки
                 row, col = tile.position
                 if direction == "up":
                     arrow_row, arrow_col = row - 1, col
@@ -622,7 +623,7 @@ class GameApp:
                     arrow_row, arrow_col = row, col - 1
                 elif direction == "right":
                     arrow_row, arrow_col = row, col + 1
-                # Не добавляем стрелку если позиция занята движущейся плиткой
+                # Стрелка не появляется где физически находится движущаяся плитка
                 if (arrow_row, arrow_col) not in occupied_by_moving:
                     self.arrows.add(Arrow(direction, arrow_position, self.game, tile))
                     arrow_grid_positions.append((arrow_row, arrow_col))
@@ -640,6 +641,7 @@ class GameApp:
     def remove_arrows_on_occupied_cells(self):
         """Удаляет стрелки, находящиеся на занятых ячейках."""
         # Позиции, где сейчас визуально находятся движущиеся плитки (1-2 ячейки)
+        # Исключаем стартовые позиции - плитки оттуда уезжают
         occupied_by_moving = set()
         cell_size = TILE_SIZE + GAP
         for tile in self.tiles:
@@ -650,15 +652,20 @@ class GameApp:
                 bottom_row = (tile.rect.y + TILE_SIZE - 1 - GAP) // cell_size
                 for row in range(max(0, top_row), min(BOARD_SIZE, bottom_row + 1)):
                     for col in range(max(0, left_col), min(BOARD_SIZE, right_col + 1)):
-                        occupied_by_moving.add((row, col))
+                        # Исключаем стартовую позицию - плитка оттуда уезжает
+                        if (row, col) != tile.position:
+                            occupied_by_moving.add((row, col))
         for arrow in list(self.arrows):
             # Вычисляем grid позицию стрелки
             arrow_row, arrow_col = pixel_to_grid(arrow.rect.x, arrow.rect.y)
-            # Если ячейка занята (статичной плиткой или движущейся) - удаляем стрелку
-            if (0 <= arrow_row < BOARD_SIZE and 0 <= arrow_col < BOARD_SIZE
-                    and (self.game.board[arrow_row][arrow_col] is not None
-                         or (arrow_row, arrow_col) in occupied_by_moving)):
-                arrow.kill()
+            if 0 <= arrow_row < BOARD_SIZE and 0 <= arrow_col < BOARD_SIZE:
+                cell = self.game.board[arrow_row][arrow_col]
+                # Удаляем стрелку если:
+                # 1. Ячейка занята статичной плиткой (не движущейся)
+                # 2. Или ячейка физически занята движущейся плиткой (кроме стартовой позиции)
+                is_static_tile = cell is not None and not cell.is_moving
+                if is_static_tile or (arrow_row, arrow_col) in occupied_by_moving:
+                    arrow.kill()
 
     def get_arrow_position(self, tile_position, direction):
         x, y = tile_position
@@ -723,11 +730,13 @@ class GameApp:
         target_rect = tile.target_move(direction, self.game.board)
         dx = target_rect.topleft[0] - tile.rect.topleft[0]
         dy = target_rect.topleft[1] - tile.rect.topleft[1]
-        if dx == 0:
-            step_y = self.speed * (1 if dy > 0 else -1)
+        if dx == 0 and dy != 0:
+            # Ограничиваем шаг чтобы не перескочить цель
+            step_y = min(self.speed, abs(dy)) * (1 if dy > 0 else -1)
             tile.rect.y += step_y
-        elif dy == 0:
-            step_x = self.speed * (1 if dx > 0 else -1)
+        elif dy == 0 and dx != 0:
+            # Ограничиваем шаг чтобы не перескочить цель
+            step_x = min(self.speed, abs(dx)) * (1 if dx > 0 else -1)
             tile.rect.x += step_x
 
         # Проверяем, покинула ли плитка ячейку (для анимации -N)
