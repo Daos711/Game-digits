@@ -18,11 +18,46 @@ class Arrow(pygame.sprite.Sprite):
         if direction in cls.arrow_images:
             return cls.arrow_images[direction].copy()
 
-        # Создаем базовую стрелку
+        # Создаем базовую стрелку (направлена вправо)
+        # Цвета по референсу
+        fill_color = (127, 160, 216)      # #7FA0D8 - приглушённый синий
+        inner_stroke = (144, 149, 156)    # #90959C - тёмно-серая внутренняя обводка
+        outer_glow = (245, 245, 245)      # #F5F5F5 - светлый внешний ореол
+
         image = pygame.Surface((65, 65), pygame.SRCALPHA)
-        points = [(20, 40), (40, 40), (40, 45), (49, 32), (40, 19), (40, 24), (20, 24)]
-        pygame.draw.polygon(image, (101, 151, 237), points)
-        pygame.draw.lines(image, (220, 220, 220), True, points, 3)
+
+        # Тонкая аккуратная стрелка (хвост уже, кончик острее)
+        # Стрелка направлена вправо, центрирована в 65x65
+        # Хвост: узкий прямоугольник, наконечник: острый треугольник
+        tail_top = 28
+        tail_bottom = 37
+        tail_left = 12
+        tail_right = 38
+        tip_x = 54
+        tip_y = 32  # центр по вертикали
+        wing_top = 22
+        wing_bottom = 43
+
+        # Точки стрелки (по часовой стрелке)
+        points = [
+            (tail_left, tail_top),      # верхний левый угол хвоста
+            (tail_right, tail_top),     # верхний правый угол хвоста
+            (tail_right, wing_top),     # верхнее крыло
+            (tip_x, tip_y),             # острие
+            (tail_right, wing_bottom),  # нижнее крыло
+            (tail_right, tail_bottom),  # нижний правый угол хвоста
+            (tail_left, tail_bottom),   # нижний левый угол хвоста
+        ]
+
+        # Внешний ореол (рисуем сначала, он будет под основной стрелкой)
+        pygame.draw.polygon(image, outer_glow, points)
+        pygame.draw.lines(image, outer_glow, True, points, 4)
+
+        # Основная заливка стрелки
+        pygame.draw.polygon(image, fill_color, points)
+
+        # Внутренняя тёмная обводка (1px)
+        pygame.draw.lines(image, inner_stroke, True, points, 1)
 
         # Вращаем изображение в зависимости от направления
         if direction == "up":
