@@ -679,10 +679,31 @@ class GameApp:
                     dir1 = tile.current_direction
                     dir2 = other.current_direction
 
-                    # Если движутся в противоположных направлениях - разъезжаются
-                    opposite_pairs = [("up", "down"), ("down", "up"), ("left", "right"), ("right", "left")]
-                    if (dir1, dir2) in opposite_pairs:
-                        continue
+                    # Проверяем противоположные направления
+                    horizontal_opposite = (dir1, dir2) in [("left", "right"), ("right", "left")]
+                    vertical_opposite = (dir1, dir2) in [("up", "down"), ("down", "up")]
+
+                    if horizontal_opposite:
+                        # Проверяем: на одной строке (лоб в лоб) или параллельно?
+                        tile_row = pixel_to_grid(tile.rect.x, tile.rect.y)[0]
+                        other_row = pixel_to_grid(other.rect.x, other.rect.y)[0]
+                        if tile_row == other_row:
+                            # Лоб в лоб на одной строке - столкновение!
+                            return other
+                        else:
+                            # Параллельные пути - пропускаем
+                            continue
+
+                    if vertical_opposite:
+                        # Проверяем: на одном столбце (лоб в лоб) или параллельно?
+                        tile_col = pixel_to_grid(tile.rect.x, tile.rect.y)[1]
+                        other_col = pixel_to_grid(other.rect.x, other.rect.y)[1]
+                        if tile_col == other_col:
+                            # Лоб в лоб на одном столбце - столкновение!
+                            return other
+                        else:
+                            # Параллельные пути - пропускаем
+                            continue
 
                     # Если движутся в одном направлении - одна догоняет другую, не коллизия
                     if dir1 == dir2:
