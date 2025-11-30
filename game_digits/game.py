@@ -139,6 +139,17 @@ class Game:
                 for row in range(max(0, top_row), min(BOARD_SIZE, bottom_row + 1)):
                     for col in range(max(0, left_col), min(BOARD_SIZE, right_col + 1)):
                         occupied_positions.add((row, col))
+                # Также блокируем следующую ячейку в направлении движения
+                # чтобы спавн не произошёл прямо перед плиткой
+                direction = tile.current_direction
+                if direction == "up" and top_row > 0:
+                    occupied_positions.add((top_row - 1, left_col))
+                elif direction == "down" and bottom_row < BOARD_SIZE - 1:
+                    occupied_positions.add((bottom_row + 1, left_col))
+                elif direction == "left" and left_col > 0:
+                    occupied_positions.add((top_row, left_col - 1))
+                elif direction == "right" and right_col < BOARD_SIZE - 1:
+                    occupied_positions.add((top_row, right_col + 1))
             else:
                 # Позиция неподвижной плитки
                 occupied_positions.add(tile.position)
