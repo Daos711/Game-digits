@@ -88,11 +88,29 @@ class TestGameApp:
             pygame.draw.line(self.screen, self.grid_line_color, (0, y), (self.WIDTH, y), 1)
 
         # Yellow border around tile area
+        # Желтая рамка с границами
+        border_color = (168, 134, 33)
+        frame_color = (247, 204, 74)
+        # Внешняя граница (1 пиксель)
         pygame.draw.rect(
             self.screen,
-            (247, 204, 74),
+            border_color,
             (self.frame, self.frame, self.window, self.window),
-            self.frame,
+            1,
+        )
+        # Желтая рамка (8 пикселей)
+        pygame.draw.rect(
+            self.screen,
+            frame_color,
+            (self.frame + 1, self.frame + 1, self.window - 2, self.window - 2),
+            self.frame - 2,
+        )
+        # Внутренняя граница (1 пиксель)
+        pygame.draw.rect(
+            self.screen,
+            border_color,
+            (self.frame * 2 - 1, self.frame * 2 - 1, self.window - self.frame * 2 + 2, self.window - self.frame * 2 + 2),
+            1,
         )
 
         # Blue panel on the right
