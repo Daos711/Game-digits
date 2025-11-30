@@ -15,7 +15,7 @@ class GameApp:
     def __init__(self):
         self.WIDTH, self.HEIGHT = 953, 713
         self.frame = 10
-        self.speed = 10  # ~5 ячеек за 13 кадров при 24fps, пересчитано на 60fps
+        self.speed = 2
         self.window = self.HEIGHT - 20
         self.panel_width, self.panel_height = 240, self.HEIGHT
         self.tile_size, self.gap = TILE_SIZE, GAP
