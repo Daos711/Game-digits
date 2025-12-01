@@ -13,7 +13,7 @@ from game_digits.constants import (
 from game_digits.test_game import TestGame, TEST_BOARD_SIZE
 from game_digits.sprites import Arrow, ScorePopup
 from game_digits import ui_components as ui
-from game_digits.windows import ResultWindow
+from game_digits.windows import ResultWindow, StartMenu
 
 
 class TestGameApp:
@@ -78,7 +78,15 @@ class TestGameApp:
         self.COUNTDOWN_EVENT = self.game.COUNTDOWN_EVENT
         self.TILE_APPEAR_EVENT = self.game.TILE_APPEAR_EVENT
 
-        self.game.start_tile_appearance()
+        # Game state: 'menu' or 'playing'
+        self.state = 'menu'
+
+        # Create start menu
+        self.start_menu = StartMenu(
+            screen=self.screen,
+            screen_size=(self.WIDTH, self.HEIGHT),
+            redraw_background=self.draw_background_for_menu
+        )
 
     def draw_background(self):
         self.screen.fill((255, 255, 255))
@@ -124,6 +132,45 @@ class TestGameApp:
 
         self.screen.blit(self.tile_surface, (2 * self.frame, 2 * self.frame))
         self.draw_score_and_timer_window()
+
+    def draw_background_for_menu(self):
+        """Draw background for menu (without UI panel elements)."""
+        self.screen.fill((255, 255, 255))
+
+        for x in range(0, self.WIDTH + 1, self.grid_cell_size):
+            pygame.draw.line(self.screen, self.grid_line_color, (x, 0), (x, self.HEIGHT), 1)
+        for y in range(0, self.HEIGHT + 1, self.grid_cell_size):
+            pygame.draw.line(self.screen, self.grid_line_color, (0, y), (self.WIDTH, y), 1)
+
+        border_color = (162, 140, 40)
+        frame_color = (247, 204, 74)
+        pygame.draw.rect(
+            self.screen,
+            border_color,
+            (self.frame, self.frame, self.window, self.window),
+            1,
+        )
+        pygame.draw.rect(
+            self.screen,
+            frame_color,
+            (self.frame + 1, self.frame + 1, self.window - 2, self.window - 2),
+            self.frame - 2,
+        )
+        pygame.draw.rect(
+            self.screen,
+            border_color,
+            (self.frame * 2 - 1, self.frame * 2 - 1, self.window - self.frame * 2 + 2, self.window - self.frame * 2 + 2),
+            1,
+        )
+
+        panel_x = self.window + 2 * self.frame
+        pygame.draw.rect(
+            self.screen,
+            (62, 157, 203),
+            (panel_x, 0, self.panel_width, self.HEIGHT),
+        )
+
+        self.screen.blit(self.tile_surface, (2 * self.frame, 2 * self.frame))
 
     def draw_score_and_timer_window(self):
         panel_x = self.window + 2 * self.frame
@@ -205,7 +252,7 @@ class TestGameApp:
         """Display the game result window with final score.
 
         Returns:
-            bool: True if user wants to start new game, False to exit
+            str: 'new_game', 'menu', or None
         """
         def redraw_background():
             """Callback to redraw game scene before result window."""
@@ -570,6 +617,16 @@ class TestGameApp:
         prepare_to_show_result = False
 
         while running:
+            # === MENU STATE ===
+            if self.state == 'menu':
+                start_game = self.start_menu.show()
+                if start_game:
+                    self.state = 'playing'
+                    self.game.start_tile_appearance()
+                else:
+                    running = False
+                continue
+
             self.tile_surface.blit(self.background_texture, (0, 0))
             self.tiles.draw(self.tile_surface)
 
@@ -627,10 +684,17 @@ class TestGameApp:
                 # Анимации очков закончились - показываем результат
                 self.update_display()
                 pygame.display.flip()
-                start_new_game = self.show_result_window()
-                if start_new_game:
-                    # Reset game and continue
+                result = self.show_result_window()
+                if result == 'new_game':
+                    # Reset game and continue playing
                     self.reset_game()
+                    self.game.start_tile_appearance()
+                    show_result = False
+                    prepare_to_show_result = False
+                elif result == 'menu':
+                    # Return to menu
+                    self.reset_game()
+                    self.state = 'menu'
                     show_result = False
                     prepare_to_show_result = False
                 else:

@@ -58,9 +58,9 @@ class StartMenu:
     """Start menu with animated title tiles."""
 
     # Animation constants
-    TILE_DELAY = 80  # ms between each tile animation start
-    SPRING_STIFFNESS = 0.15  # Spring constant
-    SPRING_DAMPING = 0.75  # Damping factor
+    TILE_DELAY = 120  # ms between each tile animation start (slower)
+    SPRING_STIFFNESS = 0.08  # Spring constant (slower)
+    SPRING_DAMPING = 0.80  # Damping factor
     EXIT_SPEED = 15  # Pixels per frame when exiting
     EXIT_DELAY = 50  # ms between each tile exit
     BUTTON_FADE_DURATION = 300  # ms for button fade
