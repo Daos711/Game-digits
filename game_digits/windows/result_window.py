@@ -101,7 +101,8 @@ class ResultWindow:
             window_surface,
             (0, 0, self.WINDOW_WIDTH, self.HEADER_HEIGHT),
             "Результат игры",
-            self.title_font
+            self.title_font,
+            close_pressed=self.close_pressed
         )
 
         # Draw checkered ON TOP with rounded corners visible
@@ -232,7 +233,9 @@ class ResultWindow:
         """Display the result window and wait for user interaction.
 
         Returns:
-            bool: True if user wants to start new game, False to exit
+            str: 'new_game' if user wants to start new game,
+                 'menu' if user clicked close button,
+                 None if window closed
         """
         self.animation_start_time = pygame.time.get_ticks()
 
@@ -256,7 +259,7 @@ class ResultWindow:
         )
 
         waiting = True
-        start_new_game = False
+        result = None
 
         while waiting:
             current_time = pygame.time.get_ticks()
@@ -287,22 +290,22 @@ class ResultWindow:
                         self.new_game_pressed = True
                 elif event.type == pygame.MOUSEBUTTONUP and self.animation_complete:
                     pos = event.pos
-                    # Check close button release
+                    # Check close button release - return to menu
                     if self.close_pressed and close_btn_screen.collidepoint(pos):
                         waiting = False
-                        start_new_game = True
-                    # Check new game button release
+                        result = 'menu'
+                    # Check new game button release - start new game
                     elif self.new_game_pressed and new_game_btn_screen.collidepoint(pos):
                         waiting = False
-                        start_new_game = True
+                        result = 'new_game'
                     # Reset pressed states
                     self.close_pressed = False
                     self.new_game_pressed = False
                 elif event.type == pygame.KEYDOWN and self.animation_complete:
                     if event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
                         waiting = False
-                        start_new_game = True
+                        result = 'new_game'
 
             pygame.time.delay(16)  # ~60 FPS
 
-        return start_new_game
+        return result

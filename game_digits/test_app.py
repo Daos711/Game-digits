@@ -13,7 +13,7 @@ from game_digits.constants import (
 from game_digits.test_game import TestGame, TEST_BOARD_SIZE
 from game_digits.sprites import Arrow, ScorePopup
 from game_digits import ui_components as ui
-from game_digits.windows import ResultWindow
+from game_digits.windows import ResultWindow, StartMenu, PauseOverlay
 
 
 class TestGameApp:
@@ -78,7 +78,26 @@ class TestGameApp:
         self.COUNTDOWN_EVENT = self.game.COUNTDOWN_EVENT
         self.TILE_APPEAR_EVENT = self.game.TILE_APPEAR_EVENT
 
-        self.game.start_tile_appearance()
+        # Game state: 'menu' or 'playing'
+        self.state = 'menu'
+
+        # Panel animation state
+        self.panel_animation_start = 0
+        self.panel_animation_active = False
+        # Animation constants for panel elements
+        self.PANEL_ANIM_DURATION = 400  # ms for each element to slide in
+        self.PANEL_ANIM_DELAY = 150     # ms delay between elements
+
+        # Create start menu
+        self.start_menu = StartMenu(
+            screen=self.screen,
+            screen_size=(self.WIDTH, self.HEIGHT),
+            redraw_background=self.draw_background_for_menu
+        )
+
+        # Create pause overlay
+        tile_area = self.board_size * TILE_SIZE + (self.board_size + 1) * GAP
+        self.pause_overlay = PauseOverlay(tile_area, tile_area)
 
     def draw_background(self):
         self.screen.fill((255, 255, 255))
@@ -123,30 +142,113 @@ class TestGameApp:
         )
 
         self.screen.blit(self.tile_surface, (2 * self.frame, 2 * self.frame))
+
+        # Draw pause overlay if game is paused
+        if self.is_paused:
+            self._draw_pause_overlay()
+
         self.draw_score_and_timer_window()
+
+    def _draw_pause_overlay(self):
+        """Draw animated overlay over game field when paused."""
+        field_x = 2 * self.frame
+        field_y = 2 * self.frame
+        self.pause_overlay.draw(self.screen, field_x, field_y)
+
+    def draw_background_for_menu(self):
+        """Draw background for menu (without UI panel elements)."""
+        self.screen.fill((255, 255, 255))
+
+        for x in range(0, self.WIDTH + 1, self.grid_cell_size):
+            pygame.draw.line(self.screen, self.grid_line_color, (x, 0), (x, self.HEIGHT), 1)
+        for y in range(0, self.HEIGHT + 1, self.grid_cell_size):
+            pygame.draw.line(self.screen, self.grid_line_color, (0, y), (self.WIDTH, y), 1)
+
+        border_color = (162, 140, 40)
+        frame_color = (247, 204, 74)
+        pygame.draw.rect(
+            self.screen,
+            border_color,
+            (self.frame, self.frame, self.window, self.window),
+            1,
+        )
+        pygame.draw.rect(
+            self.screen,
+            frame_color,
+            (self.frame + 1, self.frame + 1, self.window - 2, self.window - 2),
+            self.frame - 2,
+        )
+        pygame.draw.rect(
+            self.screen,
+            border_color,
+            (self.frame * 2 - 1, self.frame * 2 - 1, self.window - self.frame * 2 + 2, self.window - self.frame * 2 + 2),
+            1,
+        )
+
+        panel_x = self.window + 2 * self.frame
+        pygame.draw.rect(
+            self.screen,
+            (62, 157, 203),
+            (panel_x, 0, self.panel_width, self.HEIGHT),
+        )
+
+        self.screen.blit(self.tile_surface, (2 * self.frame, 2 * self.frame))
+
+    def _get_panel_element_offset(self, element_index):
+        """Calculate Y offset for panel element based on animation state."""
+        if not self.panel_animation_active:
+            return 0
+
+        current_time = pygame.time.get_ticks()
+        elapsed = current_time - self.panel_animation_start
+        element_start = element_index * self.PANEL_ANIM_DELAY
+
+        if elapsed < element_start:
+            return -500
+
+        element_elapsed = elapsed - element_start
+        if element_elapsed >= self.PANEL_ANIM_DURATION:
+            total_duration = 2 * self.PANEL_ANIM_DELAY + self.PANEL_ANIM_DURATION
+            if elapsed >= total_duration:
+                self.panel_animation_active = False
+            return 0
+
+        progress = element_elapsed / self.PANEL_ANIM_DURATION
+        eased = 1 - (1 - progress) ** 3
+        return int(-500 * (1 - eased))
 
     def draw_score_and_timer_window(self):
         panel_x = self.window + 2 * self.frame
         padding = 15
+
+        pause_offset = self._get_panel_element_offset(0)
+        time_offset = self._get_panel_element_offset(1)
+        score_offset = self._get_panel_element_offset(2)
+
         current_y = padding
 
         # Pause button
         button_width = 120
         button_height = 40
         button_x = panel_x + (self.panel_width - button_width) // 2
-        self.pause_button_rect = ui.draw_pause_button(
-            self.screen,
-            (button_x, current_y, button_width, button_height),
-            self.font_bold_medium,
-            is_pressed=self.is_paused
-        )
+        button_y = current_y + pause_offset
+
+        if button_y >= -10:
+            self.pause_button_rect = ui.draw_pause_button(
+                self.screen,
+                (button_x, button_y, button_width, button_height),
+                self.font_bold_medium,
+                is_pressed=self.is_paused
+            )
+        else:
+            self.pause_button_rect = None
+
         current_y += button_height + 25
 
-        # Time label
+        # Time block
+        time_block_y = current_y + time_offset
         time_label = self.font_bold_large.render("Время", True, (255, 255, 255))
         label_x = panel_x + (self.panel_width - time_label.get_width()) // 2
-        self.screen.blit(time_label, (label_x, current_y))
-        current_y += time_label.get_height() + 10
 
         icon_size = 50
         icon_x = panel_x + padding
@@ -154,58 +256,66 @@ class TestGameApp:
         bar_width = self.panel_width - padding - bar_x + panel_x
         bar_height = 44
 
-        ui.draw_value_bar(
-            self.screen,
-            (bar_x, current_y + 3, bar_width, bar_height),
-            self.game.current_time,
-            self.font_bold_value
-        )
-        ui.draw_clock_icon(self.screen, (icon_x + icon_size // 2, current_y + icon_size // 2), icon_size)
-        current_y += icon_size + 15
+        if time_block_y >= -10:
+            self.screen.blit(time_label, (label_x, time_block_y))
+            icon_y = time_block_y + time_label.get_height() + 10
 
-        # === Прогресс-бар ===
-        progress_height = 22
-        progress_x = panel_x + padding
-        progress_width = self.panel_width - padding * 2
+            ui.draw_value_bar(
+                self.screen,
+                (bar_x, icon_y + 3, bar_width, bar_height),
+                self.game.current_time,
+                self.font_bold_value
+            )
+            ui.draw_clock_icon(self.screen, (icon_x + icon_size // 2, icon_y + icon_size // 2), icon_size)
 
-        if self.timer_running:
-            if self.is_paused:
-                progress = self.paused_progress
+            # Progress bar
+            progress_y = icon_y + icon_size + 15
+            progress_height = 22
+            progress_x = panel_x + padding
+            progress_width = self.panel_width - padding * 2
+
+            if self.timer_running:
+                if self.is_paused:
+                    progress = self.paused_progress
+                else:
+                    elapsed = pygame.time.get_ticks() - self.bar_phase_start
+                    if self.bar_phase == 'emptying':
+                        progress = max(0, 1 - elapsed / self.bar_empty_duration)
+                    else:
+                        progress = min(1, elapsed / self.bar_fill_duration)
             else:
-                elapsed = pygame.time.get_ticks() - self.bar_phase_start
-                if self.bar_phase == 'emptying':
-                    progress = max(0, 1 - elapsed / self.bar_empty_duration)
-                else:  # filling
-                    progress = min(1, elapsed / self.bar_fill_duration)
-        else:
-            progress = self.paused_progress
+                progress = self.paused_progress
 
-        ui.draw_progress_bar(
-            self.screen,
-            (progress_x, current_y, progress_width, progress_height),
-            progress
-        )
-        current_y += progress_height + 25
+            ui.draw_progress_bar(
+                self.screen,
+                (progress_x, progress_y, progress_width, progress_height),
+                progress
+            )
 
-        # Score label
-        score_label = self.font_bold_large.render("Очки", True, (255, 255, 255))
-        label_x = panel_x + (self.panel_width - score_label.get_width()) // 2
-        self.screen.blit(score_label, (label_x, current_y))
-        current_y += score_label.get_height() + 10
+        current_y += time_label.get_height() + 10 + icon_size + 15 + 22 + 25
 
-        ui.draw_value_bar(
-            self.screen,
-            (bar_x, current_y + 3, bar_width, bar_height),
-            self.game.score,
-            self.font_bold_value
-        )
-        ui.draw_sun_icon(self.screen, (icon_x + icon_size // 2, current_y + icon_size // 2), icon_size)
+        # Score block
+        score_block_y = current_y + score_offset
+
+        if score_block_y >= -10:
+            score_label = self.font_bold_large.render("Очки", True, (255, 255, 255))
+            label_x = panel_x + (self.panel_width - score_label.get_width()) // 2
+            self.screen.blit(score_label, (label_x, score_block_y))
+            score_icon_y = score_block_y + score_label.get_height() + 10
+
+            ui.draw_value_bar(
+                self.screen,
+                (bar_x, score_icon_y + 3, bar_width, bar_height),
+                self.game.score,
+                self.font_bold_value
+            )
+            ui.draw_sun_icon(self.screen, (icon_x + icon_size // 2, score_icon_y + icon_size // 2), icon_size)
 
     def show_result_window(self):
         """Display the game result window with final score.
 
         Returns:
-            bool: True if user wants to start new game, False to exit
+            str: 'new_game', 'menu', or None
         """
         def redraw_background():
             """Callback to redraw game scene before result window."""
@@ -273,6 +383,7 @@ class TestGameApp:
 
         if self.is_paused:
             self.pause_start_time = pygame.time.get_ticks()
+            self.pause_overlay.start()
             pygame.time.set_timer(self.COUNTDOWN_EVENT, 0)
         else:
             pause_duration = pygame.time.get_ticks() - self.pause_start_time
@@ -570,6 +681,19 @@ class TestGameApp:
         prepare_to_show_result = False
 
         while running:
+            # === MENU STATE ===
+            if self.state == 'menu':
+                start_game = self.start_menu.show()
+                if start_game:
+                    self.state = 'playing'
+                    # Start panel animation
+                    self.panel_animation_active = True
+                    self.panel_animation_start = pygame.time.get_ticks()
+                    self.game.start_tile_appearance()
+                else:
+                    running = False
+                continue
+
             self.tile_surface.blit(self.background_texture, (0, 0))
             self.tiles.draw(self.tile_surface)
 
@@ -627,10 +751,20 @@ class TestGameApp:
                 # Анимации очков закончились - показываем результат
                 self.update_display()
                 pygame.display.flip()
-                start_new_game = self.show_result_window()
-                if start_new_game:
-                    # Reset game and continue
+                result = self.show_result_window()
+                if result == 'new_game':
+                    # Reset game and continue playing
                     self.reset_game()
+                    # Start panel animation
+                    self.panel_animation_active = True
+                    self.panel_animation_start = pygame.time.get_ticks()
+                    self.game.start_tile_appearance()
+                    show_result = False
+                    prepare_to_show_result = False
+                elif result == 'menu':
+                    # Return to menu
+                    self.reset_game()
+                    self.state = 'menu'
                     show_result = False
                     prepare_to_show_result = False
                 else:
