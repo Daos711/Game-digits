@@ -382,16 +382,20 @@ class StartMenu:
                         (0, 0, panel_width, panel_height), width=2, border_radius=10)
 
         # Title
-        title = self.records_title_font.render("Лучшие результаты", True, (255, 255, 255))
+        title = self.records_title_font.render("Рекорды", True, (255, 255, 255))
         title_rect = title.get_rect(center=(panel_width // 2, 25))
         panel_surface.blit(title, title_rect)
 
+        # Column positions (center-aligned)
+        col_positions = [20, 65, 120, 175]  # #, Очки, Бонус, Итого
+
         # Column headers
         header_y = 55
-        headers = [("#", 25), ("Очки", 70), ("Бонус", 120), ("Итого", 175)]
-        for text, x in headers:
+        headers = ["#", "Очки", "Бонус", "Итого"]
+        for text, center_x in zip(headers, col_positions):
             header = self.records_small_font.render(text, True, (180, 200, 220))
-            panel_surface.blit(header, (x, header_y))
+            header_rect = header.get_rect(center=(center_x, header_y + 7))
+            panel_surface.blit(header, header_rect)
 
         # Divider line
         pygame.draw.line(panel_surface, (80, 120, 160), (10, 75), (panel_width - 10, 75), 1)
@@ -415,23 +419,28 @@ class StartMenu:
 
                 # Position number
                 pos_text = self.records_font.render(f"{i + 1}", True, (200, 180, 100))
-                panel_surface.blit(pos_text, (25, row_y + 5))
+                pos_rect = pos_text.get_rect(center=(col_positions[0], row_y + 12))
+                panel_surface.blit(pos_text, pos_rect)
 
                 # Score
                 score_text = self.records_font.render(str(record.get('score', 0)), True, (255, 255, 255))
-                panel_surface.blit(score_text, (60, row_y + 5))
+                score_rect = score_text.get_rect(center=(col_positions[1], row_y + 12))
+                panel_surface.blit(score_text, score_rect)
 
                 # Bonus
                 bonus_text = self.records_font.render(str(record.get('bonus', 0)), True, (150, 220, 150))
-                panel_surface.blit(bonus_text, (115, row_y + 5))
+                bonus_rect = bonus_text.get_rect(center=(col_positions[2], row_y + 12))
+                panel_surface.blit(bonus_text, bonus_rect)
 
                 # Total
                 total_text = self.records_font.render(str(record.get('total', 0)), True, (255, 220, 100))
-                panel_surface.blit(total_text, (170, row_y + 5))
+                total_rect = total_text.get_rect(center=(col_positions[3], row_y + 12))
+                panel_surface.blit(total_text, total_rect)
 
-                # Date (smaller, below)
+                # Date (smaller, below, centered under score-bonus area)
                 date_text = self.records_small_font.render(record.get('date', ''), True, (140, 160, 180))
-                panel_surface.blit(date_text, (60, row_y + 28))
+                date_rect = date_text.get_rect(center=((col_positions[1] + col_positions[2]) // 2, row_y + 32))
+                panel_surface.blit(date_text, date_rect)
 
         # Draw panel
         self.screen.blit(panel_surface, (panel_x, max(90, panel_y)))
