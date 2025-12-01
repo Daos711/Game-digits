@@ -196,17 +196,18 @@ def draw_progress_bar(surface, rect, progress, radius=None):
         # Адаптивный радиус скругления - уменьшается пропорционально ширине
         actual_radius = min(radius, bar_width // 2)
 
-        # Создаём временную поверхность для двухцветной полоски
+        # Создаём временную поверхность с градиентом
         temp_surface = pygame.Surface((bar_width, h), pygame.SRCALPHA)
 
-        # Верхняя часть (2/3 высоты)
-        upper_height = int(h * 2 / 3)
-        upper_color = (255, 192, 41)
-        pygame.draw.rect(temp_surface, upper_color, (0, 0, bar_width, upper_height))
-
-        # Нижняя часть (1/3 высоты)
-        lower_color = (211, 136, 0)
-        pygame.draw.rect(temp_surface, lower_color, (0, upper_height, bar_width, h - upper_height))
+        # Градиент сверху вниз
+        top_color = (255, 192, 41)
+        bottom_color = (211, 136, 0)
+        for row in range(h):
+            t = row / max(h - 1, 1)  # 0.0 сверху, 1.0 снизу
+            r = int(top_color[0] + (bottom_color[0] - top_color[0]) * t)
+            g = int(top_color[1] + (bottom_color[1] - top_color[1]) * t)
+            b = int(top_color[2] + (bottom_color[2] - top_color[2]) * t)
+            pygame.draw.line(temp_surface, (r, g, b), (0, row), (bar_width, row))
 
         # Создаём маску для скруглённых углов (с адаптивным радиусом)
         mask_surface = pygame.Surface((bar_width, h), pygame.SRCALPHA)
