@@ -20,38 +20,58 @@ class MenuTile:
         self.y = target_y
         self.velocity = 0
 
-        # Create tile surface
-        self.surface = pygame.Surface((TILE_SIZE, TILE_SIZE))
-        self._draw_tile()
+        # Animation offsets
+        self.y_offset = 0  # For wave animation
+        self.brightness = 0  # For hover effect (-1 to 1)
 
-    def _draw_tile(self):
+        # Create tile surface
+        self.base_surface = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        self._draw_tile(self.base_surface, self.color)
+
+    def _draw_tile(self, surface, color):
         """Draw the tile with letter."""
-        self.surface.fill(self.color)
+        surface.fill(color)
 
         # 3D bevel effect
         bevel = 3
         dark_factor = 0.4
-        dark = tuple(max(0, min(255, int(c * dark_factor))) for c in self.color)
+        dark = tuple(max(0, min(255, int(c * dark_factor))) for c in color)
 
-        w, h = self.surface.get_size()
+        w, h = surface.get_size()
 
         # Bottom shadow
-        pygame.draw.rect(self.surface, dark, (0, h - bevel, w, bevel))
+        pygame.draw.rect(surface, dark, (0, h - bevel, w, bevel))
         # Right shadow
-        pygame.draw.rect(self.surface, dark, (w - bevel, 0, bevel, h))
+        pygame.draw.rect(surface, dark, (w - bevel, 0, bevel, h))
 
         # Border
-        pygame.draw.rect(self.surface, TILE_BORDER_COLOR, self.surface.get_rect(), 1)
+        pygame.draw.rect(surface, TILE_BORDER_COLOR, surface.get_rect(), 1)
 
         # Letter
         font = pygame.font.Font(get_font_path("OpenSans-VariableFont_wdth,wght.ttf"), 40)
         text = font.render(self.letter, True, (0, 0, 0))
         text_rect = text.get_rect(center=(w // 2, h // 2))
-        self.surface.blit(text, text_rect)
+        surface.blit(text, text_rect)
+
+    def get_surface(self):
+        """Get tile surface with current brightness applied."""
+        if self.brightness == 0:
+            return self.base_surface
+
+        # Create brightened surface
+        surface = self.base_surface.copy()
+        if self.brightness > 0:
+            # Add white overlay for brightness
+            overlay = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
+            alpha = int(self.brightness * 60)
+            overlay.fill((255, 255, 255, alpha))
+            surface.blit(overlay, (0, 0))
+        return surface
 
     def draw(self, surface):
-        """Draw tile at current position."""
-        surface.blit(self.surface, (int(self.x), int(self.y)))
+        """Draw tile at current position with offsets."""
+        draw_y = int(self.y + self.y_offset)
+        surface.blit(self.get_surface(), (int(self.x), draw_y))
 
 
 class StartMenu:
@@ -64,6 +84,12 @@ class StartMenu:
     EXIT_SPEED = 15  # Pixels per frame when exiting
     EXIT_DELAY = 50  # ms between each tile exit
     BUTTON_FADE_DURATION = 300  # ms for button fade
+
+    # Wave animation constants
+    WAVE_INTERVAL = 4000  # ms between waves
+    WAVE_DURATION = 600  # ms for full wave
+    WAVE_HEIGHT = 12  # pixels to jump
+    WAVE_TILE_DELAY = 80  # ms delay between each tile in wave
 
     def __init__(self, screen, screen_size, redraw_background):
         self.screen = screen
@@ -116,6 +142,14 @@ class StartMenu:
         self.button_opacity = 0
         self.tiles_arrived = [False] * len(self.tiles)
 
+        # Wave animation state
+        self.last_wave_time = 0
+        self.wave_active = False
+        self.wave_start_time = 0
+
+        # Hover state
+        self.button_hovered = False
+
     def _spring_physics(self, tile, index):
         """Apply spring physics to move tile to target position."""
         # Calculate spring force
@@ -133,6 +167,60 @@ class StartMenu:
             tile.velocity = 0
             return True
         return False
+
+    def _update_wave_animation(self, current_time):
+        """Update wave animation on title tiles."""
+        if self.state != 'idle':
+            return
+
+        # Check if it's time to start a new wave
+        if not self.wave_active:
+            if current_time - self.last_wave_time >= self.WAVE_INTERVAL:
+                self.wave_active = True
+                self.wave_start_time = current_time
+        else:
+            # Update wave animation
+            elapsed = current_time - self.wave_start_time
+            total_wave_time = self.WAVE_DURATION + len(self.tiles) * self.WAVE_TILE_DELAY
+
+            if elapsed >= total_wave_time:
+                # Wave finished
+                self.wave_active = False
+                self.last_wave_time = current_time
+                for tile in self.tiles:
+                    tile.y_offset = 0
+            else:
+                # Animate each tile
+                for i, tile in enumerate(self.tiles):
+                    tile_start = i * self.WAVE_TILE_DELAY
+                    tile_elapsed = elapsed - tile_start
+
+                    if tile_elapsed < 0:
+                        tile.y_offset = 0
+                    elif tile_elapsed < self.WAVE_DURATION:
+                        # Smooth up and down using sine
+                        progress = tile_elapsed / self.WAVE_DURATION
+                        tile.y_offset = -math.sin(progress * math.pi) * self.WAVE_HEIGHT
+                    else:
+                        tile.y_offset = 0
+
+    def _update_hover_effect(self, mouse_pos):
+        """Update tile brightness based on button hover."""
+        if self.state != 'idle':
+            return
+
+        was_hovered = self.button_hovered
+        self.button_hovered = self.button_rect.collidepoint(mouse_pos)
+
+        # Target brightness
+        target = 0.5 if self.button_hovered else 0
+
+        # Smooth transition
+        for tile in self.tiles:
+            if tile.brightness < target:
+                tile.brightness = min(target, tile.brightness + 0.08)
+            elif tile.brightness > target:
+                tile.brightness = max(target, tile.brightness - 0.08)
 
     def _update_entering(self, current_time):
         """Update animation for entering state."""
@@ -158,6 +246,7 @@ class StartMenu:
 
         if all_arrived and self.button_opacity >= 255:
             self.state = 'idle'
+            self.last_wave_time = current_time  # Start wave timer
 
     def _update_exiting(self, current_time):
         """Update animation for exiting state."""
@@ -213,10 +302,14 @@ class StartMenu:
         for tile in self.tiles:
             tile.x = -TILE_SIZE - 50
             tile.velocity = 0
+            tile.y_offset = 0
+            tile.brightness = 0
         self.tiles_arrived = [False] * len(self.tiles)
         self.button_opacity = 0
         self.state = 'entering'
         self.animation_start_time = pygame.time.get_ticks()
+        self.wave_active = False
+        self.button_hovered = False
 
     def start_exit_animation(self):
         """Start the exit animation (tiles go right)."""
@@ -236,10 +329,14 @@ class StartMenu:
 
         while running:
             current_time = pygame.time.get_ticks()
+            mouse_pos = pygame.mouse.get_pos()
 
             # Update animation
             if self.state == 'entering':
                 self._update_entering(current_time)
+            elif self.state == 'idle':
+                self._update_wave_animation(current_time)
+                self._update_hover_effect(mouse_pos)
             elif self.state == 'exiting':
                 if self._update_exiting(current_time):
                     running = False
