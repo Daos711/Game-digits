@@ -93,7 +93,8 @@ class StartMenu:
     WAVE_TILE_DELAY = 80  # ms delay between each tile in wave
 
     # Records panel constants
-    RECORDS_SLIDE_DURATION = 400  # ms for records slide animation
+    RECORDS_SLIDE_DURATION_OPEN = 400  # ms for opening
+    RECORDS_SLIDE_DURATION_CLOSE = 200  # ms for closing (faster)
     PANEL_X = 713  # Right panel X position
     PANEL_WIDTH = 240
     PANEL_HEIGHT = 713
@@ -258,13 +259,14 @@ class StartMenu:
             return
 
         elapsed = current_time - self.records_slide_start_time
-        progress = min(1.0, elapsed / self.RECORDS_SLIDE_DURATION)
+        duration = self.RECORDS_SLIDE_DURATION_OPEN if self.records_slide_direction == 1 else self.RECORDS_SLIDE_DURATION_CLOSE
+        progress = min(1.0, elapsed / duration)
 
         if self.records_slide_direction == 1:
             # Opening: ease-out cubic (fast start, slow end)
             self.records_slide_progress = 1 - pow(1 - progress, 3)
         else:
-            # Closing: linear (instant response)
+            # Closing: linear, faster
             self.records_slide_progress = 1 - progress
 
         if progress >= 1.0:
@@ -487,11 +489,13 @@ class StartMenu:
             if self.records_slide_direction == 1:
                 # Now opening: find progress where eased = current_slide
                 equiv_progress = 1 - pow(1 - current_slide, 1/3)
+                duration = self.RECORDS_SLIDE_DURATION_OPEN
             else:
                 # Now closing (linear): progress where (1-p) = current_slide
                 equiv_progress = 1 - current_slide
+                duration = self.RECORDS_SLIDE_DURATION_CLOSE
 
-            elapsed = equiv_progress * self.RECORDS_SLIDE_DURATION
+            elapsed = equiv_progress * duration
             self.records_slide_start_time = current_time - int(elapsed)
         else:
             self.records_sliding = True
