@@ -1,4 +1,3 @@
-import sys
 import pygame
 
 from game_digits import get_image_path, get_font_path
@@ -84,7 +83,8 @@ class GameApp:
         tile_surface_size = self.HEIGHT - 4 * self.frame
         self.pause_overlay = PauseOverlay(tile_surface_size, tile_surface_size)
 
-    def draw_background(self):
+    def _draw_frame(self):
+        """Draw common background elements: grid, frame, blue panel, game field."""
         # Заливаем фон белым
         self.screen.fill((255, 255, 255))
         # Рисуем клеточный паттерн (как в школьной тетради)
@@ -116,12 +116,18 @@ class GameApp:
             (self.frame * 2 - 1, self.frame * 2 - 1, self.window - self.frame * 2 + 2, self.window - self.frame * 2 + 2),
             1,
         )
+        # Синяя панель справа
         pygame.draw.rect(
             self.screen,
             (62, 157, 203),
             (self.HEIGHT, 0, self.panel_width, self.panel_height),
         )
+        # Игровое поле
         self.screen.blit(self.tile_surface, (2 * self.frame, 2 * self.frame))
+
+    def draw_background(self):
+        """Draw full game background with UI elements."""
+        self._draw_frame()
 
         # Draw pause overlay if game is paused
         if self.is_paused:
@@ -137,45 +143,7 @@ class GameApp:
 
     def draw_background_for_menu(self):
         """Draw background for menu (without UI panel elements)."""
-        # Заливаем фон белым
-        self.screen.fill((255, 255, 255))
-        # Рисуем клеточный паттерн (как в школьной тетради)
-        for x in range(0, self.WIDTH + 1, self.grid_cell_size):
-            pygame.draw.line(self.screen, self.grid_line_color, (x, 0), (x, self.HEIGHT), 1)
-        for y in range(0, self.HEIGHT + 1, self.grid_cell_size):
-            pygame.draw.line(self.screen, self.grid_line_color, (0, y), (self.WIDTH, y), 1)
-        # Желтая рамка с границами
-        border_color = (162, 140, 40)
-        frame_color = (247, 204, 74)
-        # Внешняя граница (1 пиксель)
-        pygame.draw.rect(
-            self.screen,
-            border_color,
-            (self.frame, self.frame, self.window, self.window),
-            1,
-        )
-        # Желтая рамка (8 пикселей)
-        pygame.draw.rect(
-            self.screen,
-            frame_color,
-            (self.frame + 1, self.frame + 1, self.window - 2, self.window - 2),
-            self.frame - 2,
-        )
-        # Внутренняя граница (1 пиксель)
-        pygame.draw.rect(
-            self.screen,
-            border_color,
-            (self.frame * 2 - 1, self.frame * 2 - 1, self.window - self.frame * 2 + 2, self.window - self.frame * 2 + 2),
-            1,
-        )
-        # Синяя панель справа (пустая)
-        pygame.draw.rect(
-            self.screen,
-            (62, 157, 203),
-            (self.HEIGHT, 0, self.panel_width, self.panel_height),
-        )
-        # Игровое поле (пустое с текстурой)
-        self.screen.blit(self.tile_surface, (2 * self.frame, 2 * self.frame))
+        self._draw_frame()
 
     def _get_panel_element_offset(self, element_index):
         """Calculate Y offset for panel element based on animation state.
