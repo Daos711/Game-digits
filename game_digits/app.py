@@ -417,6 +417,7 @@ class GameApp:
                 tile.cells_left_count = 0
                 tile.total_cells_to_move = total_cells
                 tile.move_animation_group = pygame.sprite.Group()
+                tile.target_rect = target_rect  # Сохраняем цель при старте!
                 # Начинаем движение
                 tile.is_moving = True
                 tile.current_direction = direction
@@ -605,7 +606,8 @@ class GameApp:
         return None
 
     def move_tile(self, tile, direction):
-        target_rect = tile.target_move(direction, self.game.board)
+        # Используем сохранённую цель, а не пересчитываем каждый кадр
+        target_rect = tile.target_rect
         dx = target_rect.topleft[0] - tile.rect.topleft[0]
         dy = target_rect.topleft[1] - tile.rect.topleft[1]
         if dx == 0 and dy != 0:
@@ -679,6 +681,7 @@ class GameApp:
             del tile.cells_left_count
             del tile.total_cells_to_move
             del tile.move_animation_group
+            del tile.target_rect
 
         # Сначала обновляем позицию и доску, ПОТОМ сбрасываем is_moving
         # Это предотвращает окно несогласованности состояния
@@ -795,7 +798,8 @@ class GameApp:
                         direction = tile.current_direction
                         if direction:
                             self.move_tile(tile, direction)
-                            target_rect = tile.target_move(direction, self.game.board)
+                            # Используем сохранённую цель
+                            target_rect = tile.target_rect
                             # Проверяем достижение цели с допуском (для float координат)
                             dx = abs(tile.rect.x - target_rect.x)
                             dy = abs(tile.rect.y - target_rect.y)
