@@ -13,7 +13,7 @@ from game_digits.constants import (
 from game_digits.test_game import TestGame, TEST_BOARD_SIZE
 from game_digits.sprites import Arrow, ScorePopup
 from game_digits import ui_components as ui
-from game_digits.windows import ResultWindow, StartMenu
+from game_digits.windows import ResultWindow, StartMenu, PauseOverlay
 
 
 class TestGameApp:
@@ -95,6 +95,10 @@ class TestGameApp:
             redraw_background=self.draw_background_for_menu
         )
 
+        # Create pause overlay
+        tile_area = self.board_size * TILE_SIZE + (self.board_size + 1) * GAP
+        self.pause_overlay = PauseOverlay(tile_area, tile_area)
+
     def draw_background(self):
         self.screen.fill((255, 255, 255))
 
@@ -146,20 +150,10 @@ class TestGameApp:
         self.draw_score_and_timer_window()
 
     def _draw_pause_overlay(self):
-        """Draw semi-transparent overlay over game field when paused."""
+        """Draw animated overlay over game field when paused."""
         field_x = 2 * self.frame
         field_y = 2 * self.frame
-        field_size = self.window - 2 * self.frame
-
-        overlay = pygame.Surface((field_size, field_size), pygame.SRCALPHA)
-        overlay.fill((40, 60, 80, 220))
-
-        pause_font = pygame.font.Font(get_font_path("2204.ttf"), 72)
-        pause_text = pause_font.render("ПАУЗА", True, (255, 255, 255))
-        text_rect = pause_text.get_rect(center=(field_size // 2, field_size // 2))
-        overlay.blit(pause_text, text_rect)
-
-        self.screen.blit(overlay, (field_x, field_y))
+        self.pause_overlay.draw(self.screen, field_x, field_y)
 
     def draw_background_for_menu(self):
         """Draw background for menu (without UI panel elements)."""
@@ -210,7 +204,7 @@ class TestGameApp:
         element_start = element_index * self.PANEL_ANIM_DELAY
 
         if elapsed < element_start:
-            return -300
+            return -500
 
         element_elapsed = elapsed - element_start
         if element_elapsed >= self.PANEL_ANIM_DURATION:
@@ -221,7 +215,7 @@ class TestGameApp:
 
         progress = element_elapsed / self.PANEL_ANIM_DURATION
         eased = 1 - (1 - progress) ** 3
-        return int(-300 * (1 - eased))
+        return int(-500 * (1 - eased))
 
     def draw_score_and_timer_window(self):
         panel_x = self.window + 2 * self.frame
@@ -239,7 +233,7 @@ class TestGameApp:
         button_x = panel_x + (self.panel_width - button_width) // 2
         button_y = current_y + pause_offset
 
-        if button_y > -button_height:
+        if button_y >= -10:
             self.pause_button_rect = ui.draw_pause_button(
                 self.screen,
                 (button_x, button_y, button_width, button_height),
@@ -262,7 +256,7 @@ class TestGameApp:
         bar_width = self.panel_width - padding - bar_x + panel_x
         bar_height = 44
 
-        if time_block_y > -150:
+        if time_block_y >= -10:
             self.screen.blit(time_label, (label_x, time_block_y))
             icon_y = time_block_y + time_label.get_height() + 10
 
@@ -303,7 +297,7 @@ class TestGameApp:
         # Score block
         score_block_y = current_y + score_offset
 
-        if score_block_y > -100:
+        if score_block_y >= -10:
             score_label = self.font_bold_large.render("Очки", True, (255, 255, 255))
             label_x = panel_x + (self.panel_width - score_label.get_width()) // 2
             self.screen.blit(score_label, (label_x, score_block_y))
@@ -389,6 +383,7 @@ class TestGameApp:
 
         if self.is_paused:
             self.pause_start_time = pygame.time.get_ticks()
+            self.pause_overlay.start()
             pygame.time.set_timer(self.COUNTDOWN_EVENT, 0)
         else:
             pause_duration = pygame.time.get_ticks() - self.pause_start_time

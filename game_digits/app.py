@@ -9,7 +9,7 @@ from game_digits.constants import (
 from game_digits.game import Game
 from game_digits.sprites import Arrow, ScorePopup
 from game_digits import ui_components as ui
-from game_digits.windows import ResultWindow, StartMenu
+from game_digits.windows import ResultWindow, StartMenu, PauseOverlay
 
 
 class GameApp:
@@ -80,6 +80,10 @@ class GameApp:
             redraw_background=self.draw_background_for_menu
         )
 
+        # Create pause overlay
+        tile_surface_size = self.HEIGHT - 4 * self.frame
+        self.pause_overlay = PauseOverlay(tile_surface_size, tile_surface_size)
+
     def draw_background(self):
         # Заливаем фон белым
         self.screen.fill((255, 255, 255))
@@ -126,24 +130,10 @@ class GameApp:
         self.draw_score_and_timer_window()
 
     def _draw_pause_overlay(self):
-        """Draw semi-transparent overlay over game field when paused."""
-        # Calculate game field area (inside yellow frame)
+        """Draw animated overlay over game field when paused."""
         field_x = 2 * self.frame
         field_y = 2 * self.frame
-        field_size = self.window - 2 * self.frame
-
-        # Create semi-transparent overlay
-        overlay = pygame.Surface((field_size, field_size), pygame.SRCALPHA)
-        overlay.fill((40, 60, 80, 220))  # Dark blue-gray with high opacity
-
-        # Draw "ПАУЗА" text
-        pause_font = pygame.font.Font(get_font_path("2204.ttf"), 72)
-        pause_text = pause_font.render("ПАУЗА", True, (255, 255, 255))
-        text_rect = pause_text.get_rect(center=(field_size // 2, field_size // 2))
-        overlay.blit(pause_text, text_rect)
-
-        # Blit overlay onto screen
-        self.screen.blit(overlay, (field_x, field_y))
+        self.pause_overlay.draw(self.screen, field_x, field_y)
 
     def draw_background_for_menu(self):
         """Draw background for menu (without UI panel elements)."""
@@ -207,7 +197,7 @@ class GameApp:
 
         if elapsed < element_start:
             # Animation hasn't started for this element yet - hide above screen
-            return -300
+            return -500
 
         # Calculate animation progress for this element
         element_elapsed = elapsed - element_start
@@ -224,7 +214,7 @@ class GameApp:
         eased = 1 - (1 - progress) ** 3
 
         # Start offset (above screen) to final position (0)
-        start_offset = -300
+        start_offset = -500
         return int(start_offset * (1 - eased))
 
     def draw_score_and_timer_window(self):
@@ -244,8 +234,8 @@ class GameApp:
         button_x = panel_x + (self.panel_width - button_width) // 2  # Центрирование
         button_y = current_y + pause_offset
 
-        # Only draw if visible (on screen)
-        if button_y > -button_height:
+        # Only draw if visible (y >= 0 means on screen)
+        if button_y >= -10:
             self.pause_button_rect = ui.draw_pause_button(
                 self.screen,
                 (button_x, button_y, button_width, button_height),
@@ -271,8 +261,8 @@ class GameApp:
         bar_width = self.panel_width - padding - bar_x + panel_x
         bar_height = 44
 
-        # Only draw if visible
-        if time_block_y > -150:
+        # Only draw if visible (entering from top)
+        if time_block_y >= -10:
             self.screen.blit(time_label, (label_x, time_block_y))
 
             icon_y = time_block_y + time_label.get_height() + 10
@@ -319,8 +309,8 @@ class GameApp:
         # === 4. Блок "Очки" ===
         score_block_y = current_y + score_offset
 
-        # Only draw if visible
-        if score_block_y > -100:
+        # Only draw if visible (entering from top)
+        if score_block_y >= -10:
             # Заголовок "Очки"
             score_label = self.font_bold_large.render("Очки", True, (255, 255, 255))
             label_x = panel_x + (self.panel_width - score_label.get_width()) // 2
@@ -418,6 +408,8 @@ class GameApp:
         if self.is_paused:
             # Остановка игры
             self.pause_start_time = pygame.time.get_ticks()
+            # Запускаем анимацию паузы
+            self.pause_overlay.start()
             # Сохраняем текущий прогресс
             if self.timer_running:
                 elapsed = pygame.time.get_ticks() - self.bar_phase_start
