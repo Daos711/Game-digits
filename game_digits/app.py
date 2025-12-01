@@ -98,6 +98,30 @@ class GameApp:
             (self.frame * 2 - 1, self.frame * 2 - 1, self.window - self.frame * 2 + 2, self.window - self.frame * 2 + 2),
             1,
         )
+        # Желтая полоска справа (между игровым полем и синей панелью)
+        yellow_strip_color = (247, 204, 74)
+        yellow_strip_border = (162, 140, 40)
+        yellow_strip_x = self.frame + self.window  # Начало полоски
+        yellow_strip_width = self.HEIGHT - yellow_strip_x - 2  # Ширина полоски (минус 2 для границы)
+        # Граница слева
+        pygame.draw.rect(
+            self.screen,
+            yellow_strip_border,
+            (yellow_strip_x, 0, 1, self.HEIGHT),
+        )
+        # Желтая заливка
+        pygame.draw.rect(
+            self.screen,
+            yellow_strip_color,
+            (yellow_strip_x + 1, 0, yellow_strip_width, self.HEIGHT),
+        )
+        # Граница справа
+        pygame.draw.rect(
+            self.screen,
+            yellow_strip_border,
+            (self.HEIGHT - 1, 0, 1, self.HEIGHT),
+        )
+        # Синяя панель справа
         pygame.draw.rect(
             self.screen,
             (62, 157, 203),
