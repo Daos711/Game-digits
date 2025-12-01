@@ -101,7 +101,8 @@ class ResultWindow:
             window_surface,
             (0, 0, self.WINDOW_WIDTH, self.HEADER_HEIGHT),
             "Результат игры",
-            self.title_font
+            self.title_font,
+            close_pressed=self.close_pressed
         )
 
         # Draw checkered ON TOP with rounded corners visible

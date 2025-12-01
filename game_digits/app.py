@@ -66,6 +66,13 @@ class GameApp:
         # Game state: 'menu' or 'playing'
         self.state = 'menu'
 
+        # Panel animation state
+        self.panel_animation_start = 0
+        self.panel_animation_active = False
+        # Animation constants for panel elements
+        self.PANEL_ANIM_DURATION = 400  # ms for each element to slide in
+        self.PANEL_ANIM_DELAY = 150     # ms delay between elements
+
         # Create start menu
         self.start_menu = StartMenu(
             screen=self.screen,
@@ -155,101 +162,157 @@ class GameApp:
         # Игровое поле (пустое с текстурой)
         self.screen.blit(self.tile_surface, (2 * self.frame, 2 * self.frame))
 
+    def _get_panel_element_offset(self, element_index):
+        """Calculate Y offset for panel element based on animation state.
+
+        Args:
+            element_index: 0 = pause button, 1 = time block, 2 = score block
+
+        Returns:
+            Y offset in pixels (negative = above final position, 0 = at final position)
+        """
+        if not self.panel_animation_active:
+            return 0
+
+        current_time = pygame.time.get_ticks()
+        elapsed = current_time - self.panel_animation_start
+
+        # Calculate when this element's animation should start
+        element_start = element_index * self.PANEL_ANIM_DELAY
+
+        if elapsed < element_start:
+            # Animation hasn't started for this element yet - hide above screen
+            return -300
+
+        # Calculate animation progress for this element
+        element_elapsed = elapsed - element_start
+        if element_elapsed >= self.PANEL_ANIM_DURATION:
+            # Animation complete for this element
+            # Check if all animations are done
+            total_duration = 2 * self.PANEL_ANIM_DELAY + self.PANEL_ANIM_DURATION
+            if elapsed >= total_duration:
+                self.panel_animation_active = False
+            return 0
+
+        # Easing: ease-out cubic for smooth deceleration
+        progress = element_elapsed / self.PANEL_ANIM_DURATION
+        eased = 1 - (1 - progress) ** 3
+
+        # Start offset (above screen) to final position (0)
+        start_offset = -300
+        return int(start_offset * (1 - eased))
+
     def draw_score_and_timer_window(self):
         panel_x = self.HEIGHT  # Начало правой панели
         padding = 15
+
+        # Get animation offsets for each element group
+        pause_offset = self._get_panel_element_offset(0)
+        time_offset = self._get_panel_element_offset(1)
+        score_offset = self._get_panel_element_offset(2)
+
         current_y = padding
 
         # === 1. Кнопка "Пауза" (центрированная) ===
         button_width = 120
         button_height = 40
         button_x = panel_x + (self.panel_width - button_width) // 2  # Центрирование
-        self.pause_button_rect = ui.draw_pause_button(
-            self.screen,
-            (button_x, current_y, button_width, button_height),
-            self.font_bold_medium,
-            is_pressed=self.is_paused
-        )
+        button_y = current_y + pause_offset
+
+        # Only draw if visible (on screen)
+        if button_y > -button_height:
+            self.pause_button_rect = ui.draw_pause_button(
+                self.screen,
+                (button_x, button_y, button_width, button_height),
+                self.font_bold_medium,
+                is_pressed=self.is_paused
+            )
+        else:
+            self.pause_button_rect = None
 
         current_y += button_height + 25
 
         # === 2. Блок "Время" ===
+        time_block_y = current_y + time_offset
+
         # Заголовок "Время"
         time_label = self.font_bold_large.render("Время", True, (255, 255, 255))
         label_x = panel_x + (self.panel_width - time_label.get_width()) // 2
-        self.screen.blit(time_label, (label_x, current_y))
-        current_y += time_label.get_height() + 10
 
         # Строка со значением времени (иконка + полоска)
-        # Полоска заходит ПОД иконку - иконка перекрывает левый край полоски
         icon_size = 50
         icon_x = panel_x + padding
-        # Полоска начинается от центра иконки (иконка перекрывает левую часть)
         bar_x = icon_x + icon_size // 2
         bar_width = self.panel_width - padding - bar_x + panel_x
         bar_height = 44
 
-        # СНАЧАЛА рисуем голубую полоску с временем (она будет ПОД иконкой)
-        ui.draw_value_bar(
-            self.screen,
-            (bar_x, current_y + 3, bar_width, bar_height),
-            self.game.current_time,
-            self.font_bold_value
-        )
+        # Only draw if visible
+        if time_block_y > -150:
+            self.screen.blit(time_label, (label_x, time_block_y))
 
-        # ЗАТЕМ рисуем иконку часов ПОВЕРХ полоски
-        ui.draw_clock_icon(self.screen, (icon_x + icon_size // 2, current_y + icon_size // 2), icon_size)
-        current_y += icon_size + 15
+            icon_y = time_block_y + time_label.get_height() + 10
 
-        # === 3. Прогресс-бар (индикатор времени до появления новой цифры) ===
-        progress_height = 22
-        progress_x = panel_x + padding
-        progress_width = self.panel_width - padding * 2
+            # СНАЧАЛА рисуем голубую полоску с временем (она будет ПОД иконкой)
+            ui.draw_value_bar(
+                self.screen,
+                (bar_x, icon_y + 3, bar_width, bar_height),
+                self.game.current_time,
+                self.font_bold_value
+            )
 
-        if self.timer_running:
-            if self.is_paused:
-                # На паузе используем сохранённое значение прогресса
-                progress = self.paused_progress
+            # ЗАТЕМ рисуем иконку часов ПОВЕРХ полоски
+            ui.draw_clock_icon(self.screen, (icon_x + icon_size // 2, icon_y + icon_size // 2), icon_size)
+
+            # === 3. Прогресс-бар ===
+            progress_y = icon_y + icon_size + 15
+            progress_height = 22
+            progress_x = panel_x + padding
+            progress_width = self.panel_width - padding * 2
+
+            if self.timer_running:
+                if self.is_paused:
+                    progress = self.paused_progress
+                else:
+                    elapsed = pygame.time.get_ticks() - self.bar_phase_start
+                    if self.bar_phase == 'emptying':
+                        progress = max(0, 1 - elapsed / self.bar_empty_duration)
+                    elif self.bar_phase == 'waiting_spawn':
+                        progress = 0
+                    else:
+                        progress = min(1, elapsed / self.bar_fill_duration)
             else:
-                elapsed = pygame.time.get_ticks() - self.bar_phase_start
-                if self.bar_phase == 'emptying':
-                    # Бар уменьшается от 1 до 0
-                    progress = max(0, 1 - elapsed / self.bar_empty_duration)
-                elif self.bar_phase == 'waiting_spawn':
-                    # Бар на нуле, ждём спавна
-                    progress = 0
-                else:  # filling
-                    # Бар увеличивается от 0 до 1
-                    progress = min(1, elapsed / self.bar_fill_duration)
-        else:
-            # Таймер не запущен - используем сохранённый прогресс (или 1.0 в начале игры)
-            progress = self.paused_progress
+                progress = self.paused_progress
 
-        ui.draw_progress_bar(
-            self.screen,
-            (progress_x, current_y, progress_width, progress_height),
-            progress
-        )
-        current_y += progress_height + 25
+            ui.draw_progress_bar(
+                self.screen,
+                (progress_x, progress_y, progress_width, progress_height),
+                progress
+            )
+
+        current_y += time_label.get_height() + 10 + icon_size + 15 + 22 + 25  # All time block height
 
         # === 4. Блок "Очки" ===
-        # Заголовок "Очки"
-        score_label = self.font_bold_large.render("Очки", True, (255, 255, 255))
-        label_x = panel_x + (self.panel_width - score_label.get_width()) // 2
-        self.screen.blit(score_label, (label_x, current_y))
-        current_y += score_label.get_height() + 10
+        score_block_y = current_y + score_offset
 
-        # Строка со значением очков (иконка + полоска)
-        # СНАЧАЛА рисуем голубую полоску с очками (она будет ПОД иконкой)
-        ui.draw_value_bar(
-            self.screen,
-            (bar_x, current_y + 3, bar_width, bar_height),
-            self.game.score,
-            self.font_bold_value
-        )
+        # Only draw if visible
+        if score_block_y > -100:
+            # Заголовок "Очки"
+            score_label = self.font_bold_large.render("Очки", True, (255, 255, 255))
+            label_x = panel_x + (self.panel_width - score_label.get_width()) // 2
+            self.screen.blit(score_label, (label_x, score_block_y))
 
-        # ЗАТЕМ рисуем иконку солнца ПОВЕРХ полоски
-        ui.draw_sun_icon(self.screen, (icon_x + icon_size // 2, current_y + icon_size // 2), icon_size)
+            score_icon_y = score_block_y + score_label.get_height() + 10
+
+            # СНАЧАЛА рисуем голубую полоску с очками (она будет ПОД иконкой)
+            ui.draw_value_bar(
+                self.screen,
+                (bar_x, score_icon_y + 3, bar_width, bar_height),
+                self.game.score,
+                self.font_bold_value
+            )
+
+            # ЗАТЕМ рисуем иконку солнца ПОВЕРХ полоски
+            ui.draw_sun_icon(self.screen, (icon_x + icon_size // 2, score_icon_y + icon_size // 2), icon_size)
 
     def show_result_window(self):
         """Display the game result window with final score.
@@ -678,6 +741,9 @@ class GameApp:
                 start_game = self.start_menu.show()
                 if start_game:
                     self.state = 'playing'
+                    # Start panel animation
+                    self.panel_animation_active = True
+                    self.panel_animation_start = pygame.time.get_ticks()
                     # Start the game
                     self.game.start_tile_appearance()
                 else:
@@ -795,6 +861,9 @@ class GameApp:
                 if result == 'new_game':
                     # Reset game and continue playing
                     self.reset_game()
+                    # Start panel animation
+                    self.panel_animation_active = True
+                    self.panel_animation_start = pygame.time.get_ticks()
                     self.game.start_tile_appearance()
                     show_result = False
                     prepare_to_show_result = False

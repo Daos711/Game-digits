@@ -294,7 +294,7 @@ def draw_close_button(surface, rect, is_pressed=False):
     return pygame.Rect(x, y, w, h)
 
 
-def draw_result_window_header(surface, rect, title, font, close_callback_rect=None):
+def draw_result_window_header(surface, rect, title, font, close_pressed=False):
     """Draw the yellow header bar with title and close button.
 
     Args:
@@ -302,7 +302,7 @@ def draw_result_window_header(surface, rect, title, font, close_callback_rect=No
         rect: (x, y, width, height) of the header
         title: Title text to display
         font: Font for the title
-        close_callback_rect: If provided, will be set to the close button rect
+        close_pressed: If True, draw close button in pressed state
 
     Returns:
         pygame.Rect of the close button
@@ -334,7 +334,7 @@ def draw_result_window_header(surface, rect, title, font, close_callback_rect=No
     btn_x = x + w - btn_size - btn_margin
     btn_y = y + (h - btn_size) // 2
 
-    close_rect = draw_close_button(surface, (btn_x, btn_y, btn_size, btn_size))
+    close_rect = draw_close_button(surface, (btn_x, btn_y, btn_size, btn_size), is_pressed=close_pressed)
 
     return close_rect
 
