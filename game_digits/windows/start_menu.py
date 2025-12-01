@@ -478,17 +478,31 @@ class StartMenu:
     def _toggle_records(self):
         """Toggle records panel visibility."""
         current_time = pygame.time.get_ticks()
-        self.records_sliding = True
-        self.records_slide_start_time = current_time
 
-        if self.show_records:
-            # Hide records
-            self.records_slide_direction = -1
+        if self.records_sliding:
+            # Mid-animation: reverse direction smoothly from current position
+            self.records_slide_direction *= -1
+            # Adjust start time to continue from current progress
+            current_progress = self.records_slide_progress
+            if self.records_slide_direction == 1:
+                # Now opening: start from current progress
+                elapsed = current_progress * self.RECORDS_SLIDE_DURATION
+            else:
+                # Now closing: start from current progress
+                elapsed = (1 - current_progress) * self.RECORDS_SLIDE_DURATION
+            self.records_slide_start_time = current_time - int(elapsed)
         else:
-            # Show records
-            self.show_records = True
-            self.records_slide_direction = 1
-            self.cached_records = records.load_records()
+            self.records_sliding = True
+            self.records_slide_start_time = current_time
+
+            if self.show_records:
+                # Hide records
+                self.records_slide_direction = -1
+            else:
+                # Show records
+                self.show_records = True
+                self.records_slide_direction = 1
+                self.cached_records = records.load_records()
 
     def reset_for_entry(self):
         """Reset tiles for entry animation (coming from left)."""
