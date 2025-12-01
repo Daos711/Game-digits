@@ -381,16 +381,11 @@ class StartMenu:
         pygame.draw.rect(panel_surface, (50, 100, 140),
                         (0, 0, panel_width, panel_height), width=2, border_radius=10)
 
-        # Title
-        title = self.records_title_font.render("Рекорды", True, (255, 255, 255))
-        title_rect = title.get_rect(center=(panel_width // 2, 25))
-        panel_surface.blit(title, title_rect)
-
         # Column positions (center-aligned)
         col_positions = [20, 65, 120, 175]  # #, Очки, Бонус, Итого
 
         # Column headers
-        header_y = 55
+        header_y = 15
         headers = ["#", "Очки", "Бонус", "Итого"]
         for text, center_x in zip(headers, col_positions):
             header = self.records_small_font.render(text, True, (180, 200, 220))
@@ -398,18 +393,18 @@ class StartMenu:
             panel_surface.blit(header, header_rect)
 
         # Divider line
-        pygame.draw.line(panel_surface, (80, 120, 160), (10, 75), (panel_width - 10, 75), 1)
+        pygame.draw.line(panel_surface, (80, 120, 160), (10, 35), (panel_width - 10, 35), 1)
 
         # Records
         if not self.cached_records:
             # No records message
             no_records = self.records_font.render("Нет записей", True, (150, 170, 190))
-            no_records_rect = no_records.get_rect(center=(panel_width // 2, 150))
+            no_records_rect = no_records.get_rect(center=(panel_width // 2, 100))
             panel_surface.blit(no_records, no_records_rect)
         else:
             row_height = 50
             for i, record in enumerate(self.cached_records[:10]):
-                row_y = 85 + i * row_height
+                row_y = 45 + i * row_height
 
                 # Alternate row background
                 if i % 2 == 0:
