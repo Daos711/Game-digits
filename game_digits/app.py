@@ -9,7 +9,7 @@ from game_digits.constants import (
 from game_digits.game import Game
 from game_digits.sprites import Arrow, ScorePopup
 from game_digits import ui_components as ui
-from game_digits.windows import ResultWindow
+from game_digits.windows import ResultWindow, StartMenu
 
 
 class GameApp:
@@ -63,8 +63,15 @@ class GameApp:
         self.COUNTDOWN_EVENT = self.game.COUNTDOWN_EVENT
         self.TILE_APPEAR_EVENT = self.game.TILE_APPEAR_EVENT
 
-        # Start tile appearance animation
-        self.game.start_tile_appearance()
+        # Game state: 'menu' or 'playing'
+        self.state = 'menu'
+
+        # Create start menu
+        self.start_menu = StartMenu(
+            screen=self.screen,
+            screen_size=(self.WIDTH, self.HEIGHT),
+            redraw_background=self.draw_background_for_menu
+        )
 
     def draw_background(self):
         # Заливаем фон белым
@@ -105,6 +112,48 @@ class GameApp:
         )
         self.screen.blit(self.tile_surface, (2 * self.frame, 2 * self.frame))
         self.draw_score_and_timer_window()
+
+    def draw_background_for_menu(self):
+        """Draw background for menu (without UI panel elements)."""
+        # Заливаем фон белым
+        self.screen.fill((255, 255, 255))
+        # Рисуем клеточный паттерн (как в школьной тетради)
+        for x in range(0, self.WIDTH + 1, self.grid_cell_size):
+            pygame.draw.line(self.screen, self.grid_line_color, (x, 0), (x, self.HEIGHT), 1)
+        for y in range(0, self.HEIGHT + 1, self.grid_cell_size):
+            pygame.draw.line(self.screen, self.grid_line_color, (0, y), (self.WIDTH, y), 1)
+        # Желтая рамка с границами
+        border_color = (162, 140, 40)
+        frame_color = (247, 204, 74)
+        # Внешняя граница (1 пиксель)
+        pygame.draw.rect(
+            self.screen,
+            border_color,
+            (self.frame, self.frame, self.window, self.window),
+            1,
+        )
+        # Желтая рамка (8 пикселей)
+        pygame.draw.rect(
+            self.screen,
+            frame_color,
+            (self.frame + 1, self.frame + 1, self.window - 2, self.window - 2),
+            self.frame - 2,
+        )
+        # Внутренняя граница (1 пиксель)
+        pygame.draw.rect(
+            self.screen,
+            border_color,
+            (self.frame * 2 - 1, self.frame * 2 - 1, self.window - self.frame * 2 + 2, self.window - self.frame * 2 + 2),
+            1,
+        )
+        # Синяя панель справа (пустая)
+        pygame.draw.rect(
+            self.screen,
+            (62, 157, 203),
+            (self.HEIGHT, 0, self.panel_width, self.panel_height),
+        )
+        # Игровое поле (пустое с текстурой)
+        self.screen.blit(self.tile_surface, (2 * self.frame, 2 * self.frame))
 
     def draw_score_and_timer_window(self):
         panel_x = self.HEIGHT  # Начало правой панели
@@ -206,7 +255,7 @@ class GameApp:
         """Display the game result window with final score.
 
         Returns:
-            bool: True if user wants to start new game, False to exit
+            str: 'new_game', 'menu', or None
         """
         def redraw_background():
             """Callback to redraw game scene before result window."""
@@ -621,7 +670,19 @@ class GameApp:
         prepare_to_show_result = False
         # Флаг для добавления плитки (когда бар становится пустым)
         pending_tile_spawn = False
+
         while running:
+            # === MENU STATE ===
+            if self.state == 'menu':
+                # Show start menu
+                start_game = self.start_menu.show()
+                if start_game:
+                    self.state = 'playing'
+                    # Start the game
+                    self.game.start_tile_appearance()
+                else:
+                    running = False
+                continue
             # Обработка двухфазного таймера
             if self.timer_running and not self.is_paused:
                 elapsed = pygame.time.get_ticks() - self.bar_phase_start
@@ -730,10 +791,18 @@ class GameApp:
                 # Анимации очков закончились - показываем результат
                 self.update_display()
                 pygame.display.flip()
-                start_new_game = self.show_result_window()
-                if start_new_game:
-                    # Reset game and continue
+                result = self.show_result_window()
+                if result == 'new_game':
+                    # Reset game and continue playing
                     self.reset_game()
+                    self.game.start_tile_appearance()
+                    show_result = False
+                    prepare_to_show_result = False
+                    pending_tile_spawn = False
+                elif result == 'menu':
+                    # Return to menu
+                    self.reset_game()
+                    self.state = 'menu'
                     show_result = False
                     prepare_to_show_result = False
                     pending_tile_spawn = False

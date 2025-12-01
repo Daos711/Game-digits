@@ -426,14 +426,15 @@ def draw_congratulation_panel(surface, rect, text, font):
     surface.blit(text_surface, text_rect)
 
 
-def draw_new_game_button(surface, rect, font, is_pressed=False):
-    """Draw glossy yellow-orange 'Новая игра' button.
+def draw_new_game_button(surface, rect, font, is_pressed=False, text="Новая игра"):
+    """Draw glossy yellow-orange button.
 
     Args:
         surface: Pygame surface to draw on
         rect: (x, y, width, height) of the button
         font: Font for the button text
         is_pressed: If True, draw pressed state
+        text: Button text (default: "Новая игра")
 
     Returns:
         pygame.Rect of the button
@@ -511,7 +512,6 @@ def draw_new_game_button(surface, rect, font, is_pressed=False):
         pygame.draw.line(surface, border_color, (x + radius, y + y_offset + i), (x + w - radius, y + y_offset + i), 1)
 
     # Text - dark blue for contrast on yellow-orange button
-    text = "Новая игра"
     text_surface = font.render(text, True, (20, 60, 120))
 
     # Shadow - light yellow for depth effect
