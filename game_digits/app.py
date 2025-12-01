@@ -510,6 +510,12 @@ class GameApp:
             if popup.grid_position in grid_positions:
                 popup.kill()
 
+    def _refresh_selected_tile_arrows(self):
+        """Перерисовывает стрелки для выбранной плитки после изменения состояния доски."""
+        if self.game.selected_tile and not self.game.selected_tile.is_moving:
+            self.arrows.empty()
+            self.draw_arrows_for_tile(self.game.selected_tile)
+
     def remove_arrows_on_occupied_cells(self):
         """Удаляет стрелки, находящиеся на занятых ячейках."""
         # Позиции, где сейчас визуально находятся движущиеся плитки (1-2 ячейки)
@@ -666,8 +672,6 @@ class GameApp:
         self.finalize_move(tile)
 
     def finalize_move(self, tile):
-        tile.is_moving = False
-        tile.current_direction = None
         # Очищаем атрибуты отслеживания движения
         if hasattr(tile, 'last_grid_pos'):
             del tile.last_grid_pos
@@ -675,14 +679,27 @@ class GameApp:
             del tile.cells_left_count
             del tile.total_cells_to_move
             del tile.move_animation_group
+
+        # Сначала обновляем позицию и доску, ПОТОМ сбрасываем is_moving
+        # Это предотвращает окно несогласованности состояния
         old_x, old_y = tile.position
         new_x, new_y = pixel_to_grid(tile.rect.topleft[0], tile.rect.topleft[1])
         tile.position = (new_x, new_y)
         self.game.update_board((old_x, old_y), (new_x, new_y), tile)
+
+        # Теперь безопасно сбросить флаги движения
+        tile.is_moving = False
+        tile.current_direction = None
+
         # Очищаем стрелки только если это была выбранная плитка
         if self.game.selected_tile == tile:
             self.game.deselect_tile()
             self.arrows.empty()
+        else:
+            # Обновляем стрелки для выбранной плитки (если есть)
+            # так как состояние доски изменилось
+            self._refresh_selected_tile_arrows()
+
         # Удаляем стрелки на занятых ячейках (плитка могла приехать на чужую стрелку)
         self.remove_arrows_on_occupied_cells()
         delta_x = abs(new_x - old_x)
@@ -798,7 +815,8 @@ class GameApp:
                     # Спавн произошёл - запускаем фазу заполнения бара
                     self.bar_phase = 'filling'
                     self.bar_phase_start = pygame.time.get_ticks()
-                    self.remove_arrows_on_occupied_cells()
+                    # Обновляем стрелки - новая плитка могла заблокировать направление
+                    self._refresh_selected_tile_arrows()
                     empty = any(
                         self.game.board[i][j] is None
                         for i in range(BOARD_SIZE)
