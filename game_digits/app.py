@@ -118,7 +118,32 @@ class GameApp:
             (self.HEIGHT, 0, self.panel_width, self.panel_height),
         )
         self.screen.blit(self.tile_surface, (2 * self.frame, 2 * self.frame))
+
+        # Draw pause overlay if game is paused
+        if self.is_paused:
+            self._draw_pause_overlay()
+
         self.draw_score_and_timer_window()
+
+    def _draw_pause_overlay(self):
+        """Draw semi-transparent overlay over game field when paused."""
+        # Calculate game field area (inside yellow frame)
+        field_x = 2 * self.frame
+        field_y = 2 * self.frame
+        field_size = self.window - 2 * self.frame
+
+        # Create semi-transparent overlay
+        overlay = pygame.Surface((field_size, field_size), pygame.SRCALPHA)
+        overlay.fill((40, 60, 80, 220))  # Dark blue-gray with high opacity
+
+        # Draw "ПАУЗА" text
+        pause_font = pygame.font.Font(get_font_path("2204.ttf"), 72)
+        pause_text = pause_font.render("ПАУЗА", True, (255, 255, 255))
+        text_rect = pause_text.get_rect(center=(field_size // 2, field_size // 2))
+        overlay.blit(pause_text, text_rect)
+
+        # Blit overlay onto screen
+        self.screen.blit(overlay, (field_x, field_y))
 
     def draw_background_for_menu(self):
         """Draw background for menu (without UI panel elements)."""
