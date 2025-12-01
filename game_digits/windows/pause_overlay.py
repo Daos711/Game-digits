@@ -145,16 +145,16 @@ class PauseOverlay:
         # Create overlay surface
         overlay = pygame.Surface((self.field_width, self.field_height), pygame.SRCALPHA)
 
-        # Dark semi-transparent background
-        overlay.fill((30, 45, 60, 230))
+        # Fully opaque dark background to hide game field
+        overlay.fill((35, 50, 65, 255))
 
         # Update and draw tiles
         self.update()
         for tile in self.tiles:
             tile.draw(overlay)
 
-        # Draw subtitle
-        subtitle = self.subtitle_font.render("Нажмите для продолжения", True, (180, 180, 180))
+        # Draw subtitle (informative, not actionable)
+        subtitle = self.subtitle_font.render("Игра приостановлена", True, (140, 150, 160))
         subtitle_rect = subtitle.get_rect(center=(self.field_width // 2, self.field_height - 50))
         overlay.blit(subtitle, subtitle_rect)
 
