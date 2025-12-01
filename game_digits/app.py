@@ -381,11 +381,6 @@ class GameApp:
     def handle_event(self, event):
         if event.type == pygame.QUIT:
             return False
-        elif event.type == pygame.KEYDOWN:
-            # Space while paused - switch pattern
-            if self.is_paused and event.key == pygame.K_SPACE:
-                self.pause_overlay.next_pattern()
-                return True
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             pos = pygame.mouse.get_pos()
 

@@ -344,8 +344,7 @@ class PauseOverlay:
         self.pattern_index = 0
         self.start_time = 0
 
-        self.subtitle_font = pygame.font.Font(get_font_path("2204.ttf"), 24)
-        self.hint_font = pygame.font.Font(get_font_path("2204.ttf"), 18)
+        self.title_font = pygame.font.Font(get_font_path("2204.ttf"), 28)
 
         self._create_tiles()
 
@@ -399,16 +398,6 @@ class PauseOverlay:
         self.pattern_index = random.randint(0, len(self.PATTERN_NAMES) - 1)
         self._select_pattern()
 
-    def next_pattern(self):
-        """Switch to next pattern (for preview mode)."""
-        self.pattern_index = (self.pattern_index + 1) % len(self.PATTERN_NAMES)
-        self.start_time = pygame.time.get_ticks()
-        self._select_pattern()
-
-    def get_current_pattern_name(self):
-        """Get name of current pattern."""
-        return self.PATTERN_NAMES[self.pattern_index]
-
     def update(self):
         """Update tile positions based on current pattern."""
         if self.pattern:
@@ -427,16 +416,9 @@ class PauseOverlay:
         for tile in self.tiles:
             tile.draw(overlay)
 
-        # Draw pattern name at top
-        pattern_name = self.get_current_pattern_name()
-        pattern_num = f"{self.pattern_index + 1}/{len(self.PATTERN_NAMES)}"
-        pattern_text = self.subtitle_font.render(f"{pattern_name} ({pattern_num})", True, (200, 200, 200))
-        pattern_rect = pattern_text.get_rect(center=(self.field_width // 2, 40))
-        overlay.blit(pattern_text, pattern_rect)
-
-        # Draw hint to switch patterns
-        hint = self.hint_font.render("[Пробел] - следующий паттерн", True, (120, 130, 140))
-        hint_rect = hint.get_rect(center=(self.field_width // 2, self.field_height - 25))
-        overlay.blit(hint, hint_rect)
+        # Draw "Игра приостановлена" text at bottom
+        title_text = self.title_font.render("Игра приостановлена", True, (180, 190, 200))
+        title_rect = title_text.get_rect(center=(self.field_width // 2, self.field_height - 50))
+        overlay.blit(title_text, title_rect)
 
         surface.blit(overlay, (offset_x, offset_y))
