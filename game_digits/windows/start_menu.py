@@ -260,15 +260,12 @@ class StartMenu:
         elapsed = current_time - self.records_slide_start_time
         progress = min(1.0, elapsed / self.RECORDS_SLIDE_DURATION)
 
-        # Ease out cubic: fast start, slow end
-        eased = 1 - pow(1 - progress, 3)
-
         if self.records_slide_direction == 1:
-            # Opening: 0 → 1
-            self.records_slide_progress = eased
+            # Opening: ease-out cubic (fast start, slow end)
+            self.records_slide_progress = 1 - pow(1 - progress, 3)
         else:
-            # Closing: 1 → 0 (same fast start, slow end feel)
-            self.records_slide_progress = pow(1 - progress, 3)
+            # Closing: linear (instant response)
+            self.records_slide_progress = 1 - progress
 
         if progress >= 1.0:
             self.records_sliding = False
@@ -489,12 +486,10 @@ class StartMenu:
             # Calculate equivalent progress for new direction
             if self.records_slide_direction == 1:
                 # Now opening: find progress where eased = current_slide
-                # eased = 1 - (1-p)^3, so p = 1 - (1-current_slide)^(1/3)
                 equiv_progress = 1 - pow(1 - current_slide, 1/3)
             else:
-                # Now closing: find progress where pow(1-p, 3) = current_slide
-                # p = 1 - current_slide^(1/3)
-                equiv_progress = 1 - pow(current_slide, 1/3)
+                # Now closing (linear): progress where (1-p) = current_slide
+                equiv_progress = 1 - current_slide
 
             elapsed = equiv_progress * self.RECORDS_SLIDE_DURATION
             self.records_slide_start_time = current_time - int(elapsed)
