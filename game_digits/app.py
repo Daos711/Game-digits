@@ -75,7 +75,7 @@ class GameApp:
         for y in range(0, self.HEIGHT + 1, self.grid_cell_size):
             pygame.draw.line(self.screen, self.grid_line_color, (0, y), (self.WIDTH, y), 1)
         # Желтая рамка с границами
-        border_color = (168, 134, 33)
+        border_color = (162, 140, 40)
         frame_color = (247, 204, 74)
         # Внешняя граница (1 пиксель)
         pygame.draw.rect(
