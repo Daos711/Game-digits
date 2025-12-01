@@ -238,9 +238,11 @@ class PauseOverlay:
 
         self.tiles = []
         self.pattern = None
+        self.pattern_index = 0
         self.start_time = 0
 
         self.subtitle_font = pygame.font.Font(get_font_path("2204.ttf"), 24)
+        self.hint_font = pygame.font.Font(get_font_path("2204.ttf"), 18)
 
         self._create_tiles()
 
@@ -260,11 +262,15 @@ class PauseOverlay:
             )
             self.tiles.append(tile)
 
-    def _select_pattern(self):
-        """Randomly select an animation pattern."""
-        pattern_name = random.choice(self.PATTERN_NAMES)
+    def _select_pattern(self, pattern_name=None):
+        """Select an animation pattern by name or use current index."""
+        if pattern_name is None:
+            pattern_name = self.PATTERN_NAMES[self.pattern_index]
+
         center_x = self.field_width // 2
         center_y = self.field_height // 2
+
+        self._create_tiles()  # Reset tiles for new pattern
 
         if pattern_name == 'orbit':
             self.pattern = OrbitPattern(self.tiles, center_x, center_y)
@@ -281,8 +287,18 @@ class PauseOverlay:
     def start(self):
         """Start the animation with a random pattern."""
         self.start_time = pygame.time.get_ticks()
-        self._create_tiles()  # Reset tiles
+        self.pattern_index = random.randint(0, len(self.PATTERN_NAMES) - 1)
         self._select_pattern()
+
+    def next_pattern(self):
+        """Switch to next pattern (for preview mode)."""
+        self.pattern_index = (self.pattern_index + 1) % len(self.PATTERN_NAMES)
+        self.start_time = pygame.time.get_ticks()
+        self._select_pattern()
+
+    def get_current_pattern_name(self):
+        """Get name of current pattern."""
+        return self.PATTERN_NAMES[self.pattern_index]
 
     def update(self):
         """Update tile positions based on current pattern."""
@@ -302,9 +318,16 @@ class PauseOverlay:
         for tile in self.tiles:
             tile.draw(overlay)
 
-        # Draw subtitle
-        subtitle = self.subtitle_font.render("Игра приостановлена", True, (140, 150, 160))
-        subtitle_rect = subtitle.get_rect(center=(self.field_width // 2, self.field_height - 50))
-        overlay.blit(subtitle, subtitle_rect)
+        # Draw pattern name at top
+        pattern_name = self.get_current_pattern_name()
+        pattern_num = f"{self.pattern_index + 1}/{len(self.PATTERN_NAMES)}"
+        pattern_text = self.subtitle_font.render(f"{pattern_name} ({pattern_num})", True, (200, 200, 200))
+        pattern_rect = pattern_text.get_rect(center=(self.field_width // 2, 40))
+        overlay.blit(pattern_text, pattern_rect)
+
+        # Draw hint to switch patterns
+        hint = self.hint_font.render("[Пробел] - следующий паттерн", True, (120, 130, 140))
+        hint_rect = hint.get_rect(center=(self.field_width // 2, self.field_height - 25))
+        overlay.blit(hint, hint_rect)
 
         surface.blit(overlay, (offset_x, offset_y))
