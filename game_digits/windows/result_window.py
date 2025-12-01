@@ -4,6 +4,7 @@ import pygame
 
 from game_digits import get_font_path
 from game_digits import ui_components as ui
+from game_digits import records
 
 
 class ResultWindow:
@@ -77,6 +78,13 @@ class ResultWindow:
         self.rows_animation_started = False
         self.rows_animation_start_time = 0
         self.animation_complete = False
+
+        # Save record
+        self.record_position = records.add_record(
+            score=self.game_score,
+            bonus=self.bonus,
+            total=self.total_score
+        )
 
     def _draw_window(self, rows_to_show=3, current_total=None, opacity=255, overlay_alpha=128):
         """Draw the complete result window with animation state.
