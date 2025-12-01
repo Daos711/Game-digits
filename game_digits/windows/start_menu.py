@@ -260,13 +260,15 @@ class StartMenu:
         elapsed = current_time - self.records_slide_start_time
         progress = min(1.0, elapsed / self.RECORDS_SLIDE_DURATION)
 
-        # Ease out cubic
+        # Ease out cubic: fast start, slow end
         eased = 1 - pow(1 - progress, 3)
 
         if self.records_slide_direction == 1:
+            # Opening: 0 → 1
             self.records_slide_progress = eased
         else:
-            self.records_slide_progress = 1 - eased
+            # Closing: 1 → 0 (same fast start, slow end feel)
+            self.records_slide_progress = pow(1 - progress, 3)
 
         if progress >= 1.0:
             self.records_sliding = False
@@ -481,15 +483,20 @@ class StartMenu:
 
         if self.records_sliding:
             # Mid-animation: reverse direction smoothly from current position
+            current_slide = self.records_slide_progress
             self.records_slide_direction *= -1
-            # Adjust start time to continue from current progress
-            current_progress = self.records_slide_progress
+
+            # Calculate equivalent progress for new direction
             if self.records_slide_direction == 1:
-                # Now opening: start from current progress
-                elapsed = current_progress * self.RECORDS_SLIDE_DURATION
+                # Now opening: find progress where eased = current_slide
+                # eased = 1 - (1-p)^3, so p = 1 - (1-current_slide)^(1/3)
+                equiv_progress = 1 - pow(1 - current_slide, 1/3)
             else:
-                # Now closing: start from current progress
-                elapsed = (1 - current_progress) * self.RECORDS_SLIDE_DURATION
+                # Now closing: find progress where pow(1-p, 3) = current_slide
+                # p = 1 - current_slide^(1/3)
+                equiv_progress = 1 - pow(current_slide, 1/3)
+
+            elapsed = equiv_progress * self.RECORDS_SLIDE_DURATION
             self.records_slide_start_time = current_time - int(elapsed)
         else:
             self.records_sliding = True
