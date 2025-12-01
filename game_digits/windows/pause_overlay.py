@@ -54,59 +54,6 @@ class PauseTile:
         surface.blit(self.surface, pos)
 
 
-class OrbitPattern:
-    """Tiles orbit around center in elliptical paths."""
-
-    def __init__(self, tiles, center_x, center_y):
-        self.tiles = tiles
-        self.center_x = center_x
-        self.center_y = center_y
-
-        # Assign orbit parameters to each tile
-        for i, tile in enumerate(tiles):
-            tile.orbit_radius = 80 + (i % 2) * 30
-            tile.orbit_speed = 0.5 + (i * 0.1)
-            tile.phase = (i / len(tiles)) * 2 * math.pi
-
-    def update(self, time_ms):
-        for tile in self.tiles:
-            angle = tile.phase + (time_ms / 1000.0) * tile.orbit_speed
-            tile.x = self.center_x + math.cos(angle) * tile.orbit_radius
-            tile.y = self.center_y + math.sin(angle) * tile.orbit_radius * 0.5
-
-
-class BouncePattern:
-    """DVD screensaver style - tiles bounce off edges."""
-
-    def __init__(self, tiles, width, height):
-        self.tiles = tiles
-        self.width = width
-        self.height = height
-        self.margin = 30
-
-        # Initialize positions and velocities
-        for i, tile in enumerate(tiles):
-            tile.x = width // 2 + (i - 2) * 60
-            tile.y = height // 2
-            angle = random.uniform(0, 2 * math.pi)
-            speed = 2 + random.uniform(0, 1)
-            tile.vx = math.cos(angle) * speed
-            tile.vy = math.sin(angle) * speed
-
-    def update(self, time_ms):
-        for tile in self.tiles:
-            tile.x += tile.vx
-            tile.y += tile.vy
-
-            half = tile.tile_size // 2
-            if tile.x - half < self.margin or tile.x + half > self.width - self.margin:
-                tile.vx = -tile.vx
-                tile.x = max(self.margin + half, min(self.width - self.margin - half, tile.x))
-            if tile.y - half < self.margin or tile.y + half > self.height - self.margin:
-                tile.vy = -tile.vy
-                tile.y = max(self.margin + half, min(self.height - self.margin - half, tile.y))
-
-
 class WavePattern:
     """Tiles in a row with wave pulsing effect."""
 
@@ -124,15 +71,44 @@ class WavePattern:
         for i, tile in enumerate(self.tiles):
             tile.x = start_x + i * self.base_spacing
             # Wave motion - each tile has phase offset
-            wave_offset = math.sin(t * 3 + i * 0.8) * 20
+            wave_offset = math.sin(t * 2 + i * 0.8) * 25
             tile.y = self.center_y + wave_offset
-            # Scale effect (simulated by position jitter)
-            scale_offset = math.sin(t * 2 + i * 0.5) * 5
-            tile.y += scale_offset
+
+
+class BouncePattern:
+    """DVD screensaver style - tiles bounce off edges (slowed down)."""
+
+    def __init__(self, tiles, width, height):
+        self.tiles = tiles
+        self.width = width
+        self.height = height
+        self.margin = 30
+
+        # Initialize positions and velocities - SLOWER speed
+        for i, tile in enumerate(tiles):
+            tile.x = width // 2 + (i - 2) * 60
+            tile.y = height // 2
+            angle = random.uniform(0, 2 * math.pi)
+            speed = 0.8 + random.uniform(0, 0.4)  # Reduced from 2-3 to 0.8-1.2
+            tile.vx = math.cos(angle) * speed
+            tile.vy = math.sin(angle) * speed
+
+    def update(self, time_ms):
+        for tile in self.tiles:
+            tile.x += tile.vx
+            tile.y += tile.vy
+
+            half = tile.tile_size // 2
+            if tile.x - half < self.margin or tile.x + half > self.width - self.margin:
+                tile.vx = -tile.vx
+                tile.x = max(self.margin + half, min(self.width - self.margin - half, tile.x))
+            if tile.y - half < self.margin or tile.y + half > self.height - self.margin:
+                tile.vy = -tile.vy
+                tile.y = max(self.margin + half, min(self.height - self.margin - half, tile.y))
 
 
 class SnakePattern:
-    """Tiles follow each other in a snake pattern."""
+    """Tiles follow each other in a snake pattern (slowed down)."""
 
     def __init__(self, tiles, center_x, center_y, width, height):
         self.tiles = tiles
@@ -151,9 +127,9 @@ class SnakePattern:
     def update(self, time_ms):
         t = time_ms / 1000.0
 
-        # Move head in a smooth wandering pattern
-        self.angle += math.sin(t * 0.7) * 0.05 + math.cos(t * 1.1) * 0.03
-        speed = 3
+        # Move head in a smooth wandering pattern - SLOWER
+        self.angle += math.sin(t * 0.5) * 0.03 + math.cos(t * 0.7) * 0.02
+        speed = 1.2  # Reduced from 3 to 1.2
         self.head_x += math.cos(self.angle) * speed
         self.head_y += math.sin(self.angle) * speed
 
@@ -189,13 +165,104 @@ class SnakePattern:
                 tile.x, tile.y = self.center_x, self.center_y
 
 
-class SpiralPattern:
-    """Tiles move in expanding/contracting spiral."""
+class FloatPattern:
+    """Tiles float gently like bubbles."""
 
     def __init__(self, tiles, center_x, center_y):
         self.tiles = tiles
         self.center_x = center_x
         self.center_y = center_y
+        self.base_spacing = 60
+
+        # Random parameters for each tile
+        for i, tile in enumerate(tiles):
+            tile.float_speed = 0.8 + random.uniform(0, 0.4)
+            tile.float_phase = random.uniform(0, 2 * math.pi)
+            tile.float_amplitude = 15 + random.uniform(0, 10)
+            tile.drift_speed = 0.3 + random.uniform(0, 0.2)
+            tile.drift_phase = random.uniform(0, 2 * math.pi)
+
+    def update(self, time_ms):
+        t = time_ms / 1000.0
+        total_width = (len(self.tiles) - 1) * self.base_spacing
+        start_x = self.center_x - total_width / 2
+
+        for i, tile in enumerate(self.tiles):
+            # Base position in row
+            base_x = start_x + i * self.base_spacing
+            # Gentle vertical float
+            float_y = math.sin(t * tile.float_speed + tile.float_phase) * tile.float_amplitude
+            # Slight horizontal drift
+            drift_x = math.sin(t * tile.drift_speed + tile.drift_phase) * 8
+
+            tile.x = base_x + drift_x
+            tile.y = self.center_y + float_y
+
+
+class SwingPattern:
+    """Tiles swing like pendulums from the top."""
+
+    def __init__(self, tiles, center_x, center_y):
+        self.tiles = tiles
+        self.center_x = center_x
+        self.center_y = center_y
+        self.base_spacing = 60
+        self.rope_length = 80
+
+        # Different swing parameters for each tile
+        for i, tile in enumerate(tiles):
+            tile.swing_speed = 1.5 + i * 0.15
+            tile.swing_phase = i * 0.4
+            tile.swing_amplitude = 0.4 + i * 0.05
+
+    def update(self, time_ms):
+        t = time_ms / 1000.0
+        total_width = (len(self.tiles) - 1) * self.base_spacing
+        start_x = self.center_x - total_width / 2
+
+        anchor_y = self.center_y - self.rope_length
+
+        for i, tile in enumerate(self.tiles):
+            anchor_x = start_x + i * self.base_spacing
+            # Pendulum swing angle
+            angle = math.sin(t * tile.swing_speed + tile.swing_phase) * tile.swing_amplitude
+
+            tile.x = anchor_x + math.sin(angle) * self.rope_length
+            tile.y = anchor_y + math.cos(angle) * self.rope_length
+
+
+class BreathePattern:
+    """Tiles breathe in and out together, expanding and contracting."""
+
+    def __init__(self, tiles, center_x, center_y):
+        self.tiles = tiles
+        self.center_x = center_x
+        self.center_y = center_y
+        self.base_spacing = 60
+
+    def update(self, time_ms):
+        t = time_ms / 1000.0
+
+        # Breathing scale factor
+        breath = 1 + math.sin(t * 1.2) * 0.3
+
+        total_width = (len(self.tiles) - 1) * self.base_spacing * breath
+        start_x = self.center_x - total_width / 2
+
+        for i, tile in enumerate(self.tiles):
+            tile.x = start_x + i * self.base_spacing * breath
+            # Slight vertical bob
+            tile.y = self.center_y + math.sin(t * 0.8 + i * 0.3) * 8
+
+
+class CarouselPattern:
+    """Tiles rotate like a 3D carousel with depth effect."""
+
+    def __init__(self, tiles, center_x, center_y):
+        self.tiles = tiles
+        self.center_x = center_x
+        self.center_y = center_y
+        self.radius = 100
 
     def update(self, time_ms):
         t = time_ms / 1000.0
@@ -204,16 +271,52 @@ class SpiralPattern:
             # Base angle for this tile
             base_angle = (i / len(self.tiles)) * 2 * math.pi
 
-            # Rotating angle
-            angle = base_angle + t * 0.8
+            # Slow rotation
+            angle = base_angle + t * 0.5
 
-            # Pulsing radius
-            base_radius = 60 + i * 15
-            pulse = math.sin(t * 1.5) * 30
-            radius = base_radius + pulse
+            # 3D carousel effect
+            tile.x = self.center_x + math.sin(angle) * self.radius
+            # Compress Y for perspective, offset for depth
+            z = math.cos(angle)
+            tile.y = self.center_y + z * 30
 
-            tile.x = self.center_x + math.cos(angle) * radius
-            tile.y = self.center_y + math.sin(angle) * radius
+
+class TypewriterPattern:
+    """Tiles appear one by one like typing, then reset."""
+
+    def __init__(self, tiles, center_x, center_y):
+        self.tiles = tiles
+        self.center_x = center_x
+        self.center_y = center_y
+        self.base_spacing = 60
+        self.char_delay = 400  # ms per character
+        self.pause_time = 2000  # ms to pause when complete
+        self.cycle_time = len(tiles) * self.char_delay + self.pause_time
+
+    def update(self, time_ms):
+        cycle_pos = time_ms % self.cycle_time
+
+        total_width = (len(self.tiles) - 1) * self.base_spacing
+        start_x = self.center_x - total_width / 2
+
+        for i, tile in enumerate(self.tiles):
+            appear_time = i * self.char_delay
+
+            if cycle_pos < appear_time:
+                # Not yet appeared - hide off screen
+                tile.x = -100
+                tile.y = -100
+            else:
+                # Appeared - in position with slight bounce
+                time_since_appear = cycle_pos - appear_time
+                bounce = 0
+                if time_since_appear < 200:
+                    # Quick bounce on appear
+                    progress = time_since_appear / 200
+                    bounce = math.sin(progress * math.pi) * 15
+
+                tile.x = start_x + i * self.base_spacing
+                tile.y = self.center_y - bounce
 
 
 class PauseOverlay:
@@ -230,7 +333,7 @@ class PauseOverlay:
         (245, 203, 105),  # А - yellow
     ]
 
-    PATTERN_NAMES = ['orbit', 'bounce', 'wave', 'snake', 'spiral']
+    PATTERN_NAMES = ['wave', 'float', 'swing', 'breathe', 'carousel', 'typewriter', 'bounce', 'snake']
 
     def __init__(self, field_width: int, field_height: int):
         self.field_width = field_width
@@ -272,17 +375,23 @@ class PauseOverlay:
 
         self._create_tiles()  # Reset tiles for new pattern
 
-        if pattern_name == 'orbit':
-            self.pattern = OrbitPattern(self.tiles, center_x, center_y)
+        if pattern_name == 'wave':
+            self.pattern = WavePattern(self.tiles, center_x, center_y)
         elif pattern_name == 'bounce':
             self.pattern = BouncePattern(self.tiles, self.field_width, self.field_height)
-        elif pattern_name == 'wave':
-            self.pattern = WavePattern(self.tiles, center_x, center_y)
         elif pattern_name == 'snake':
             self.pattern = SnakePattern(self.tiles, center_x, center_y,
                                         self.field_width, self.field_height)
-        elif pattern_name == 'spiral':
-            self.pattern = SpiralPattern(self.tiles, center_x, center_y)
+        elif pattern_name == 'float':
+            self.pattern = FloatPattern(self.tiles, center_x, center_y)
+        elif pattern_name == 'swing':
+            self.pattern = SwingPattern(self.tiles, center_x, center_y)
+        elif pattern_name == 'breathe':
+            self.pattern = BreathePattern(self.tiles, center_x, center_y)
+        elif pattern_name == 'carousel':
+            self.pattern = CarouselPattern(self.tiles, center_x, center_y)
+        elif pattern_name == 'typewriter':
+            self.pattern = TypewriterPattern(self.tiles, center_x, center_y)
 
     def start(self):
         """Start the animation with a random pattern."""
