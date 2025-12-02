@@ -1,7 +1,7 @@
 import pygame
 
 from game_digits import get_font_path
-from game_digits.constants import TILE_SIZE, GAP, TILE_BORDER_COLOR, grid_to_pixel
+from game_digits.constants import TILE_SIZE, TILE_BORDER_COLOR, grid_to_pixel
 
 
 class Tile(pygame.sprite.Sprite):
@@ -14,11 +14,8 @@ class Tile(pygame.sprite.Sprite):
         self.current_direction = None
         self.image = pygame.Surface((TILE_SIZE, TILE_SIZE))
         self.rect = self.image.get_rect()
-        self.x = self.position[0]
-        self.y = self.position[1]
         self.target_rect = None
-        x, y = grid_to_pixel(self.x, self.y)
-        self.rect.topleft = (x, y)
+        self.rect.topleft = grid_to_pixel(self.position[0], self.position[1])
         self.draw_tile((0, 0, 0))
 
     def draw_tile(self, text_color):

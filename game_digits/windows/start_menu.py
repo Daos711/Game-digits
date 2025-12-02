@@ -6,6 +6,7 @@ import pygame
 from game_digits import get_font_path
 from game_digits.constants import COLORS, TILE_SIZE, TILE_BORDER_COLOR
 from game_digits import ui_components as ui
+from game_digits import records
 
 
 class MenuTile:
@@ -91,6 +92,13 @@ class StartMenu:
     WAVE_HEIGHT = 12  # pixels to jump
     WAVE_TILE_DELAY = 80  # ms delay between each tile in wave
 
+    # Records panel constants
+    RECORDS_SLIDE_DURATION_OPEN = 400  # ms for opening
+    RECORDS_SLIDE_DURATION_CLOSE = 200  # ms for closing (faster)
+    PANEL_X = 713  # Right panel X position
+    PANEL_WIDTH = 240
+    PANEL_HEIGHT = 713
+
     def __init__(self, screen, screen_size, redraw_background):
         self.screen = screen
         self.screen_width, self.screen_height = screen_size
@@ -99,6 +107,9 @@ class StartMenu:
         # Load fonts
         bold_font_path = get_font_path("2204.ttf")
         self.button_font = pygame.font.Font(bold_font_path, 28)
+        self.records_title_font = pygame.font.Font(bold_font_path, 24)
+        self.records_font = pygame.font.Font(bold_font_path, 16)
+        self.records_small_font = pygame.font.Font(bold_font_path, 14)
 
         # Title letters and colors (using game tile colors)
         letters = ['Ц', 'И', 'Ф', 'Р', 'Ы']
@@ -125,7 +136,7 @@ class StartMenu:
             y = field_center_y - TILE_SIZE // 2
             self.tiles.append(MenuTile(letter, color, x, y))
 
-        # Button setup
+        # Start game button setup
         button_width = 200
         button_height = 50
         self.button_rect = pygame.Rect(
@@ -135,10 +146,21 @@ class StartMenu:
             button_height
         )
 
+        # Records button setup (on right panel)
+        records_btn_width = 180
+        records_btn_height = 45
+        self.records_button_rect = pygame.Rect(
+            self.PANEL_X + (self.PANEL_WIDTH - records_btn_width) // 2,
+            30,
+            records_btn_width,
+            records_btn_height
+        )
+
         # State
         self.state = 'entering'  # 'entering', 'idle', 'exiting'
         self.animation_start_time = 0
         self.button_pressed = False
+        self.records_button_pressed = False
         self.button_opacity = 0
         self.tiles_arrived = [False] * len(self.tiles)
 
@@ -149,6 +171,15 @@ class StartMenu:
 
         # Hover state
         self.button_hovered = False
+        self.records_button_hovered = False
+
+        # Records display state
+        self.show_records = False
+        self.records_slide_progress = 0  # 0 = hidden, 1 = fully visible
+        self.records_slide_start_time = 0
+        self.records_sliding = False
+        self.records_slide_direction = 1  # 1 = showing, -1 = hiding
+        self.cached_records = []
 
     def _spring_physics(self, tile, index):
         """Apply spring physics to move tile to target position."""
@@ -209,8 +240,8 @@ class StartMenu:
         if self.state != 'idle':
             return
 
-        was_hovered = self.button_hovered
         self.button_hovered = self.button_rect.collidepoint(mouse_pos)
+        self.records_button_hovered = self.records_button_rect.collidepoint(mouse_pos)
 
         # Target brightness
         target = 0.5 if self.button_hovered else 0
@@ -221,6 +252,27 @@ class StartMenu:
                 tile.brightness = min(target, tile.brightness + 0.08)
             elif tile.brightness > target:
                 tile.brightness = max(target, tile.brightness - 0.08)
+
+    def _update_records_slide(self, current_time):
+        """Update records panel slide animation."""
+        if not self.records_sliding:
+            return
+
+        elapsed = current_time - self.records_slide_start_time
+        duration = self.RECORDS_SLIDE_DURATION_OPEN if self.records_slide_direction == 1 else self.RECORDS_SLIDE_DURATION_CLOSE
+        progress = min(1.0, elapsed / duration)
+
+        if self.records_slide_direction == 1:
+            # Opening: ease-out cubic (fast start, slow end)
+            self.records_slide_progress = 1 - pow(1 - progress, 3)
+        else:
+            # Closing: linear, faster
+            self.records_slide_progress = 1 - progress
+
+        if progress >= 1.0:
+            self.records_sliding = False
+            if self.records_slide_direction == -1:
+                self.show_records = False
 
     def _update_entering(self, current_time):
         """Update animation for entering state."""
@@ -269,6 +321,126 @@ class StartMenu:
 
         return all_exited
 
+    def _draw_records_button(self):
+        """Draw the records button on the right panel."""
+        if self.button_opacity <= 0:
+            return
+
+        # Button colors
+        if self.records_button_pressed:
+            bg_color = (40, 100, 140)
+            border_color = (30, 80, 120)
+        elif self.records_button_hovered:
+            bg_color = (70, 140, 180)
+            border_color = (50, 120, 160)
+        else:
+            bg_color = (50, 120, 160)
+            border_color = (40, 100, 140)
+
+        btn_surface = pygame.Surface(
+            (self.records_button_rect.width, self.records_button_rect.height),
+            pygame.SRCALPHA
+        )
+
+        # Draw button background
+        pygame.draw.rect(btn_surface, bg_color,
+                        (0, 0, self.records_button_rect.width, self.records_button_rect.height),
+                        border_radius=8)
+        pygame.draw.rect(btn_surface, border_color,
+                        (0, 0, self.records_button_rect.width, self.records_button_rect.height),
+                        width=2, border_radius=8)
+
+        # Draw text
+        text = self.button_font.render("Рекорды", True, (255, 255, 255))
+        text_rect = text.get_rect(center=(self.records_button_rect.width // 2,
+                                          self.records_button_rect.height // 2))
+        btn_surface.blit(text, text_rect)
+
+        btn_surface.set_alpha(self.button_opacity)
+        self.screen.blit(btn_surface, self.records_button_rect.topleft)
+
+    def _draw_records_panel(self):
+        """Draw the records list on the right panel."""
+        if self.records_slide_progress <= 0:
+            return
+
+        # Calculate slide offset (slides down from top)
+        panel_height = 600
+        offset_y = int((1 - self.records_slide_progress) * -panel_height)
+
+        # Panel position
+        panel_x = self.PANEL_X + 10
+        panel_y = 90 + offset_y
+        panel_width = self.PANEL_WIDTH - 20
+
+        # Create panel surface
+        panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
+
+        # Background
+        pygame.draw.rect(panel_surface, (30, 70, 100, 240),
+                        (0, 0, panel_width, panel_height), border_radius=10)
+        pygame.draw.rect(panel_surface, (50, 100, 140),
+                        (0, 0, panel_width, panel_height), width=2, border_radius=10)
+
+        # Column positions (center-aligned)
+        col_positions = [20, 65, 120, 175]  # #, Очки, Бонус, Итого
+
+        # Column headers
+        header_y = 15
+        headers = ["#", "Очки", "Бонус", "Итого"]
+        for text, center_x in zip(headers, col_positions):
+            header = self.records_small_font.render(text, True, (180, 200, 220))
+            header_rect = header.get_rect(center=(center_x, header_y + 7))
+            panel_surface.blit(header, header_rect)
+
+        # Divider line
+        pygame.draw.line(panel_surface, (80, 120, 160), (10, 35), (panel_width - 10, 35), 1)
+
+        # Records
+        if not self.cached_records:
+            # No records message
+            no_records = self.records_font.render("Нет записей", True, (150, 170, 190))
+            no_records_rect = no_records.get_rect(center=(panel_width // 2, 100))
+            panel_surface.blit(no_records, no_records_rect)
+        else:
+            row_height = 50
+            for i, record in enumerate(self.cached_records[:10]):
+                row_y = 45 + i * row_height
+
+                # Alternate row background
+                if i % 2 == 0:
+                    pygame.draw.rect(panel_surface, (40, 80, 120, 100),
+                                    (5, row_y, panel_width - 10, row_height - 5),
+                                    border_radius=5)
+
+                # Position number
+                pos_text = self.records_font.render(f"{i + 1}", True, (200, 180, 100))
+                pos_rect = pos_text.get_rect(center=(col_positions[0], row_y + 12))
+                panel_surface.blit(pos_text, pos_rect)
+
+                # Score
+                score_text = self.records_font.render(str(record.get('score', 0)), True, (255, 255, 255))
+                score_rect = score_text.get_rect(center=(col_positions[1], row_y + 12))
+                panel_surface.blit(score_text, score_rect)
+
+                # Bonus
+                bonus_text = self.records_font.render(str(record.get('bonus', 0)), True, (150, 220, 150))
+                bonus_rect = bonus_text.get_rect(center=(col_positions[2], row_y + 12))
+                panel_surface.blit(bonus_text, bonus_rect)
+
+                # Total
+                total_text = self.records_font.render(str(record.get('total', 0)), True, (255, 220, 100))
+                total_rect = total_text.get_rect(center=(col_positions[3], row_y + 12))
+                panel_surface.blit(total_text, total_rect)
+
+                # Date (smaller, below, centered under score-bonus area)
+                date_text = self.records_small_font.render(record.get('date', ''), True, (140, 160, 180))
+                date_rect = date_text.get_rect(center=((col_positions[1] + col_positions[2]) // 2, row_y + 32))
+                panel_surface.blit(date_text, date_rect)
+
+        # Draw panel
+        self.screen.blit(panel_surface, (panel_x, max(90, panel_y)))
+
     def _draw(self):
         """Draw the menu."""
         # Draw background
@@ -278,7 +450,7 @@ class StartMenu:
         for tile in self.tiles:
             tile.draw(self.screen)
 
-        # Draw button with opacity
+        # Draw start game button with opacity
         if self.button_opacity > 0:
             # Create temporary surface for button with alpha
             btn_surface = pygame.Surface(
@@ -295,7 +467,48 @@ class StartMenu:
             btn_surface.set_alpha(self.button_opacity)
             self.screen.blit(btn_surface, self.button_rect.topleft)
 
+        # Draw records button
+        self._draw_records_button()
+
+        # Draw records panel if visible
+        if self.show_records or self.records_sliding:
+            self._draw_records_panel()
+
         pygame.display.update()
+
+    def _toggle_records(self):
+        """Toggle records panel visibility."""
+        current_time = pygame.time.get_ticks()
+
+        if self.records_sliding:
+            # Mid-animation: reverse direction smoothly from current position
+            current_slide = self.records_slide_progress
+            self.records_slide_direction *= -1
+
+            # Calculate equivalent progress for new direction
+            if self.records_slide_direction == 1:
+                # Now opening: find progress where eased = current_slide
+                equiv_progress = 1 - pow(1 - current_slide, 1/3)
+                duration = self.RECORDS_SLIDE_DURATION_OPEN
+            else:
+                # Now closing (linear): progress where (1-p) = current_slide
+                equiv_progress = 1 - current_slide
+                duration = self.RECORDS_SLIDE_DURATION_CLOSE
+
+            elapsed = equiv_progress * duration
+            self.records_slide_start_time = current_time - int(elapsed)
+        else:
+            self.records_sliding = True
+            self.records_slide_start_time = current_time
+
+            if self.show_records:
+                # Hide records
+                self.records_slide_direction = -1
+            else:
+                # Show records
+                self.show_records = True
+                self.records_slide_direction = 1
+                self.cached_records = records.load_records()
 
     def reset_for_entry(self):
         """Reset tiles for entry animation (coming from left)."""
@@ -310,6 +523,10 @@ class StartMenu:
         self.animation_start_time = pygame.time.get_ticks()
         self.wave_active = False
         self.button_hovered = False
+        self.records_button_hovered = False
+        self.show_records = False
+        self.records_slide_progress = 0
+        self.records_sliding = False
 
     def start_exit_animation(self):
         """Start the exit animation (tiles go right)."""
@@ -337,6 +554,7 @@ class StartMenu:
             elif self.state == 'idle':
                 self._update_wave_animation(current_time)
                 self._update_hover_effect(mouse_pos)
+                self._update_records_slide(current_time)
             elif self.state == 'exiting':
                 if self._update_exiting(current_time):
                     running = False
@@ -354,13 +572,20 @@ class StartMenu:
                 elif event.type == pygame.MOUSEBUTTONDOWN and self.state == 'idle':
                     if self.button_rect.collidepoint(event.pos):
                         self.button_pressed = True
+                    elif self.records_button_rect.collidepoint(event.pos):
+                        self.records_button_pressed = True
                 elif event.type == pygame.MOUSEBUTTONUP:
                     if self.button_pressed and self.button_rect.collidepoint(event.pos):
                         self.start_exit_animation()
+                    elif self.records_button_pressed and self.records_button_rect.collidepoint(event.pos):
+                        self._toggle_records()
                     self.button_pressed = False
+                    self.records_button_pressed = False
                 elif event.type == pygame.KEYDOWN and self.state == 'idle':
                     if event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
                         self.start_exit_animation()
+                    elif event.key == pygame.K_ESCAPE and self.show_records:
+                        self._toggle_records()
 
             pygame.time.delay(16)  # ~60 FPS
 

@@ -2,7 +2,6 @@
 Test mode application for quick result window testing.
 10x10 board with 6 tiles (3 pairs).
 """
-import sys
 import pygame
 
 from game_digits import get_image_path, get_font_path
@@ -99,7 +98,8 @@ class TestGameApp:
         tile_area = self.board_size * TILE_SIZE + (self.board_size + 1) * GAP
         self.pause_overlay = PauseOverlay(tile_area, tile_area)
 
-    def draw_background(self):
+    def _draw_frame(self):
+        """Draw common background elements: grid, frame, blue panel, game field."""
         self.screen.fill((255, 255, 255))
 
         for x in range(0, self.WIDTH + 1, self.grid_cell_size):
@@ -107,9 +107,8 @@ class TestGameApp:
         for y in range(0, self.HEIGHT + 1, self.grid_cell_size):
             pygame.draw.line(self.screen, self.grid_line_color, (0, y), (self.WIDTH, y), 1)
 
-        # Yellow border around tile area
         # Желтая рамка с границами
-        border_color = (168, 134, 33)
+        border_color = (162, 140, 40)
         frame_color = (247, 204, 74)
         # Внешняя граница (1 пиксель)
         pygame.draw.rect(
@@ -133,7 +132,7 @@ class TestGameApp:
             1,
         )
 
-        # Blue panel on the right
+        # Синяя панель справа
         panel_x = self.window + 2 * self.frame
         pygame.draw.rect(
             self.screen,
@@ -141,7 +140,12 @@ class TestGameApp:
             (panel_x, 0, self.panel_width, self.HEIGHT),
         )
 
+        # Игровое поле
         self.screen.blit(self.tile_surface, (2 * self.frame, 2 * self.frame))
+
+    def draw_background(self):
+        """Draw full game background with UI elements."""
+        self._draw_frame()
 
         # Draw pause overlay if game is paused
         if self.is_paused:
@@ -157,42 +161,7 @@ class TestGameApp:
 
     def draw_background_for_menu(self):
         """Draw background for menu (without UI panel elements)."""
-        self.screen.fill((255, 255, 255))
-
-        for x in range(0, self.WIDTH + 1, self.grid_cell_size):
-            pygame.draw.line(self.screen, self.grid_line_color, (x, 0), (x, self.HEIGHT), 1)
-        for y in range(0, self.HEIGHT + 1, self.grid_cell_size):
-            pygame.draw.line(self.screen, self.grid_line_color, (0, y), (self.WIDTH, y), 1)
-
-        border_color = (162, 140, 40)
-        frame_color = (247, 204, 74)
-        pygame.draw.rect(
-            self.screen,
-            border_color,
-            (self.frame, self.frame, self.window, self.window),
-            1,
-        )
-        pygame.draw.rect(
-            self.screen,
-            frame_color,
-            (self.frame + 1, self.frame + 1, self.window - 2, self.window - 2),
-            self.frame - 2,
-        )
-        pygame.draw.rect(
-            self.screen,
-            border_color,
-            (self.frame * 2 - 1, self.frame * 2 - 1, self.window - self.frame * 2 + 2, self.window - self.frame * 2 + 2),
-            1,
-        )
-
-        panel_x = self.window + 2 * self.frame
-        pygame.draw.rect(
-            self.screen,
-            (62, 157, 203),
-            (panel_x, 0, self.panel_width, self.HEIGHT),
-        )
-
-        self.screen.blit(self.tile_surface, (2 * self.frame, 2 * self.frame))
+        self._draw_frame()
 
     def _get_panel_element_offset(self, element_index):
         """Calculate Y offset for panel element based on animation state."""
@@ -404,6 +373,7 @@ class TestGameApp:
                 tile.cells_left_count = 0
                 tile.total_cells_to_move = total_cells
                 tile.move_animation_group = pygame.sprite.Group()
+                tile.target_rect = target_rect  # Сохраняем цель при старте!
                 tile.is_moving = True
                 tile.current_direction = direction
                 self.arrows.empty()
@@ -491,6 +461,12 @@ class TestGameApp:
         for popup in list(self.score_popups):
             if popup.grid_position in grid_positions:
                 popup.kill()
+
+    def _refresh_selected_tile_arrows(self):
+        """Перерисовывает стрелки для выбранной плитки после изменения состояния доски."""
+        if self.game.selected_tile and not self.game.selected_tile.is_moving:
+            self.arrows.empty()
+            self.draw_arrows_for_tile(self.game.selected_tile)
 
     def remove_arrows_on_occupied_cells(self):
         """Удаляет стрелки, находящиеся на занятых ячейках."""
@@ -597,24 +573,31 @@ class TestGameApp:
         self.finalize_move(tile)
 
     def finalize_move(self, tile):
-        tile.is_moving = False
-        tile.current_direction = None
-
+        # Очищаем атрибуты отслеживания движения
         if hasattr(tile, 'last_grid_pos'):
             del tile.last_grid_pos
             del tile.move_start_pos
             del tile.cells_left_count
             del tile.total_cells_to_move
             del tile.move_animation_group
+            del tile.target_rect
 
+        # Сначала обновляем позицию и доску, ПОТОМ сбрасываем is_moving
         old_x, old_y = tile.position
         new_x, new_y = pixel_to_grid(tile.rect.topleft[0], tile.rect.topleft[1])
         tile.position = (new_x, new_y)
         self.game.update_board((old_x, old_y), (new_x, new_y), tile)
 
+        # Теперь безопасно сбросить флаги движения
+        tile.is_moving = False
+        tile.current_direction = None
+
         if self.game.selected_tile == tile:
             self.game.deselect_tile()
             self.arrows.empty()
+        else:
+            # Обновляем стрелки для выбранной плитки
+            self._refresh_selected_tile_arrows()
 
         delta_x = abs(new_x - old_x)
         delta_y = abs(new_y - old_y)
@@ -626,7 +609,8 @@ class TestGameApp:
         pygame.display.flip()
 
     def move_tile(self, tile, direction):
-        target_rect = tile.target_move(direction, self.game.board)
+        # Используем сохранённую цель, а не пересчитываем каждый кадр
+        target_rect = tile.target_rect
         dx = target_rect.topleft[0] - tile.rect.topleft[0]
         dy = target_rect.topleft[1] - tile.rect.topleft[1]
 
@@ -711,7 +695,8 @@ class TestGameApp:
                         direction = tile.current_direction
                         if direction:
                             self.move_tile(tile, direction)
-                            target_rect = tile.target_move(direction, self.game.board)
+                            # Используем сохранённую цель
+                            target_rect = tile.target_rect
                             dx = abs(tile.rect.x - target_rect.x)
                             dy = abs(tile.rect.y - target_rect.y)
                             if dx < 1 and dy < 1:
