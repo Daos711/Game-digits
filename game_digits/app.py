@@ -557,6 +557,14 @@ class GameApp:
         elif direction == "right":
             return (x + self.tile_size + self.gap, y)
 
+    def check_static_collision(self, tile):
+        """Проверяет столкновение со статичными плитками."""
+        for other in self.tiles:
+            if other != tile and not other.is_moving:
+                if tile.rect.colliderect(other.rect):
+                    return other
+        return None
+
     def check_collision(self, tile):
         """Проверяет столкновение с другими движущимися плитками."""
         for other in self.tiles:
@@ -565,43 +573,33 @@ class GameApp:
                     dir1 = tile.current_direction
                     dir2 = other.current_direction
 
+                    # Порог для определения "одной линии" - половина размера ячейки
+                    threshold = (TILE_SIZE + GAP) // 2
+
                     # Проверяем противоположные направления
                     horizontal_opposite = (dir1, dir2) in [("left", "right"), ("right", "left")]
                     vertical_opposite = (dir1, dir2) in [("up", "down"), ("down", "up")]
 
-                    # Порог для определения "одной линии" - половина размера ячейки
-                    threshold = (TILE_SIZE + GAP) // 2
-
                     if horizontal_opposite:
                         # Проверяем по Y: на одной строке или параллельно?
                         if abs(tile.rect.y - other.rect.y) <= threshold:
-                            # Лоб в лоб на одной строке - столкновение!
-                            return other
-                        else:
-                            # Параллельные пути - пропускаем
-                            continue
+                            return other  # Лоб в лоб
+                        continue  # Параллельные пути
 
                     if vertical_opposite:
                         # Проверяем по X: на одном столбце или параллельно?
                         if abs(tile.rect.x - other.rect.x) <= threshold:
-                            # Лоб в лоб на одном столбце - столкновение!
-                            return other
-                        else:
-                            # Параллельные пути - пропускаем
-                            continue
+                            return other  # Лоб в лоб
+                        continue  # Параллельные пути
 
-                    # Если движутся в одном направлении - одна догоняет другую, не коллизия
+                    # Одинаковое направление - проверяем догоняет ли одна другую
                     if dir1 == dir2:
-                        continue
+                        # Если rect'ы пересекаются при одинаковом направлении - коллизия
+                        # (одна плитка догнала другую)
+                        return other
 
-                    # Если движутся перпендикулярно - проверяем кто куда едет
-                    # Если other уезжает из области куда едет tile - не коллизия
-                    tile_target = tile.target_move(dir1, self.game.board)
-                    other_start = other.position  # откуда уехала other
-                    tile_target_pos = pixel_to_grid(tile_target.x, tile_target.y)
-                    if other_start == tile_target_pos:
-                        continue  # other уезжает оттуда куда едет tile
-
+                    # Перпендикулярные направления - пересечение путей
+                    # Если rect'ы пересекаются - это реальная коллизия
                     return other
         return None
 
@@ -641,6 +639,13 @@ class GameApp:
         collided = self.check_collision(tile)
         if collided:
             self.resolve_collision(tile, collided)
+            return  # Плитка уже остановлена
+
+        # Проверяем коллизию со статичными плитками (которые уже остановились)
+        static_collided = self.check_static_collision(tile)
+        if static_collided:
+            self.snap_to_grid(tile)
+            return  # Плитка остановлена
 
         # Удаляем стрелки на ячейках где сейчас находится движущаяся плитка
         self.remove_arrows_on_occupied_cells()
@@ -661,10 +666,41 @@ class GameApp:
         grid_col = max(0, min(BOARD_SIZE - 1, grid_col))
         grid_row = max(0, min(BOARD_SIZE - 1, grid_row))
 
-        # Если ячейка занята, ищем ближайшую свободную в направлении движения
+        # Если ячейка занята, ищем ближайшую свободную в обратном направлении
         if self.game.board[grid_row][grid_col] is not None and self.game.board[grid_row][grid_col] != tile:
-            # Откатываемся на предыдущую позицию
-            grid_row, grid_col = tile.position[0], tile.position[1]
+            direction = tile.current_direction
+            start_row, start_col = tile.position  # Стартовая позиция
+
+            # Ищем свободную ячейку между текущей и стартовой
+            found = False
+            if direction == "up":
+                for r in range(grid_row, start_row + 1):
+                    if self.game.board[r][grid_col] is None or self.game.board[r][grid_col] == tile:
+                        grid_row = r
+                        found = True
+                        break
+            elif direction == "down":
+                for r in range(grid_row, start_row - 1, -1):
+                    if self.game.board[r][grid_col] is None or self.game.board[r][grid_col] == tile:
+                        grid_row = r
+                        found = True
+                        break
+            elif direction == "left":
+                for c in range(grid_col, start_col + 1):
+                    if self.game.board[grid_row][c] is None or self.game.board[grid_row][c] == tile:
+                        grid_col = c
+                        found = True
+                        break
+            elif direction == "right":
+                for c in range(grid_col, start_col - 1, -1):
+                    if self.game.board[grid_row][c] is None or self.game.board[grid_row][c] == tile:
+                        grid_col = c
+                        found = True
+                        break
+
+            # Если не нашли свободную - используем стартовую позицию
+            if not found:
+                grid_row, grid_col = start_row, start_col
 
         # Устанавливаем новую позицию
         new_rect_x, new_rect_y = grid_to_pixel(grid_row, grid_col)
@@ -798,6 +834,9 @@ class GameApp:
                         direction = tile.current_direction
                         if direction:
                             self.move_tile(tile, direction)
+                            # После move_tile плитка могла остановиться из-за коллизии
+                            if not tile.is_moving:
+                                continue
                             # Используем сохранённую цель
                             target_rect = tile.target_rect
                             # Проверяем достижение цели с допуском (для float координат)

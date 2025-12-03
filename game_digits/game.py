@@ -219,5 +219,15 @@ class Game:
     def update_board(self, old_position, new_position, tile):
         old_x, old_y = old_position
         new_x, new_y = new_position
+
+        # Проверяем что целевая ячейка не занята другой плиткой
+        existing = self.board[new_x][new_y]
+        if existing is not None and existing != tile:
+            # Ячейка занята! Это критическая ошибка логики коллизий
+            # Не перезаписываем - оставляем плитку на старом месте
+            print(f"WARNING: Collision not handled! Tile at {new_position} blocked by another tile")
+            return False
+
         self.board[old_x][old_y] = None
         self.board[new_x][new_y] = tile
+        return True
