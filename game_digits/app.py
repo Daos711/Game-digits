@@ -557,6 +557,14 @@ class GameApp:
         elif direction == "right":
             return (x + self.tile_size + self.gap, y)
 
+    def check_static_collision(self, tile):
+        """Проверяет столкновение со статичными плитками."""
+        for other in self.tiles:
+            if other != tile and not other.is_moving:
+                if tile.rect.colliderect(other.rect):
+                    return other
+        return None
+
     def check_collision(self, tile):
         """Проверяет столкновение с другими движущимися плитками."""
         for other in self.tiles:
@@ -631,6 +639,13 @@ class GameApp:
         collided = self.check_collision(tile)
         if collided:
             self.resolve_collision(tile, collided)
+            return  # Плитка уже остановлена
+
+        # Проверяем коллизию со статичными плитками (которые уже остановились)
+        static_collided = self.check_static_collision(tile)
+        if static_collided:
+            self.snap_to_grid(tile)
+            return  # Плитка остановлена
 
         # Удаляем стрелки на ячейках где сейчас находится движущаяся плитка
         self.remove_arrows_on_occupied_cells()
