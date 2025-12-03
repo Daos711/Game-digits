@@ -28,7 +28,7 @@ class TestGameApp:
         self.WIDTH = self.window + 2 * self.frame + self.panel_width
         self.HEIGHT = self.window + 2 * self.frame
 
-        self.speed = 2
+        self.speed = 3
         self.tile_size, self.gap = TILE_SIZE, GAP
         self.offset = (23, 23)
         self.COLORS = COLORS
