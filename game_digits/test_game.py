@@ -38,8 +38,11 @@ class TestGame:
         self.current_pattern_name = "test_pattern"
         self.prepare_tile_appearance()
 
-    def prepare_tile_appearance(self):
+    def prepare_tile_appearance(self, seed=42):
         """Prepare 6 tiles (3 pairs) for animated appearance on 5x5 board."""
+        # Fixed seed for reproducible board layout
+        random.seed(seed)
+
         # Generate 3 pairs of numbers that sum to 10
         pairs = [
             (1, 9),
