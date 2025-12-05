@@ -1,9 +1,10 @@
 """
-Bot test mode: 5x5 board with 6 tiles (3 pairs).
+Bot test mode: full 5x5 board with 25 tiles.
 Starts immediately without menu.
 
 Controls:
-  B - Bot makes a move (OptimalStrategy)
+  A - Toggle bot AUTO mode (bot plays automatically with delay)
+  B - Bot makes a single move
   H - Show hint (highlights best move)
 """
 import pygame
@@ -53,7 +54,7 @@ class TestGameApp:
         self.paused_progress = 1.0
 
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
-        pygame.display.set_caption("Bot Mode 5x5 - Press B for bot, H for hint")
+        pygame.display.set_caption("Bot Mode 5x5 - A=auto, B=step, H=hint")
         self.icon = pygame.image.load(get_image_path("icon.png"))
         pygame.display.set_icon(self.icon)
 
@@ -70,6 +71,11 @@ class TestGameApp:
         self.bot_strategy = OptimalStrategy(max_movement_distance=10)
         self.hint_tiles = []  # Highlighted tiles for hint
         self.pending_bot_removal = None  # (tile1_pos, tile2_pos) to remove after movement
+
+        # Bot auto-play mode
+        self.bot_auto_play = False
+        self.bot_move_delay = 800  # ms between bot moves (simulates human thinking)
+        self.bot_last_move_time = 0
 
         tile_surface_size = tile_area
         self.tile_surface = pygame.Surface((tile_surface_size, tile_surface_size))
@@ -322,6 +328,8 @@ class TestGameApp:
         self.paused_progress = 1.0
         self.pending_bot_removal = None
         self.hint_tiles = []
+        self.bot_auto_play = False
+        self.bot_last_move_time = 0
 
         # Recreate background texture
         tile_area = self.board_size * TILE_SIZE + (self.board_size + 1) * GAP
@@ -335,8 +343,16 @@ class TestGameApp:
         if event.type == pygame.QUIT:
             return False
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_b and not self.is_paused and not self.game.is_initializing:
-                # Bot makes a move
+            if event.key == pygame.K_a and not self.is_paused and not self.game.is_initializing:
+                # Toggle bot auto-play mode
+                self.bot_auto_play = not self.bot_auto_play
+                if self.bot_auto_play:
+                    print("Bot AUTO mode ON - bot will play automatically")
+                    self.bot_last_move_time = pygame.time.get_ticks()
+                else:
+                    print("Bot AUTO mode OFF")
+            elif event.key == pygame.K_b and not self.is_paused and not self.game.is_initializing:
+                # Bot makes a single move
                 self.bot_make_move()
             elif event.key == pygame.K_h and not self.is_paused and not self.game.is_initializing:
                 # Show hint
@@ -850,6 +866,15 @@ class TestGameApp:
                             if dx < 1 and dy < 1:
                                 tile.rect.topleft = target_rect.topleft
                                 self.finalize_move(tile)
+
+                # Bot auto-play: make move if enabled and ready
+                if self.bot_auto_play and not self.game.is_initializing:
+                    no_moving = not any(t.is_moving for t in self.tiles)
+                    no_pending = self.pending_bot_removal is None
+                    time_ready = pygame.time.get_ticks() - self.bot_last_move_time >= self.bot_move_delay
+                    if no_moving and no_pending and time_ready:
+                        self.bot_make_move()
+                        self.bot_last_move_time = pygame.time.get_ticks()
 
             pygame.display.update()
 

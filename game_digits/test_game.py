@@ -18,7 +18,7 @@ class TestGame:
     COUNTDOWN_EVENT = pygame.USEREVENT + 2
     TILE_APPEAR_EVENT = pygame.USEREVENT + 3
 
-    def __init__(self, tiles, time_limit=60):
+    def __init__(self, tiles, time_limit=180):
         self.tiles = tiles
         self.board = [[None for _ in range(TEST_BOARD_SIZE)] for _ in range(TEST_BOARD_SIZE)]
         self.score = 0
@@ -39,31 +39,40 @@ class TestGame:
         self.prepare_tile_appearance()
 
     def prepare_tile_appearance(self, seed=42):
-        """Prepare 6 tiles (3 pairs) for animated appearance on 5x5 board."""
+        """Prepare 25 tiles for full 5x5 board."""
         # Fixed seed for reproducible board layout
         random.seed(seed)
 
-        # Generate 3 pairs of numbers that sum to 10
+        # Generate 25 numbers ensuring all can be matched
+        # Create pairs that sum to 10: (1,9), (2,8), (3,7), (4,6), (5,5)
         pairs = [
-            (1, 9),
-            (2, 8),
-            (3, 7),
-        ]
+            (1, 9), (1, 9), (1, 9),  # 6 tiles
+            (2, 8), (2, 8), (2, 8),  # 6 tiles
+            (3, 7), (3, 7),          # 4 tiles
+            (4, 6), (4, 6),          # 4 tiles
+            (5, 5),                   # 2 tiles (5+5=10)
+        ]  # Total: 22 tiles, need 3 more
 
-        # Create list of all numbers from pairs
+        # Add 3 more tiles that can match
+        extra = [(3, 7)]  # 2 more tiles
+        # Plus one 5 that matches the existing 5s
+        pairs.extend(extra)
+        # Total: 24 tiles + 1 more
+
         numbers = []
         for a, b in pairs:
             numbers.append(a)
             numbers.append(b)
+        numbers.append(5)  # 25th tile - matches with other 5s
 
         # Shuffle numbers
         random.shuffle(numbers)
 
-        # Place tiles on 5x5 board (2 rows x 3 cols in center)
-        # Center positions: rows 1-2, cols 1-3
+        # All positions on 5x5 board
         positions = [
-            (1, 1), (1, 2), (1, 3),
-            (2, 1), (2, 2), (2, 3),
+            (row, col)
+            for row in range(TEST_BOARD_SIZE)
+            for col in range(TEST_BOARD_SIZE)
         ]
 
         # Create pending tiles
