@@ -1,6 +1,6 @@
 """
-Test mode application for quick result window testing.
-10x10 board with 6 tiles (3 pairs).
+Bot test mode: 5x5 board with 6 tiles (3 pairs).
+Starts immediately without menu.
 
 Controls:
   B - Bot makes a move (OptimalStrategy)
@@ -16,7 +16,7 @@ from game_digits.constants import (
 from game_digits.test_game import TestGame, TEST_BOARD_SIZE
 from game_digits.sprites import Arrow, ScorePopup
 from game_digits import ui_components as ui
-from game_digits.windows import ResultWindow, StartMenu, PauseOverlay
+from game_digits.windows import ResultWindow, PauseOverlay
 from game_digits.bot.strategy import OptimalStrategy
 
 
@@ -53,7 +53,7 @@ class TestGameApp:
         self.paused_progress = 1.0
 
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
-        pygame.display.set_caption("Test Mode - 6 Tiles (3 pairs)")
+        pygame.display.set_caption("Bot Mode 5x5 - Press B for bot, H for hint")
         self.icon = pygame.image.load(get_image_path("icon.png"))
         pygame.display.set_icon(self.icon)
 
@@ -86,22 +86,18 @@ class TestGameApp:
         self.COUNTDOWN_EVENT = self.game.COUNTDOWN_EVENT
         self.TILE_APPEAR_EVENT = self.game.TILE_APPEAR_EVENT
 
-        # Game state: 'menu' or 'playing'
-        self.state = 'menu'
+        # Game state: start directly in 'playing' mode (no menu for bot test)
+        self.state = 'playing'
 
-        # Panel animation state
-        self.panel_animation_start = 0
-        self.panel_animation_active = False
+        # Panel animation state - start immediately
+        self.panel_animation_start = pygame.time.get_ticks()
+        self.panel_animation_active = True
         # Animation constants for panel elements
         self.PANEL_ANIM_DURATION = 400  # ms for each element to slide in
         self.PANEL_ANIM_DELAY = 150     # ms delay between elements
 
-        # Create start menu
-        self.start_menu = StartMenu(
-            screen=self.screen,
-            screen_size=(self.WIDTH, self.HEIGHT),
-            redraw_background=self.draw_background_for_menu
-        )
+        # Start tile appearance immediately
+        self.game.start_tile_appearance()
 
         # Create pause overlay
         tile_area = self.board_size * TILE_SIZE + (self.board_size + 1) * GAP
@@ -167,10 +163,6 @@ class TestGameApp:
         field_x = 2 * self.frame
         field_y = 2 * self.frame
         self.pause_overlay.draw(self.screen, field_x, field_y)
-
-    def draw_background_for_menu(self):
-        """Draw background for menu (without UI panel elements)."""
-        self._draw_frame()
 
     def _get_panel_element_offset(self, element_index):
         """Calculate Y offset for panel element based on animation state."""
@@ -813,19 +805,6 @@ class TestGameApp:
         prepare_to_show_result = False
 
         while running:
-            # === MENU STATE ===
-            if self.state == 'menu':
-                start_game = self.start_menu.show()
-                if start_game:
-                    self.state = 'playing'
-                    # Start panel animation
-                    self.panel_animation_active = True
-                    self.panel_animation_start = pygame.time.get_ticks()
-                    self.game.start_tile_appearance()
-                else:
-                    running = False
-                continue
-
             self.tile_surface.blit(self.background_texture, (0, 0))
             self.tiles.draw(self.tile_surface)
 
@@ -888,19 +867,13 @@ class TestGameApp:
                 self.update_display()
                 pygame.display.flip()
                 result = self.show_result_window()
-                if result == 'new_game':
-                    # Reset game and continue playing
+                if result == 'new_game' or result == 'menu':
+                    # Reset game and continue playing (no menu in bot mode)
                     self.reset_game()
                     # Start panel animation
                     self.panel_animation_active = True
                     self.panel_animation_start = pygame.time.get_ticks()
                     self.game.start_tile_appearance()
-                    show_result = False
-                    prepare_to_show_result = False
-                elif result == 'menu':
-                    # Return to menu
-                    self.reset_game()
-                    self.state = 'menu'
                     show_result = False
                     prepare_to_show_result = False
                 else:
