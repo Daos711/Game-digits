@@ -86,25 +86,31 @@ class Move:
         """True if this is a simple removal without movement."""
         return self.move_tile_pos is None
 
-    def calculate_score(self) -> int:
+    def calculate_score(self, after_move_distance: int = None) -> int:
         """Calculate net score change from this move.
+
+        Args:
+            after_move_distance: Distance after movement (if pre-calculated)
 
         Returns:
             Net points gained (removal reward minus movement cost)
         """
-        # Calculate Manhattan distance after potential movement
-        r1, c1 = self.tile1_pos
-        r2, c2 = self.tile2_pos
+        if after_move_distance is not None:
+            distance = after_move_distance
+        else:
+            r1, c1 = self.tile1_pos
+            r2, c2 = self.tile2_pos
 
-        # If we're moving a tile, adjust its position
-        if self.move_tile_pos and self.move_direction:
-            if self.move_tile_pos == self.tile1_pos:
-                r1, c1 = self._apply_movement(r1, c1)
-            else:
-                r2, c2 = self._apply_movement(r2, c2)
+            if self.move_tile_pos and self.move_direction:
+                if self.move_tile_pos == self.tile1_pos:
+                    r1, c1 = self._apply_movement(r1, c1)
+                else:
+                    r2, c2 = self._apply_movement(r2, c2)
 
-        distance = abs(r1 - r2) + abs(c1 - c2)
-        removal_score = distance * (distance + 1) // 2
+            distance = abs(r1 - r2) + abs(c1 - c2)
+
+        # Формула из game.py: (d + 1) * (d + 2) // 2
+        removal_score = (distance + 1) * (distance + 2) // 2
         movement_cost = self.move_distance
 
         return removal_score - movement_cost
@@ -147,17 +153,69 @@ class Strategy(ABC):
         """
         pass
 
-    def find_all_pairs(self, game: 'Game') -> List[Tuple['Tile', 'Tile']]:
-        """Find all pairs of identical tiles on the board.
+    def can_remove_pair(self, game: 'Game', tile1: 'Tile', tile2: 'Tile') -> bool:
+        """Check if two tiles can be removed (same line, clear path)."""
+        if tile1.is_moving or tile2.is_moving:
+            return False
 
-        Args:
-            game: Current game instance
+        x1, y1 = tile1.position
+        x2, y2 = tile2.position
+
+        # Must match: same number or sum to 10
+        if tile1.number != tile2.number and tile1.number + tile2.number != 10:
+            return False
+
+        # Must be on same line
+        if x1 == x2:  # Same row (horizontal line)
+            # Check path is clear
+            min_y, max_y = min(y1, y2), max(y1, y2)
+            if max_y - min_y == 1:
+                return True  # Adjacent
+            for j in range(min_y + 1, max_y):
+                if game.board[x1][j] is not None:
+                    return False
+            return True
+        elif y1 == y2:  # Same column (vertical line)
+            min_x, max_x = min(x1, x2), max(x1, x2)
+            if max_x - min_x == 1:
+                return True  # Adjacent
+            for i in range(min_x + 1, max_x):
+                if game.board[i][y1] is not None:
+                    return False
+            return True
+
+        return False  # Not on same line
+
+    def find_all_removable_pairs(self, game: 'Game') -> List[Tuple['Tile', 'Tile', int]]:
+        """Find all pairs that can be removed right now.
 
         Returns:
-            List of (tile1, tile2) tuples for matching pairs
+            List of (tile1, tile2, distance) tuples
         """
-        # TODO: Implement - scan board for matching tile values
-        pass
+        pairs = []
+        tiles = [t for t in game.tiles if not t.is_moving]
+
+        for i, tile1 in enumerate(tiles):
+            for tile2 in tiles[i + 1:]:
+                if self.can_remove_pair(game, tile1, tile2):
+                    x1, y1 = tile1.position
+                    x2, y2 = tile2.position
+                    distance = abs(x1 - x2) + abs(y1 - y2)
+                    pairs.append((tile1, tile2, distance))
+
+        return pairs
+
+    def find_matching_tiles(self, game: 'Game') -> List[Tuple['Tile', 'Tile']]:
+        """Find all pairs of tiles that could match (same number or sum=10)."""
+        pairs = []
+        tiles = [t for t in game.tiles if not t.is_moving]
+
+        for i, tile1 in enumerate(tiles):
+            for tile2 in tiles[i + 1:]:
+                if tile1.number == tile2.number or tile1.number + tile2.number == 10:
+                    pairs.append((tile1, tile2))
+
+        return pairs
 
     def calculate_distance(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> int:
         """Calculate Manhattan distance between two positions."""
@@ -189,11 +247,25 @@ class GreedyStrategy(Strategy):
         Returns:
             Move for the best immediate pair, or None
         """
-        # TODO: Implement
-        # 1. Find all pairs of identical tiles
-        # 2. Calculate distance for each pair
-        # 3. Return Move for the pair with max distance
-        pass
+        pairs = self.find_all_removable_pairs(game)
+
+        if not pairs:
+            return None
+
+        # Find pair with maximum score
+        best_pair = None
+        best_score = -1
+
+        for tile1, tile2, distance in pairs:
+            score = (distance + 1) * (distance + 2) // 2
+            if score > best_score:
+                best_score = score
+                best_pair = (tile1, tile2)
+
+        if best_pair:
+            return Move(best_pair[0].position, best_pair[1].position)
+
+        return None
 
 
 class OptimalStrategy(Strategy):
@@ -222,7 +294,7 @@ class OptimalStrategy(Strategy):
     - Factor in time pressure (faster decisions under time limit)
     """
 
-    def __init__(self, max_movement_distance: int = 5):
+    def __init__(self, max_movement_distance: int = 10):
         """
         Args:
             max_movement_distance: Maximum cells to consider moving
@@ -241,20 +313,40 @@ class OptimalStrategy(Strategy):
         Returns:
             Optimal Move, or None if no valid moves
         """
-        # TODO: Implement
-        # 1. Find all pairs
-        # 2. For each pair, evaluate:
-        #    - Immediate removal score
-        #    - All possible movements and their net scores
-        # 3. Return the move with highest net score
-        pass
+        best_move = None
+        best_score = -float('inf')
+
+        # 1. Check all immediate removals
+        for tile1, tile2, distance in self.find_all_removable_pairs(game):
+            score = (distance + 1) * (distance + 2) // 2
+            if score > best_score:
+                best_score = score
+                best_move = Move(tile1.position, tile2.position)
+
+        # 2. Check all matching pairs (even if not currently removable)
+        for tile1, tile2 in self.find_matching_tiles(game):
+            # Try moving tile1 to align with tile2
+            moves1 = self._evaluate_movements(game, tile1, tile2)
+            for move, score in moves1:
+                if score > best_score:
+                    best_score = score
+                    best_move = move
+
+            # Try moving tile2 to align with tile1
+            moves2 = self._evaluate_movements(game, tile2, tile1)
+            for move, score in moves2:
+                if score > best_score:
+                    best_score = score
+                    best_move = move
+
+        return best_move
 
     def _evaluate_movements(
         self,
         game: 'Game',
         tile: 'Tile',
         partner: 'Tile'
-    ) -> List[Move]:
+    ) -> List[Tuple[Move, int]]:
         """Generate all possible movement options for a tile.
 
         Args:
@@ -263,11 +355,86 @@ class OptimalStrategy(Strategy):
             partner: The matching tile (for pair removal)
 
         Returns:
-            List of possible Moves involving movement of tile
+            List of (Move, score) tuples
         """
-        # TODO: Implement
-        # For each direction (up, down, left, right):
-        #   For each distance (1 to max_movement_distance):
-        #     If movement is valid (no obstacles):
-        #       Create Move and calculate score
-        pass
+        moves = []
+        board_size = len(game.board)
+        r1, c1 = tile.position
+        r2, c2 = partner.position
+
+        directions = [
+            ('up', -1, 0),
+            ('down', 1, 0),
+            ('left', 0, -1),
+            ('right', 0, 1)
+        ]
+
+        for dir_name, dr, dc in directions:
+            for dist in range(1, self.max_movement_distance + 1):
+                new_r = r1 + dr * dist
+                new_c = c1 + dc * dist
+
+                # Check bounds
+                if not (0 <= new_r < board_size and 0 <= new_c < board_size):
+                    break  # Can't go further in this direction
+
+                # Check path is clear (all cells between current and target)
+                path_clear = True
+                for step in range(1, dist + 1):
+                    check_r = r1 + dr * step
+                    check_c = c1 + dc * step
+                    cell = game.board[check_r][check_c]
+                    if cell is not None and cell != tile and cell != partner:
+                        path_clear = False
+                        break
+
+                if not path_clear:
+                    break  # Can't go further
+
+                # After movement, can we remove the pair?
+                # They must be on same line with clear path
+                if new_r == r2:  # Same row after movement
+                    # Check path between new position and partner
+                    min_c, max_c = min(new_c, c2), max(new_c, c2)
+                    clear = True
+                    for j in range(min_c + 1, max_c):
+                        cell = game.board[new_r][j]
+                        if cell is not None and cell != tile and cell != partner:
+                            clear = False
+                            break
+                    if clear:
+                        new_distance = abs(new_c - c2)
+                        removal_score = (new_distance + 1) * (new_distance + 2) // 2
+                        net_score = removal_score - dist
+                        move = Move(
+                            tile1_pos=tile.position,
+                            tile2_pos=partner.position,
+                            move_tile_pos=tile.position,
+                            move_direction=dir_name,
+                            move_distance=dist
+                        )
+                        moves.append((move, net_score))
+
+                elif new_c == c2:  # Same column after movement
+                    # Check path between new position and partner
+                    min_r, max_r = min(new_r, r2), max(new_r, r2)
+                    clear = True
+                    for i in range(min_r + 1, max_r):
+                        cell = game.board[i][new_c]
+                        if cell is not None and cell != tile and cell != partner:
+                            clear = False
+                            break
+                    if clear:
+                        new_distance = abs(new_r - r2)
+                        removal_score = (new_distance + 1) * (new_distance + 2) // 2
+                        net_score = removal_score - dist
+                        move = Move(
+                            tile1_pos=tile.position,
+                            tile2_pos=partner.position,
+                            move_tile_pos=tile.position,
+                            move_direction=dir_name,
+                            move_distance=dist
+                        )
+                        moves.append((move, net_score))
+
+        return moves
