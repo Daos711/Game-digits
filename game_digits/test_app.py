@@ -442,9 +442,27 @@ class TestGameApp:
             if moving_tile and tile1 and tile2:
                 direction = move.move_direction
                 old_row, old_col = moving_tile.position
-                target_rect = moving_tile.target_move(direction, self.game.board)
-                new_row, new_col = pixel_to_grid(target_rect.topleft[0], target_rect.topleft[1])
-                total_cells = abs(new_row - old_row) + abs(new_col - old_col)
+
+                # Calculate exact target position based on bot's planned distance
+                # (not target_move which goes to edge)
+                dist = move.move_distance
+                if direction == 'up':
+                    new_row, new_col = old_row - dist, old_col
+                elif direction == 'down':
+                    new_row, new_col = old_row + dist, old_col
+                elif direction == 'left':
+                    new_row, new_col = old_row, old_col - dist
+                elif direction == 'right':
+                    new_row, new_col = old_row, old_col + dist
+                else:
+                    new_row, new_col = old_row, old_col
+
+                total_cells = dist
+
+                # Create target rect at exact position
+                target_x, target_y = grid_to_pixel(new_row, new_col)
+                target_rect = moving_tile.rect.copy()
+                target_rect.topleft = (target_x, target_y)
 
                 moving_tile.move_start_pos = moving_tile.position
                 moving_tile.last_grid_pos = moving_tile.position
