@@ -67,8 +67,9 @@ class TestGameApp:
         self.score_popups = pygame.sprite.Group()
 
         # Seed rotation: changes every 2 games (1 for player, 1 for bot)
-        # Use current time to get unique starting seed each app launch
-        self.current_seed = int(time.time()) % 10000  # 4-digit seed
+        # Use date-based seed so same board all day (for fair comparison)
+        today = time.localtime()
+        self.current_seed = today.tm_year * 1000 + today.tm_yday  # e.g., 2024339
         self.games_with_seed = 0  # Counter: 0=first game, 1=second game, then rotate
 
         self.game = TestGame(self.tiles, time_limit=60, seed=self.current_seed)
