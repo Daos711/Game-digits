@@ -65,7 +65,12 @@ class TestGameApp:
         self.tiles = pygame.sprite.Group()
         self.score_popups = pygame.sprite.Group()
 
-        self.game = TestGame(self.tiles, time_limit=60)
+        # Seed rotation: changes every 2 games (1 for player, 1 for bot)
+        self.current_seed = 2024
+        self.games_with_seed = 0  # Counter: 0=first game, 1=second game, then rotate
+
+        self.game = TestGame(self.tiles, time_limit=60, seed=self.current_seed)
+        print(f"Game #1/2 with seed {self.current_seed}")
 
         # Bot strategy for hints and auto-play (LookaheadStrategy thinks 1 move ahead)
         self.bot_strategy = LookaheadStrategy(max_movement_distance=10)
@@ -317,8 +322,16 @@ class TestGameApp:
         self.tiles.empty()
         self.score_popups.empty()
 
-        # Reset game state
-        self.game = TestGame(self.tiles, time_limit=60)
+        # Rotate seed every 2 games
+        self.games_with_seed += 1
+        if self.games_with_seed >= 2:
+            self.games_with_seed = 0
+            self.current_seed += 1
+            print(f"New seed: {self.current_seed}")
+
+        # Reset game state with current seed
+        self.game = TestGame(self.tiles, time_limit=60, seed=self.current_seed)
+        print(f"Game #{self.games_with_seed + 1}/2 with seed {self.current_seed}")
 
         # Reset timer state
         self.timer_running = False

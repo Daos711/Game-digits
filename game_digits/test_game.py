@@ -18,7 +18,7 @@ class TestGame:
     COUNTDOWN_EVENT = pygame.USEREVENT + 2
     TILE_APPEAR_EVENT = pygame.USEREVENT + 3
 
-    def __init__(self, tiles, time_limit=180):
+    def __init__(self, tiles, time_limit=180, seed=2024):
         self.tiles = tiles
         self.board = [[None for _ in range(TEST_BOARD_SIZE)] for _ in range(TEST_BOARD_SIZE)]
         self.score = 0
@@ -30,13 +30,14 @@ class TestGame:
         self.game_over_flag = False
         self.COLORS = COLORS
         self.prepare_to_end = False
+        self.seed = seed
 
         # Tile appearance animation state
         self.is_initializing = True
         self.tile_appear_delay = 50  # ms between tile appearances
         self.pending_tiles = []
         self.current_pattern_name = "test_pattern"
-        self.prepare_tile_appearance()
+        self.prepare_tile_appearance(seed=self.seed)
 
     def prepare_tile_appearance(self, seed=2024):
         """Prepare 24 tiles for 5x5 board (one cell empty, all tiles have pairs)."""
