@@ -1,6 +1,10 @@
 """
 Test mode application for quick result window testing.
 10x10 board with 6 tiles (3 pairs).
+
+Controls:
+  B - Bot makes a move (OptimalStrategy)
+  H - Show hint (highlights best move)
 """
 import pygame
 
@@ -13,6 +17,7 @@ from game_digits.test_game import TestGame, TEST_BOARD_SIZE
 from game_digits.sprites import Arrow, ScorePopup
 from game_digits import ui_components as ui
 from game_digits.windows import ResultWindow, StartMenu, PauseOverlay
+from game_digits.bot.strategy import OptimalStrategy
 
 
 class TestGameApp:
@@ -60,6 +65,10 @@ class TestGameApp:
         self.score_popups = pygame.sprite.Group()
 
         self.game = TestGame(self.tiles, time_limit=60)
+
+        # Bot strategy for hints and auto-play
+        self.bot_strategy = OptimalStrategy(max_movement_distance=10)
+        self.hint_tiles = []  # Highlighted tiles for hint
 
         tile_surface_size = tile_area
         self.tile_surface = pygame.Surface((tile_surface_size, tile_surface_size))
@@ -330,6 +339,13 @@ class TestGameApp:
     def handle_event(self, event):
         if event.type == pygame.QUIT:
             return False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_b and not self.is_paused and not self.game.is_initializing:
+                # Bot makes a move
+                self.bot_make_move()
+            elif event.key == pygame.K_h and not self.is_paused and not self.game.is_initializing:
+                # Show hint
+                self.show_hint()
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             pos = pygame.mouse.get_pos()
 
@@ -342,6 +358,9 @@ class TestGameApp:
 
             if self.game.is_initializing:
                 return True
+
+            # Clear hint when clicking
+            self.hint_tiles = []
 
             pos = (pos[0] - self.offset[0], pos[1] - self.offset[1])
             self.handle_mouse_click(pos)
@@ -358,6 +377,90 @@ class TestGameApp:
             pause_duration = pygame.time.get_ticks() - self.pause_start_time
             self.total_pause_time += pause_duration
             pygame.time.set_timer(self.COUNTDOWN_EVENT, 1000)
+
+    def bot_make_move(self):
+        """Bot makes the best move according to OptimalStrategy."""
+        # Don't move if any tile is moving
+        if any(t.is_moving for t in self.tiles):
+            return
+
+        move = self.bot_strategy.find_best_move(self.game)
+        if move is None:
+            print("Bot: No moves available!")
+            return
+
+        # Clear any selection
+        self.game.deselect_tile()
+        self.arrows.empty()
+        self.hint_tiles = []
+
+        if move.is_direct_removal:
+            # Direct removal - find tiles and remove them
+            tile1 = self.game.board[move.tile1_pos[0]][move.tile1_pos[1]]
+            tile2 = self.game.board[move.tile2_pos[0]][move.tile2_pos[1]]
+
+            if tile1 and tile2:
+                positions = self.game.remove_tiles(tile1, tile2)
+                if positions:
+                    self.spawn_score_animation(positions)
+                    print(f"Bot: Removed pair at {move.tile1_pos} + {move.tile2_pos}, score: {move.calculate_score()}")
+                    # Start timer if not running
+                    if not self.timer_running:
+                        self.timer_running = True
+                        self.bar_phase = 'emptying'
+                        self.bar_phase_start = pygame.time.get_ticks()
+        else:
+            # Need to move tile first
+            tile = self.game.board[move.move_tile_pos[0]][move.move_tile_pos[1]]
+            if tile:
+                direction = move.move_direction
+                old_row, old_col = tile.position
+                target_rect = tile.target_move(direction, self.game.board)
+                new_row, new_col = pixel_to_grid(target_rect.topleft[0], target_rect.topleft[1])
+                total_cells = abs(new_row - old_row) + abs(new_col - old_col)
+
+                tile.move_start_pos = tile.position
+                tile.last_grid_pos = tile.position
+                tile.cells_left_count = 0
+                tile.total_cells_to_move = total_cells
+                tile.move_animation_group = pygame.sprite.Group()
+                tile.target_rect = target_rect
+                tile.is_moving = True
+                tile.current_direction = direction
+
+                print(f"Bot: Moving tile at {move.move_tile_pos} {direction}, then will remove")
+                # Start timer if not running
+                if not self.timer_running:
+                    self.timer_running = True
+                    self.bar_phase = 'emptying'
+                    self.bar_phase_start = pygame.time.get_ticks()
+
+    def show_hint(self):
+        """Highlight the best move."""
+        # Don't show hint if any tile is moving
+        if any(t.is_moving for t in self.tiles):
+            return
+
+        move = self.bot_strategy.find_best_move(self.game)
+        if move is None:
+            print("Hint: No moves available!")
+            self.hint_tiles = []
+            return
+
+        # Highlight tiles involved in the move
+        tile1 = self.game.board[move.tile1_pos[0]][move.tile1_pos[1]]
+        tile2 = self.game.board[move.tile2_pos[0]][move.tile2_pos[1]]
+
+        self.hint_tiles = []
+        if tile1:
+            self.hint_tiles.append(tile1)
+        if tile2:
+            self.hint_tiles.append(tile2)
+
+        if move.is_direct_removal:
+            print(f"Hint: Remove {move.tile1_pos} + {move.tile2_pos}, score: +{move.calculate_score()}")
+        else:
+            print(f"Hint: Move {move.move_tile_pos} {move.move_direction}, then remove. Net score: +{move.calculate_score()}")
 
     def handle_mouse_click(self, pos):
         for arrow in self.arrows:
@@ -690,6 +793,13 @@ class TestGameApp:
     def update_display(self):
         self.tile_surface.blit(self.background_texture, (0, 0))
         self.tiles.draw(self.tile_surface)
+
+        # Draw hint highlight (green border around hinted tiles)
+        for tile in self.hint_tiles:
+            if tile in self.tiles:
+                highlight_rect = tile.rect.inflate(6, 6)
+                pygame.draw.rect(self.tile_surface, (0, 255, 0), highlight_rect, 3, border_radius=8)
+
         self.score_popups.update()
         for popup in self.score_popups:
             popup.draw(self.tile_surface)
