@@ -18,7 +18,7 @@ from game_digits.test_game import TestGame, TEST_BOARD_SIZE
 from game_digits.sprites import Arrow, ScorePopup
 from game_digits import ui_components as ui
 from game_digits.windows import ResultWindow, PauseOverlay
-from game_digits.bot.strategy import OptimalStrategy
+from game_digits.bot.strategy import LookaheadStrategy
 
 
 class TestGameApp:
@@ -67,8 +67,8 @@ class TestGameApp:
 
         self.game = TestGame(self.tiles, time_limit=60)
 
-        # Bot strategy for hints and auto-play
-        self.bot_strategy = OptimalStrategy(max_movement_distance=10)
+        # Bot strategy for hints and auto-play (LookaheadStrategy thinks 1 move ahead)
+        self.bot_strategy = LookaheadStrategy(max_movement_distance=10)
         self.hint_tiles = []  # Highlighted tiles for hint
         self.pending_bot_removal = None  # (tile1_pos, tile2_pos) to remove after movement
 

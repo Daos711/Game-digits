@@ -438,3 +438,228 @@ class OptimalStrategy(Strategy):
                         moves.append((move, net_score))
 
         return moves
+
+
+class LookaheadStrategy(Strategy):
+    """Strategy with 1-move lookahead.
+
+    For each possible move, simulates the removal and evaluates
+    what the best follow-up move would be. Chooses the move that
+    maximizes (current_score + best_next_score).
+
+    This is significantly smarter than greedy because it considers
+    how removing a pair opens up new opportunities.
+    """
+
+    def __init__(self, max_movement_distance: int = 10):
+        self.max_movement_distance = max_movement_distance
+
+    def find_best_move(self, game: 'Game') -> Optional[Move]:
+        """Find best move considering 1-step lookahead."""
+        all_moves = self._get_all_possible_moves(game)
+
+        if not all_moves:
+            return None
+
+        best_move = None
+        best_total_score = -float('inf')
+
+        for move, immediate_score in all_moves:
+            # Simulate this move and find best follow-up
+            future_score = self._evaluate_future(game, move)
+            total_score = immediate_score + future_score
+
+            if total_score > best_total_score:
+                best_total_score = total_score
+                best_move = move
+
+        return best_move
+
+    def _get_all_possible_moves(self, game: 'Game') -> List[Tuple[Move, int]]:
+        """Get all possible moves with their immediate scores."""
+        moves = []
+
+        # Immediate removals
+        for tile1, tile2, distance in self.find_all_removable_pairs(game):
+            score = (distance + 1) * (distance + 2) // 2
+            move = Move(tile1.position, tile2.position)
+            moves.append((move, score))
+
+        # Movement + removal
+        for tile1, tile2 in self.find_matching_tiles(game):
+            moves.extend(self._evaluate_movements(game, tile1, tile2))
+            moves.extend(self._evaluate_movements(game, tile2, tile1))
+
+        return moves
+
+    def _evaluate_movements(
+        self,
+        game: 'Game',
+        tile: 'Tile',
+        partner: 'Tile'
+    ) -> List[Tuple[Move, int]]:
+        """Same as OptimalStrategy._evaluate_movements."""
+        moves = []
+        board_size = len(game.board)
+        r1, c1 = tile.position
+        r2, c2 = partner.position
+
+        directions = [
+            ('up', -1, 0),
+            ('down', 1, 0),
+            ('left', 0, -1),
+            ('right', 0, 1)
+        ]
+
+        for dir_name, dr, dc in directions:
+            for dist in range(1, self.max_movement_distance + 1):
+                new_r = r1 + dr * dist
+                new_c = c1 + dc * dist
+
+                if not (0 <= new_r < board_size and 0 <= new_c < board_size):
+                    break
+
+                path_clear = True
+                for step in range(1, dist + 1):
+                    check_r = r1 + dr * step
+                    check_c = c1 + dc * step
+                    cell = game.board[check_r][check_c]
+                    if cell is not None and cell != tile and cell != partner:
+                        path_clear = False
+                        break
+
+                if not path_clear:
+                    break
+
+                if new_r == r2:
+                    min_c, max_c = min(new_c, c2), max(new_c, c2)
+                    clear = True
+                    for j in range(min_c + 1, max_c):
+                        cell = game.board[new_r][j]
+                        if cell is not None and cell != tile and cell != partner:
+                            clear = False
+                            break
+                    if clear:
+                        new_distance = abs(new_c - c2)
+                        removal_score = (new_distance + 1) * (new_distance + 2) // 2
+                        net_score = removal_score - dist
+                        move = Move(
+                            tile1_pos=tile.position,
+                            tile2_pos=partner.position,
+                            move_tile_pos=tile.position,
+                            move_direction=dir_name,
+                            move_distance=dist
+                        )
+                        moves.append((move, net_score))
+
+                elif new_c == c2:
+                    min_r, max_r = min(new_r, r2), max(new_r, r2)
+                    clear = True
+                    for i in range(min_r + 1, max_r):
+                        cell = game.board[i][new_c]
+                        if cell is not None and cell != tile and cell != partner:
+                            clear = False
+                            break
+                    if clear:
+                        new_distance = abs(new_r - r2)
+                        removal_score = (new_distance + 1) * (new_distance + 2) // 2
+                        net_score = removal_score - dist
+                        move = Move(
+                            tile1_pos=tile.position,
+                            tile2_pos=partner.position,
+                            move_tile_pos=tile.position,
+                            move_direction=dir_name,
+                            move_distance=dist
+                        )
+                        moves.append((move, net_score))
+
+        return moves
+
+    def _evaluate_future(self, game: 'Game', move: Move) -> int:
+        """Simulate move and return best follow-up score."""
+        # Create virtual board state
+        board_size = len(game.board)
+        virtual_board = [[None] * board_size for _ in range(board_size)]
+        tile_positions = {}  # pos -> (number, original_tile)
+
+        for tile in game.tiles:
+            if not tile.is_moving:
+                r, c = tile.position
+                virtual_board[r][c] = tile.number
+                tile_positions[(r, c)] = (tile.number, tile)
+
+        # Apply the move
+        pos1 = move.tile1_pos
+        pos2 = move.tile2_pos
+
+        # If there's movement, update position
+        if move.move_tile_pos and move.move_direction:
+            if move.move_tile_pos == pos1:
+                pos1 = self._apply_movement_to_pos(pos1, move.move_direction, move.move_distance)
+            else:
+                pos2 = self._apply_movement_to_pos(pos2, move.move_direction, move.move_distance)
+
+        # Remove tiles from virtual board
+        if move.tile1_pos in tile_positions:
+            r, c = move.tile1_pos
+            virtual_board[r][c] = None
+            del tile_positions[move.tile1_pos]
+        if move.tile2_pos in tile_positions:
+            r, c = move.tile2_pos
+            virtual_board[r][c] = None
+            del tile_positions[move.tile2_pos]
+
+        # Find best move on virtual board
+        best_score = 0
+        remaining_tiles = list(tile_positions.items())
+
+        for i, (pos1_v, (num1, _)) in enumerate(remaining_tiles):
+            for pos2_v, (num2, _) in remaining_tiles[i + 1:]:
+                # Check if they match
+                if num1 != num2 and num1 + num2 != 10:
+                    continue
+
+                r1, c1 = pos1_v
+                r2, c2 = pos2_v
+
+                # Check if they can be removed (same line, clear path)
+                can_remove = False
+                distance = 0
+
+                if r1 == r2:  # Same row
+                    min_c, max_c = min(c1, c2), max(c1, c2)
+                    clear = all(virtual_board[r1][j] is None for j in range(min_c + 1, max_c))
+                    if clear:
+                        can_remove = True
+                        distance = max_c - min_c
+                elif c1 == c2:  # Same column
+                    min_r, max_r = min(r1, r2), max(r1, r2)
+                    clear = all(virtual_board[i][c1] is None for i in range(min_r + 1, max_r))
+                    if clear:
+                        can_remove = True
+                        distance = max_r - min_r
+
+                if can_remove:
+                    score = (distance + 1) * (distance + 2) // 2
+                    if score > best_score:
+                        best_score = score
+
+        return best_score
+
+    def _apply_movement_to_pos(
+        self,
+        pos: Tuple[int, int],
+        direction: str,
+        distance: int
+    ) -> Tuple[int, int]:
+        """Apply movement to a position."""
+        r, c = pos
+        if direction == 'up':
+            return r - distance, c
+        elif direction == 'down':
+            return r + distance, c
+        elif direction == 'left':
+            return r, c - distance
+        elif direction == 'right':
+            return r, c + distance
+        return pos

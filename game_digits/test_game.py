@@ -38,7 +38,7 @@ class TestGame:
         self.current_pattern_name = "test_pattern"
         self.prepare_tile_appearance()
 
-    def prepare_tile_appearance(self, seed=42):
+    def prepare_tile_appearance(self, seed=2024):
         """Prepare 24 tiles for 5x5 board (one cell empty, all tiles have pairs)."""
         # Fixed seed for reproducible board layout
         random.seed(seed)
