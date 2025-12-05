@@ -39,41 +39,35 @@ class TestGame:
         self.prepare_tile_appearance()
 
     def prepare_tile_appearance(self, seed=42):
-        """Prepare 25 tiles for full 5x5 board."""
+        """Prepare 24 tiles for 5x5 board (one cell empty, all tiles have pairs)."""
         # Fixed seed for reproducible board layout
         random.seed(seed)
 
-        # Generate 25 numbers ensuring all can be matched
-        # Create pairs that sum to 10: (1,9), (2,8), (3,7), (4,6), (5,5)
+        # Generate 24 numbers - all have pairs (12 pairs total)
+        # Pairs that sum to 10: (1,9), (2,8), (3,7), (4,6), (5,5)
         pairs = [
             (1, 9), (1, 9), (1, 9),  # 6 tiles
             (2, 8), (2, 8), (2, 8),  # 6 tiles
-            (3, 7), (3, 7),          # 4 tiles
-            (4, 6), (4, 6),          # 4 tiles
-            (5, 5),                   # 2 tiles (5+5=10)
-        ]  # Total: 22 tiles, need 3 more
-
-        # Add 3 more tiles that can match
-        extra = [(3, 7)]  # 2 more tiles
-        # Plus one 5 that matches the existing 5s
-        pairs.extend(extra)
-        # Total: 24 tiles + 1 more
+            (3, 7), (3, 7), (3, 7),  # 6 tiles
+            (4, 6), (4, 6), (4, 6),  # 6 tiles
+        ]  # Total: 24 tiles = 12 pairs
 
         numbers = []
         for a, b in pairs:
             numbers.append(a)
             numbers.append(b)
-        numbers.append(5)  # 25th tile - matches with other 5s
 
         # Shuffle numbers
         random.shuffle(numbers)
 
-        # All positions on 5x5 board
-        positions = [
+        # All positions on 5x5 board except one (24 positions)
+        all_positions = [
             (row, col)
             for row in range(TEST_BOARD_SIZE)
             for col in range(TEST_BOARD_SIZE)
         ]
+        # Remove one random position (center looks good)
+        positions = [p for p in all_positions if p != (2, 2)]
 
         # Create pending tiles
         self.pending_tiles = []
