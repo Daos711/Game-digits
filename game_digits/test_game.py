@@ -8,12 +8,12 @@ from game_digits.constants import COLORS
 from game_digits.sprites import Tile
 
 
-# Test mode board size (same as main game for proper testing)
-TEST_BOARD_SIZE = 10
+# Test mode board size - small 5x5 for bot testing
+TEST_BOARD_SIZE = 5
 
 
 class TestGame:
-    """Simplified game with 6 tiles (3 pairs) for quick result window testing."""
+    """Simplified game with 6 tiles (3 pairs) on 5x5 board for bot testing."""
 
     COUNTDOWN_EVENT = pygame.USEREVENT + 2
     TILE_APPEAR_EVENT = pygame.USEREVENT + 3
@@ -39,7 +39,7 @@ class TestGame:
         self.prepare_tile_appearance()
 
     def prepare_tile_appearance(self):
-        """Prepare 6 tiles (3 pairs) for animated appearance in center of board."""
+        """Prepare 6 tiles (3 pairs) for animated appearance on 5x5 board."""
         # Generate 3 pairs of numbers that sum to 10
         pairs = [
             (1, 9),
@@ -56,11 +56,11 @@ class TestGame:
         # Shuffle numbers
         random.shuffle(numbers)
 
-        # Place tiles in center of 10x10 board (2 rows x 3 cols in center)
-        # Center positions: rows 4-5, cols 3-5
+        # Place tiles on 5x5 board (2 rows x 3 cols in center)
+        # Center positions: rows 1-2, cols 1-3
         positions = [
-            (4, 3), (4, 4), (4, 5),
-            (5, 3), (5, 4), (5, 5),
+            (1, 1), (1, 2), (1, 3),
+            (2, 1), (2, 2), (2, 3),
         ]
 
         # Create pending tiles
