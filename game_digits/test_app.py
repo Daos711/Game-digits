@@ -8,6 +8,7 @@ Controls:
   H - Show hint (highlights best move)
 """
 import pygame
+import time
 
 from game_digits import get_image_path, get_font_path
 from game_digits.constants import (
@@ -66,7 +67,8 @@ class TestGameApp:
         self.score_popups = pygame.sprite.Group()
 
         # Seed rotation: changes every 2 games (1 for player, 1 for bot)
-        self.current_seed = 2024
+        # Use current time to get unique starting seed each app launch
+        self.current_seed = int(time.time()) % 10000  # 4-digit seed
         self.games_with_seed = 0  # Counter: 0=first game, 1=second game, then rotate
 
         self.game = TestGame(self.tiles, time_limit=60, seed=self.current_seed)
