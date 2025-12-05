@@ -69,6 +69,7 @@ class TestGameApp:
         # Bot strategy for hints and auto-play
         self.bot_strategy = OptimalStrategy(max_movement_distance=10)
         self.hint_tiles = []  # Highlighted tiles for hint
+        self.pending_bot_removal = None  # (tile1_pos, tile2_pos) to remove after movement
 
         tile_surface_size = tile_area
         self.tile_surface = pygame.Surface((tile_surface_size, tile_surface_size))
@@ -319,6 +320,8 @@ class TestGameApp:
         self.pause_start_time = 0
         self.total_pause_time = 0
         self.paused_progress = 1.0
+        self.pending_bot_removal = None
+        self.hint_tiles = []
 
         # Recreate background texture
         tile_area = self.board_size * TILE_SIZE + (self.board_size + 1) * GAP
@@ -420,7 +423,10 @@ class TestGameApp:
                 tile.is_moving = True
                 tile.current_direction = direction
 
-                print(f"Bot: Moving tile at {move.move_tile_pos} {direction}, then will remove")
+                # Store pending removal to execute after movement completes
+                self.pending_bot_removal = (move.tile1_pos, move.tile2_pos)
+
+                print(f"Bot: Moving tile at {move.move_tile_pos} {direction}, then will remove {move.tile1_pos} + {move.tile2_pos}")
                 # Start timer if not running
                 if not self.timer_running:
                     self.timer_running = True
@@ -733,6 +739,18 @@ class TestGameApp:
 
         self.update_display()
         pygame.display.flip()
+
+        # Execute pending bot removal after movement completes
+        if self.pending_bot_removal:
+            tile1_pos, tile2_pos = self.pending_bot_removal
+            self.pending_bot_removal = None
+            tile1 = self.game.board[tile1_pos[0]][tile1_pos[1]]
+            tile2 = self.game.board[tile2_pos[0]][tile2_pos[1]]
+            if tile1 and tile2:
+                positions = self.game.remove_tiles(tile1, tile2)
+                if positions:
+                    self.spawn_score_animation(positions)
+                    print(f"Bot: Completed removal {tile1_pos} + {tile2_pos}")
 
     def move_tile(self, tile, direction):
         # Используем сохранённую цель, а не пересчитываем каждый кадр
