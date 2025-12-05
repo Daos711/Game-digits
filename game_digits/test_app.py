@@ -421,26 +421,29 @@ class TestGameApp:
                         self.bar_phase = 'emptying'
                         self.bar_phase_start = pygame.time.get_ticks()
         else:
-            # Need to move tile first
-            tile = self.game.board[move.move_tile_pos[0]][move.move_tile_pos[1]]
-            if tile:
+            # Need to move tile first - find both tiles
+            tile1 = self.game.board[move.tile1_pos[0]][move.tile1_pos[1]]
+            tile2 = self.game.board[move.tile2_pos[0]][move.tile2_pos[1]]
+            moving_tile = self.game.board[move.move_tile_pos[0]][move.move_tile_pos[1]]
+
+            if moving_tile and tile1 and tile2:
                 direction = move.move_direction
-                old_row, old_col = tile.position
-                target_rect = tile.target_move(direction, self.game.board)
+                old_row, old_col = moving_tile.position
+                target_rect = moving_tile.target_move(direction, self.game.board)
                 new_row, new_col = pixel_to_grid(target_rect.topleft[0], target_rect.topleft[1])
                 total_cells = abs(new_row - old_row) + abs(new_col - old_col)
 
-                tile.move_start_pos = tile.position
-                tile.last_grid_pos = tile.position
-                tile.cells_left_count = 0
-                tile.total_cells_to_move = total_cells
-                tile.move_animation_group = pygame.sprite.Group()
-                tile.target_rect = target_rect
-                tile.is_moving = True
-                tile.current_direction = direction
+                moving_tile.move_start_pos = moving_tile.position
+                moving_tile.last_grid_pos = moving_tile.position
+                moving_tile.cells_left_count = 0
+                moving_tile.total_cells_to_move = total_cells
+                moving_tile.move_animation_group = pygame.sprite.Group()
+                moving_tile.target_rect = target_rect
+                moving_tile.is_moving = True
+                moving_tile.current_direction = direction
 
-                # Store pending removal to execute after movement completes
-                self.pending_bot_removal = (move.tile1_pos, move.tile2_pos)
+                # Store tile OBJECTS (not positions) for removal after movement
+                self.pending_bot_removal = (tile1, tile2)
 
                 print(f"Bot: Moving tile at {move.move_tile_pos} {direction}, then will remove {move.tile1_pos} + {move.tile2_pos}")
                 # Start timer if not running
@@ -758,15 +761,14 @@ class TestGameApp:
 
         # Execute pending bot removal after movement completes
         if self.pending_bot_removal:
-            tile1_pos, tile2_pos = self.pending_bot_removal
+            tile1, tile2 = self.pending_bot_removal  # These are tile objects, not positions
             self.pending_bot_removal = None
-            tile1 = self.game.board[tile1_pos[0]][tile1_pos[1]]
-            tile2 = self.game.board[tile2_pos[0]][tile2_pos[1]]
-            if tile1 and tile2:
+            # Check tiles still exist in game
+            if tile1 in self.tiles and tile2 in self.tiles:
                 positions = self.game.remove_tiles(tile1, tile2)
                 if positions:
                     self.spawn_score_animation(positions)
-                    print(f"Bot: Completed removal {tile1_pos} + {tile2_pos}")
+                    print(f"Bot: Completed removal {tile1.position} + {tile2.position}")
 
     def move_tile(self, tile, direction):
         # Используем сохранённую цель, а не пересчитываем каждый кадр
