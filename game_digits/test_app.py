@@ -66,11 +66,9 @@ class TestGameApp:
         self.tiles = pygame.sprite.Group()
         self.score_popups = pygame.sprite.Group()
 
-        # Seed rotation: changes every 2 games (1 for player, 1 for bot)
-        # Use date-based seed so same board all day (for fair comparison)
-        today = time.localtime()
-        self.current_seed = today.tm_year * 1000 + today.tm_yday  # e.g., 2024339
-        self.games_with_seed = 0  # Counter: 0=first game, 1=second game, then rotate
+        # Seed rotation: same seed for 2 games (player vs bot), then new seed
+        self.current_seed = int(time.time()) % 100000  # 5-digit unique seed
+        self.games_with_seed = 0  # Counter: 0=first game, 1=second game, then new seed
 
         self.game = TestGame(self.tiles, time_limit=60, seed=self.current_seed)
         print(f"Game #1/2 with seed {self.current_seed}")
@@ -325,11 +323,11 @@ class TestGameApp:
         self.tiles.empty()
         self.score_popups.empty()
 
-        # Rotate seed every 2 games
+        # Rotate seed every 2 games (new random seed, not just +1)
         self.games_with_seed += 1
         if self.games_with_seed >= 2:
             self.games_with_seed = 0
-            self.current_seed += 1
+            self.current_seed = int(time.time()) % 100000  # New unique seed
             print(f"New seed: {self.current_seed}")
 
         # Reset game state with current seed
