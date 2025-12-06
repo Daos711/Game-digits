@@ -9,6 +9,12 @@ from game_digits.constants import (
     TILE_SIZE, GAP, COLORS,
     grid_to_pixel, pixel_to_grid, pixel_to_grid_round, create_background_surface
 )
+from game_digits.scale import (
+    PANEL_WIDTH, FRAME_WIDTH, GRID_CELL_SIZE,
+    FONT_PANEL_LABEL, FONT_PANEL_VALUE, FONT_PANEL_PAUSE,
+    PAUSE_BTN_WIDTH, PAUSE_BTN_HEIGHT, ICON_SIZE,
+    VALUE_BAR_HEIGHT, PROGRESS_BAR_HEIGHT, PANEL_PADDING
+)
 from game_digits.test_game import TestGame, TEST_BOARD_SIZE
 from game_digits.sprites import Arrow, ScorePopup
 from game_digits import ui_components as ui
@@ -22,9 +28,9 @@ class TestGameApp:
         # Window size adjusted for smaller board
         self.board_size = TEST_BOARD_SIZE
         tile_area = self.board_size * TILE_SIZE + (self.board_size + 1) * GAP
-        self.frame = 10
+        self.frame = FRAME_WIDTH
         self.window = tile_area + 2 * self.frame
-        self.panel_width = 240
+        self.panel_width = PANEL_WIDTH
         self.WIDTH = self.window + 2 * self.frame + self.panel_width
         self.HEIGHT = self.window + 2 * self.frame
 
@@ -37,9 +43,9 @@ class TestGameApp:
         pygame.font.init()
 
         bold_cyrillic = get_font_path("2204.ttf")
-        self.font_bold_large = pygame.font.Font(bold_cyrillic, 26)
-        self.font_bold_medium = pygame.font.Font(bold_cyrillic, 22)
-        self.font_bold_value = pygame.font.Font(bold_cyrillic, 36)
+        self.font_bold_large = pygame.font.Font(bold_cyrillic, FONT_PANEL_LABEL)
+        self.font_bold_medium = pygame.font.Font(bold_cyrillic, FONT_PANEL_PAUSE)
+        self.font_bold_value = pygame.font.Font(bold_cyrillic, FONT_PANEL_VALUE)
 
         self.is_paused = False
         self.pause_button_rect = None
@@ -52,7 +58,7 @@ class TestGameApp:
         self.icon = pygame.image.load(get_image_path("icon.png"))
         pygame.display.set_icon(self.icon)
 
-        self.grid_cell_size = 18  # Мельче клетки
+        self.grid_cell_size = GRID_CELL_SIZE
         self.grid_line_color = (218, 236, 241)  # Светло-голубые линии
 
         self.arrows = pygame.sprite.Group()
@@ -188,7 +194,7 @@ class TestGameApp:
 
     def draw_score_and_timer_window(self):
         panel_x = self.window + 2 * self.frame
-        padding = 15
+        padding = PANEL_PADDING
 
         pause_offset = self._get_panel_element_offset(0)
         time_offset = self._get_panel_element_offset(1)
@@ -197,33 +203,29 @@ class TestGameApp:
         current_y = padding
 
         # Pause button
-        button_width = 120
-        button_height = 40
-        button_x = panel_x + (self.panel_width - button_width) // 2
+        button_x = panel_x + (self.panel_width - PAUSE_BTN_WIDTH) // 2
         button_y = current_y + pause_offset
 
         if button_y >= -10:
             self.pause_button_rect = ui.draw_pause_button(
                 self.screen,
-                (button_x, button_y, button_width, button_height),
+                (button_x, button_y, PAUSE_BTN_WIDTH, PAUSE_BTN_HEIGHT),
                 self.font_bold_medium,
                 is_pressed=self.is_paused
             )
         else:
             self.pause_button_rect = None
 
-        current_y += button_height + 25
+        current_y += PAUSE_BTN_HEIGHT + 25
 
         # Time block
         time_block_y = current_y + time_offset
         time_label = self.font_bold_large.render("Время", True, (255, 255, 255))
         label_x = panel_x + (self.panel_width - time_label.get_width()) // 2
 
-        icon_size = 50
         icon_x = panel_x + padding
-        bar_x = icon_x + icon_size // 2
+        bar_x = icon_x + ICON_SIZE // 2
         bar_width = self.panel_width - padding - bar_x + panel_x
-        bar_height = 44
 
         if time_block_y >= -10:
             self.screen.blit(time_label, (label_x, time_block_y))
@@ -231,15 +233,14 @@ class TestGameApp:
 
             ui.draw_value_bar(
                 self.screen,
-                (bar_x, icon_y + 3, bar_width, bar_height),
+                (bar_x, icon_y + 3, bar_width, VALUE_BAR_HEIGHT),
                 self.game.current_time,
                 self.font_bold_value
             )
-            ui.draw_clock_icon(self.screen, (icon_x + icon_size // 2, icon_y + icon_size // 2), icon_size)
+            ui.draw_clock_icon(self.screen, (icon_x + ICON_SIZE // 2, icon_y + ICON_SIZE // 2), ICON_SIZE)
 
             # Progress bar
-            progress_y = icon_y + icon_size + 15
-            progress_height = 22
+            progress_y = icon_y + ICON_SIZE + 15
             progress_x = panel_x + padding
             progress_width = self.panel_width - padding * 2
 
@@ -257,11 +258,11 @@ class TestGameApp:
 
             ui.draw_progress_bar(
                 self.screen,
-                (progress_x, progress_y, progress_width, progress_height),
+                (progress_x, progress_y, progress_width, PROGRESS_BAR_HEIGHT),
                 progress
             )
 
-        current_y += time_label.get_height() + 10 + icon_size + 15 + 22 + 25
+        current_y += time_label.get_height() + 10 + ICON_SIZE + 15 + PROGRESS_BAR_HEIGHT + 25
 
         # Score block
         score_block_y = current_y + score_offset
@@ -274,11 +275,11 @@ class TestGameApp:
 
             ui.draw_value_bar(
                 self.screen,
-                (bar_x, score_icon_y + 3, bar_width, bar_height),
+                (bar_x, score_icon_y + 3, bar_width, VALUE_BAR_HEIGHT),
                 self.game.score,
                 self.font_bold_value
             )
-            ui.draw_sun_icon(self.screen, (icon_x + icon_size // 2, score_icon_y + icon_size // 2), icon_size)
+            ui.draw_sun_icon(self.screen, (icon_x + ICON_SIZE // 2, score_icon_y + ICON_SIZE // 2), ICON_SIZE)
 
     def show_result_window(self):
         """Display the game result window with final score.

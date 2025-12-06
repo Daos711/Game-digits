@@ -5,6 +5,10 @@ import pygame
 from game_digits import get_font_path
 from game_digits import ui_components as ui
 from game_digits import records
+from game_digits.scale import (
+    FONT_RESULT_TITLE, FONT_RESULT_LABEL, FONT_RESULT_VALUE, FONT_RESULT_BUTTON,
+    CORNER_RADIUS, scaled
+)
 
 
 class ResultWindow:
@@ -23,16 +27,15 @@ class ResultWindow:
     ROW_APPEAR_DELAY = 1000         # Interval between row appearances (1s)
     NUMBER_ANIMATION_DURATION = 2500  # Number animation duration (2.5s)
 
-    # Window dimensions
-    WINDOW_WIDTH = 420
-    WINDOW_HEIGHT = 340
+    # Window dimensions (масштабируемые)
+    WINDOW_WIDTH = scaled(420)
+    WINDOW_HEIGHT = scaled(340)
 
-    # Layout constants
-    HEADER_HEIGHT = 50
-    PADDING = 20
-    ROW_HEIGHT = 50
-    ROW_GAP = 12
-    CORNER_RADIUS = 10
+    # Layout constants (масштабируемые)
+    HEADER_HEIGHT = scaled(50)
+    PADDING = scaled(20)
+    ROW_HEIGHT = scaled(50)
+    ROW_GAP = scaled(12)
 
     def __init__(self, screen, screen_size, game_score, current_time, redraw_callback):
         self.screen = screen
@@ -52,17 +55,17 @@ class ResultWindow:
 
         # Load fonts
         bold_font_path = get_font_path("2204.ttf")
-        self.title_font = pygame.font.Font(bold_font_path, 32)
-        self.label_font = pygame.font.Font(bold_font_path, 26)
-        self.value_font = pygame.font.Font(bold_font_path, 30)
-        self.button_font = pygame.font.Font(bold_font_path, 28)
+        self.title_font = pygame.font.Font(bold_font_path, FONT_RESULT_TITLE)
+        self.label_font = pygame.font.Font(bold_font_path, FONT_RESULT_LABEL)
+        self.value_font = pygame.font.Font(bold_font_path, FONT_RESULT_VALUE)
+        self.button_font = pygame.font.Font(bold_font_path, FONT_RESULT_BUTTON)
 
         # Button positions (relative to window)
         self.new_game_btn_rel = pygame.Rect(
             self.PADDING,
             self.HEADER_HEIGHT + self.PADDING + (self.ROW_HEIGHT + self.ROW_GAP) * 3 + 5,
             self.WINDOW_WIDTH - 2 * self.PADDING,
-            50
+            scaled(50)
         )
 
         # Button state tracking

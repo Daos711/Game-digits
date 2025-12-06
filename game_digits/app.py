@@ -5,6 +5,12 @@ from game_digits.constants import (
     TILE_SIZE, GAP, COLORS, BOARD_SIZE,
     grid_to_pixel, pixel_to_grid, pixel_to_grid_round, create_background_surface
 )
+from game_digits.scale import (
+    PANEL_WIDTH, FRAME_WIDTH, GRID_CELL_SIZE,
+    FONT_PANEL_LABEL, FONT_PANEL_VALUE, FONT_PANEL_PAUSE,
+    PAUSE_BTN_WIDTH, PAUSE_BTN_HEIGHT, ICON_SIZE,
+    VALUE_BAR_HEIGHT, PROGRESS_BAR_HEIGHT, PANEL_PADDING
+)
 from game_digits.game import Game
 from game_digits.sprites import Arrow, ScorePopup
 from game_digits import ui_components as ui
@@ -13,22 +19,25 @@ from game_digits.windows import ResultWindow, StartMenu, PauseOverlay
 
 class GameApp:
     def __init__(self):
-        self.WIDTH, self.HEIGHT = 953, 713
-        self.frame = 10
+        self.frame = FRAME_WIDTH
         self.speed = 2
-        self.window = self.HEIGHT - 20
-        self.panel_width, self.panel_height = 240, self.HEIGHT
         self.tile_size, self.gap = TILE_SIZE, GAP
+        # Вычисляем размеры окна из размера плиток
+        tile_area = BOARD_SIZE * TILE_SIZE + (BOARD_SIZE + 1) * GAP
+        self.HEIGHT = tile_area + 4 * self.frame
+        self.panel_width = PANEL_WIDTH
+        self.WIDTH = self.HEIGHT + self.panel_width
+        self.window = self.HEIGHT - 2 * self.frame
+        self.panel_height = self.HEIGHT
         self.offset = (23, 23)
         self.COLORS = COLORS
         pygame.init()
         pygame.font.init()
         # Жирные шрифты для UI панели
-        # OpenSans-Bold для кириллицы (Время, Очки, пауза)
         bold_cyrillic = get_font_path("2204.ttf")
-        self.font_bold_large = pygame.font.Font(bold_cyrillic, 26)   # "Время", "Очки"
-        self.font_bold_medium = pygame.font.Font(bold_cyrillic, 22)  # "пауза"
-        self.font_bold_value = pygame.font.Font(bold_cyrillic, 36)   # цифры
+        self.font_bold_large = pygame.font.Font(bold_cyrillic, FONT_PANEL_LABEL)   # "Время", "Очки"
+        self.font_bold_medium = pygame.font.Font(bold_cyrillic, FONT_PANEL_PAUSE)  # "пауза"
+        self.font_bold_value = pygame.font.Font(bold_cyrillic, FONT_PANEL_VALUE)   # цифры
         # Состояние UI
         self.is_paused = False
         self.pause_button_rect = None
@@ -41,7 +50,7 @@ class GameApp:
         self.icon = pygame.image.load(get_image_path("icon.png"))
         pygame.display.set_icon(self.icon)
         # Параметры для клеточного фона (как в школьной тетради)
-        self.grid_cell_size = 18  # Размер клетки в пикселях (мельче)
+        self.grid_cell_size = GRID_CELL_SIZE
         self.grid_line_color = (218, 236, 241)  # Светло-голубые линии
         self.arrows = pygame.sprite.Group()
         self.tiles = pygame.sprite.Group()
@@ -187,7 +196,7 @@ class GameApp:
 
     def draw_score_and_timer_window(self):
         panel_x = self.HEIGHT  # Начало правой панели
-        padding = 15
+        padding = PANEL_PADDING
 
         # Get animation offsets for each element group
         pause_offset = self._get_panel_element_offset(0)
@@ -197,23 +206,21 @@ class GameApp:
         current_y = padding
 
         # === 1. Кнопка "Пауза" (центрированная) ===
-        button_width = 120
-        button_height = 40
-        button_x = panel_x + (self.panel_width - button_width) // 2  # Центрирование
+        button_x = panel_x + (self.panel_width - PAUSE_BTN_WIDTH) // 2  # Центрирование
         button_y = current_y + pause_offset
 
         # Only draw if visible (y >= 0 means on screen)
         if button_y >= -10:
             self.pause_button_rect = ui.draw_pause_button(
                 self.screen,
-                (button_x, button_y, button_width, button_height),
+                (button_x, button_y, PAUSE_BTN_WIDTH, PAUSE_BTN_HEIGHT),
                 self.font_bold_medium,
                 is_pressed=self.is_paused
             )
         else:
             self.pause_button_rect = None
 
-        current_y += button_height + 25
+        current_y += PAUSE_BTN_HEIGHT + 25
 
         # === 2. Блок "Время" ===
         time_block_y = current_y + time_offset
@@ -223,11 +230,9 @@ class GameApp:
         label_x = panel_x + (self.panel_width - time_label.get_width()) // 2
 
         # Строка со значением времени (иконка + полоска)
-        icon_size = 50
         icon_x = panel_x + padding
-        bar_x = icon_x + icon_size // 2
+        bar_x = icon_x + ICON_SIZE // 2
         bar_width = self.panel_width - padding - bar_x + panel_x
-        bar_height = 44
 
         # Only draw if visible (entering from top)
         if time_block_y >= -10:
@@ -238,17 +243,16 @@ class GameApp:
             # СНАЧАЛА рисуем голубую полоску с временем (она будет ПОД иконкой)
             ui.draw_value_bar(
                 self.screen,
-                (bar_x, icon_y + 3, bar_width, bar_height),
+                (bar_x, icon_y + 3, bar_width, VALUE_BAR_HEIGHT),
                 self.game.current_time,
                 self.font_bold_value
             )
 
             # ЗАТЕМ рисуем иконку часов ПОВЕРХ полоски
-            ui.draw_clock_icon(self.screen, (icon_x + icon_size // 2, icon_y + icon_size // 2), icon_size)
+            ui.draw_clock_icon(self.screen, (icon_x + ICON_SIZE // 2, icon_y + ICON_SIZE // 2), ICON_SIZE)
 
             # === 3. Прогресс-бар ===
-            progress_y = icon_y + icon_size + 15
-            progress_height = 22
+            progress_y = icon_y + ICON_SIZE + 15
             progress_x = panel_x + padding
             progress_width = self.panel_width - padding * 2
 
@@ -268,11 +272,11 @@ class GameApp:
 
             ui.draw_progress_bar(
                 self.screen,
-                (progress_x, progress_y, progress_width, progress_height),
+                (progress_x, progress_y, progress_width, PROGRESS_BAR_HEIGHT),
                 progress
             )
 
-        current_y += time_label.get_height() + 10 + icon_size + 15 + 22 + 25  # All time block height
+        current_y += time_label.get_height() + 10 + ICON_SIZE + 15 + PROGRESS_BAR_HEIGHT + 25  # All time block height
 
         # === 4. Блок "Очки" ===
         score_block_y = current_y + score_offset
@@ -289,13 +293,13 @@ class GameApp:
             # СНАЧАЛА рисуем голубую полоску с очками (она будет ПОД иконкой)
             ui.draw_value_bar(
                 self.screen,
-                (bar_x, score_icon_y + 3, bar_width, bar_height),
+                (bar_x, score_icon_y + 3, bar_width, VALUE_BAR_HEIGHT),
                 self.game.score,
                 self.font_bold_value
             )
 
             # ЗАТЕМ рисуем иконку солнца ПОВЕРХ полоски
-            ui.draw_sun_icon(self.screen, (icon_x + icon_size // 2, score_icon_y + icon_size // 2), icon_size)
+            ui.draw_sun_icon(self.screen, (icon_x + ICON_SIZE // 2, score_icon_y + ICON_SIZE // 2), ICON_SIZE)
 
     def show_result_window(self):
         """Display the game result window with final score.
@@ -349,6 +353,12 @@ class GameApp:
     def handle_event(self, event):
         if event.type == pygame.QUIT:
             return False
+
+        # Обработка движения мыши для hover-эффекта кнопки "В меню"
+        elif event.type == pygame.MOUSEMOTION:
+            if self.is_paused:
+                self.pause_overlay.handle_mouse_move(event.pos)
+
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             pos = pygame.mouse.get_pos()
 
@@ -357,8 +367,10 @@ class GameApp:
                 self.toggle_pause()
                 return True
 
-            # Блокируем игровые взаимодействия на паузе
+            # Обработка клика на паузе
             if self.is_paused:
+                # Проверяем нажатие на кнопку "В меню"
+                self.pause_overlay.handle_mouse_down(pos)
                 return True
 
             # Block interaction during tile appearance animation
@@ -367,6 +379,15 @@ class GameApp:
 
             pos = (pos[0] - self.offset[0], pos[1] - self.offset[1])
             self.handle_mouse_click(pos)
+
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            if self.is_paused:
+                pos = pygame.mouse.get_pos()
+                # Проверяем клик на кнопку "В меню"
+                if self.pause_overlay.handle_mouse_up(pos):
+                    # Возврат в главное меню
+                    return 'menu'
+
         return True
 
     def toggle_pause(self):
@@ -876,7 +897,17 @@ class GameApp:
                 elif event.type == self.COUNTDOWN_EVENT:
                     self.game.handle_countdown()
                 else:
-                    running = self.handle_event(event)
+                    result = self.handle_event(event)
+                    if result == 'menu':
+                        # Возврат в меню из паузы
+                        self.is_paused = False
+                        self.reset_game()
+                        self.state = 'menu'
+                        show_result = False
+                        prepare_to_show_result = False
+                        pending_tile_spawn = False
+                    elif result == False:
+                        running = False
             # Проверяем успешное завершение (все плитки убраны)
             if self.game.prepare_to_end:
                 self.game.prepare_to_end = False

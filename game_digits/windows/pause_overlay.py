@@ -6,15 +6,24 @@ import math
 import random
 import pygame
 from game_digits import get_font_path
+from game_digits.scale import (
+    FONT_PAUSE_TEXT, FONT_PAUSE_TITLE, scaled,
+    BUTTON_WIDTH, BUTTON_HEIGHT, FONT_MENU_BUTTON, CORNER_RADIUS,
+    PATTERN_SPACING, PATTERN_MARGIN, SNAKE_MARGIN, SNAKE_PATH_SPACING,
+    CAROUSEL_RADIUS, SWING_ROPE_LENGTH,
+    BOUNCE_SPEED_BASE, BOUNCE_SPEED_RANDOM, SNAKE_SPEED,
+    FLOAT_SPEED_BASE, FLOAT_SPEED_RANDOM,
+    TYPEWRITER_CHAR_DELAY, TYPEWRITER_PAUSE_TIME
+)
 
 
 class PauseTile:
     """A single animated tile for the pause screen."""
 
-    def __init__(self, letter: str, color: tuple, x: float, y: float, tile_size: int = 52):
+    def __init__(self, letter: str, color: tuple, x: float, y: float, tile_size: int = None):
         self.letter = letter
         self.color = color
-        self.tile_size = tile_size
+        self.tile_size = tile_size if tile_size is not None else scaled(52)
         self.x = x
         self.y = y
 
@@ -23,7 +32,7 @@ class PauseTile:
         self.vy = 0
 
         # Font for the letter
-        self.font = pygame.font.Font(get_font_path("2204.ttf"), 32)
+        self.font = pygame.font.Font(get_font_path("2204.ttf"), FONT_PAUSE_TEXT)
 
         # Pre-render the tile surface
         self._render_tile()
@@ -61,7 +70,7 @@ class WavePattern:
         self.tiles = tiles
         self.center_x = center_x
         self.center_y = center_y
-        self.base_spacing = 60
+        self.base_spacing = PATTERN_SPACING
 
     def update(self, time_ms):
         t = time_ms / 1000.0
@@ -82,14 +91,14 @@ class BouncePattern:
         self.tiles = tiles
         self.width = width
         self.height = height
-        self.margin = 30
+        self.margin = PATTERN_MARGIN
 
-        # Initialize positions and velocities - SLOWER speed
+        # Initialize positions and velocities
         for i, tile in enumerate(tiles):
-            tile.x = width // 2 + (i - 2) * 60
+            tile.x = width // 2 + (i - 2) * PATTERN_SPACING
             tile.y = height // 2
             angle = random.uniform(0, 2 * math.pi)
-            speed = 0.8 + random.uniform(0, 0.4)  # Reduced from 2-3 to 0.8-1.2
+            speed = BOUNCE_SPEED_BASE + random.uniform(0, BOUNCE_SPEED_RANDOM)
             tile.vx = math.cos(angle) * speed
             tile.vy = math.sin(angle) * speed
 
@@ -122,19 +131,18 @@ class SnakePattern:
         self.head_x = center_x
         self.head_y = center_y
         self.angle = 0
-        self.path_spacing = 30
+        self.path_spacing = SNAKE_PATH_SPACING
 
     def update(self, time_ms):
         t = time_ms / 1000.0
 
-        # Move head in a smooth wandering pattern - SLOWER
+        # Move head in a smooth wandering pattern
         self.angle += math.sin(t * 0.5) * 0.03 + math.cos(t * 0.7) * 0.02
-        speed = 1.2  # Reduced from 3 to 1.2
-        self.head_x += math.cos(self.angle) * speed
-        self.head_y += math.sin(self.angle) * speed
+        self.head_x += math.cos(self.angle) * SNAKE_SPEED
+        self.head_y += math.sin(self.angle) * SNAKE_SPEED
 
         # Bounce off walls
-        margin = 80
+        margin = SNAKE_MARGIN
         if self.head_x < margin:
             self.head_x = margin
             self.angle = math.pi - self.angle
@@ -172,11 +180,11 @@ class FloatPattern:
         self.tiles = tiles
         self.center_x = center_x
         self.center_y = center_y
-        self.base_spacing = 60
+        self.base_spacing = PATTERN_SPACING
 
         # Random parameters for each tile
         for i, tile in enumerate(tiles):
-            tile.float_speed = 0.8 + random.uniform(0, 0.4)
+            tile.float_speed = FLOAT_SPEED_BASE + random.uniform(0, FLOAT_SPEED_RANDOM)
             tile.float_phase = random.uniform(0, 2 * math.pi)
             tile.float_amplitude = 15 + random.uniform(0, 10)
             tile.drift_speed = 0.3 + random.uniform(0, 0.2)
@@ -206,8 +214,8 @@ class SwingPattern:
         self.tiles = tiles
         self.center_x = center_x
         self.center_y = center_y
-        self.base_spacing = 60
-        self.rope_length = 80
+        self.base_spacing = PATTERN_SPACING
+        self.rope_length = SWING_ROPE_LENGTH
 
         # Different swing parameters for each tile
         for i, tile in enumerate(tiles):
@@ -238,7 +246,7 @@ class BreathePattern:
         self.tiles = tiles
         self.center_x = center_x
         self.center_y = center_y
-        self.base_spacing = 60
+        self.base_spacing = PATTERN_SPACING
 
     def update(self, time_ms):
         t = time_ms / 1000.0
@@ -262,7 +270,7 @@ class CarouselPattern:
         self.tiles = tiles
         self.center_x = center_x
         self.center_y = center_y
-        self.radius = 100
+        self.radius = CAROUSEL_RADIUS
 
     def update(self, time_ms):
         t = time_ms / 1000.0
@@ -288,9 +296,9 @@ class TypewriterPattern:
         self.tiles = tiles
         self.center_x = center_x
         self.center_y = center_y
-        self.base_spacing = 60
-        self.char_delay = 400  # ms per character
-        self.pause_time = 2000  # ms to pause when complete
+        self.base_spacing = PATTERN_SPACING
+        self.char_delay = TYPEWRITER_CHAR_DELAY
+        self.pause_time = TYPEWRITER_PAUSE_TIME
         self.cycle_time = len(tiles) * self.char_delay + self.pause_time
 
     def update(self, time_ms):
@@ -344,7 +352,23 @@ class PauseOverlay:
         self.pattern_index = 0
         self.start_time = 0
 
-        self.title_font = pygame.font.Font(get_font_path("2204.ttf"), 28)
+        self.title_font = pygame.font.Font(get_font_path("2204.ttf"), FONT_PAUSE_TITLE)
+        self.button_font = pygame.font.Font(get_font_path("2204.ttf"), FONT_MENU_BUTTON)
+
+        # Кнопка "В меню" (внизу по центру)
+        btn_width = scaled(160)
+        btn_height = scaled(45)
+        self.menu_button_rect = pygame.Rect(
+            (field_width - btn_width) // 2,
+            field_height - btn_height - scaled(25),  # 25px от нижнего края
+            btn_width,
+            btn_height
+        )
+        self.menu_button_hovered = False
+        self.menu_button_pressed = False
+        # Смещение для преобразования в экранные координаты
+        self.offset_x = 0
+        self.offset_y = 0
 
         self._create_tiles()
 
@@ -404,8 +428,82 @@ class PauseOverlay:
             current_time = pygame.time.get_ticks() - self.start_time
             self.pattern.update(current_time)
 
+    def _draw_menu_button(self, surface: pygame.Surface):
+        """Draw the 'В меню' button."""
+        rect = self.menu_button_rect
+
+        # Цвета кнопки (оранжевый градиент как у кнопки паузы)
+        if self.menu_button_pressed:
+            color_top = (180, 120, 0)
+            color_bottom = (130, 85, 0)
+        elif self.menu_button_hovered:
+            color_top = (255, 180, 20)
+            color_bottom = (200, 145, 10)
+        else:
+            color_top = (243, 165, 0)
+            color_bottom = (186, 127, 0)
+
+        # Рисуем кнопку с градиентом
+        btn_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+        for y in range(rect.height):
+            t = y / rect.height
+            r = int(color_top[0] + (color_bottom[0] - color_top[0]) * t)
+            g = int(color_top[1] + (color_bottom[1] - color_top[1]) * t)
+            b = int(color_top[2] + (color_bottom[2] - color_top[2]) * t)
+            pygame.draw.line(btn_surface, (r, g, b), (0, y), (rect.width, y))
+
+        # Маска для скругленных углов
+        mask = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+        pygame.draw.rect(mask, (255, 255, 255, 255), (0, 0, rect.width, rect.height),
+                        border_radius=scaled(8))
+        btn_surface.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+
+        # Текст (небольшой сдвиг вверх для визуального центрирования)
+        text = self.button_font.render("В меню", True, (255, 255, 255))
+        text_rect = text.get_rect(center=(rect.width // 2, rect.height // 2 - 1))
+
+        # Тень текста
+        shadow = self.button_font.render("В меню", True, (140, 95, 0))
+        shadow_rect = shadow.get_rect(center=(rect.width // 2 + 1, rect.height // 2))
+        btn_surface.blit(shadow, shadow_rect)
+        btn_surface.blit(text, text_rect)
+
+        surface.blit(btn_surface, rect.topleft)
+
+    def get_screen_button_rect(self) -> pygame.Rect:
+        """Get button rect in screen coordinates."""
+        return pygame.Rect(
+            self.menu_button_rect.x + self.offset_x,
+            self.menu_button_rect.y + self.offset_y,
+            self.menu_button_rect.width,
+            self.menu_button_rect.height
+        )
+
+    def handle_mouse_move(self, screen_pos: tuple):
+        """Update hover state based on mouse position."""
+        btn_rect = self.get_screen_button_rect()
+        self.menu_button_hovered = btn_rect.collidepoint(screen_pos)
+
+    def handle_mouse_down(self, screen_pos: tuple) -> bool:
+        """Handle mouse button down. Returns True if button was pressed."""
+        btn_rect = self.get_screen_button_rect()
+        if btn_rect.collidepoint(screen_pos):
+            self.menu_button_pressed = True
+            return True
+        return False
+
+    def handle_mouse_up(self, screen_pos: tuple) -> bool:
+        """Handle mouse button up. Returns True if button was clicked."""
+        was_pressed = self.menu_button_pressed
+        self.menu_button_pressed = False
+        btn_rect = self.get_screen_button_rect()
+        return was_pressed and btn_rect.collidepoint(screen_pos)
+
     def draw(self, surface: pygame.Surface, offset_x: int = 0, offset_y: int = 0):
         """Draw the pause overlay."""
+        self.offset_x = offset_x
+        self.offset_y = offset_y
+
         overlay = pygame.Surface((self.field_width, self.field_height), pygame.SRCALPHA)
 
         # Fully opaque dark background
@@ -416,9 +514,7 @@ class PauseOverlay:
         for tile in self.tiles:
             tile.draw(overlay)
 
-        # Draw "Игра приостановлена" text at bottom
-        title_text = self.title_font.render("Игра приостановлена", True, (180, 190, 200))
-        title_rect = title_text.get_rect(center=(self.field_width // 2, self.field_height - 50))
-        overlay.blit(title_text, title_rect)
+        # Draw "В меню" button at bottom
+        self._draw_menu_button(overlay)
 
         surface.blit(overlay, (offset_x, offset_y))

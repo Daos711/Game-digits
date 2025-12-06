@@ -1,6 +1,6 @@
-# Размеры сетки
-TILE_SIZE = 64
-GAP = 3
+# Размеры сетки (импортируем из scale.py для легкого изменения)
+from game_digits.scale import TILE_SIZE, GAP
+
 BOARD_SIZE = 10
 
 # Цвета плиток
