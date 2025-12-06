@@ -537,8 +537,7 @@ class TestGameApp:
                 break
 
     def handle_tile_click(self, tile):
-        # Block all tile actions while any tile is moving
-        if any(t.is_moving for t in self.tiles):
+        if tile.is_moving:
             return
         if self.game.selected_tile:
             if self.game.selected_tile == tile:
