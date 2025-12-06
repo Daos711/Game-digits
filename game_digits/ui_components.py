@@ -516,11 +516,11 @@ def draw_new_game_button(surface, rect, font, is_pressed=False, text="Новая
 
     # Shadow - light yellow for depth effect
     shadow_surface = font.render(text, True, (255, 230, 150))
-    shadow_rect = shadow_surface.get_rect(center=(x + w // 2 + 1, y + h // 2 - 2 + y_offset))
+    shadow_rect = shadow_surface.get_rect(center=(x + w // 2 + 1, y + h // 2 + y_offset))
     surface.blit(shadow_surface, shadow_rect)
 
-    # Main text (moved up 3 pixels)
-    text_rect = text_surface.get_rect(center=(x + w // 2, y + h // 2 - 3 + y_offset))
+    # Main text (визуально по центру)
+    text_rect = text_surface.get_rect(center=(x + w // 2, y + h // 2 - 1 + y_offset))
     surface.blit(text_surface, text_rect)
 
     return pygame.Rect(x, y, w, h)
