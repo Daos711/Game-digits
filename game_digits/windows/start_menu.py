@@ -389,7 +389,7 @@ class StartMenu:
         pygame.draw.rect(panel_surface, (30, 70, 100, 240),
                         (0, 0, panel_width, panel_height), border_radius=CORNER_RADIUS)
         pygame.draw.rect(panel_surface, (50, 100, 140),
-                        (0, 0, panel_width, panel_height), width=2, border_radius=CORNER_RADIUS)
+                        (0, 0, panel_width, panel_height), width=BORDER_WIDTH, border_radius=CORNER_RADIUS)
 
         # Column positions (center-aligned)
         col_positions = [RECORDS_COL_1, RECORDS_COL_2, RECORDS_COL_3, RECORDS_COL_4]
