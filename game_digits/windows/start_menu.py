@@ -359,10 +359,10 @@ class StartMenu:
                         (0, 0, self.records_button_rect.width, self.records_button_rect.height),
                         width=2, border_radius=8)
 
-        # Draw text
+        # Draw text (визуально по центру)
         text = self.button_font.render("Рекорды", True, (255, 255, 255))
         text_rect = text.get_rect(center=(self.records_button_rect.width // 2,
-                                          self.records_button_rect.height // 2))
+                                          self.records_button_rect.height // 2 - 1))
         btn_surface.blit(text, text_rect)
 
         btn_surface.set_alpha(self.button_opacity)
