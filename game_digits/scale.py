@@ -22,6 +22,12 @@ GAP = scaled(BASE_GAP)
 TILE_FONT_SIZE = scaled(BASE_TILE_FONT_SIZE)
 
 # ============================================
+# СТРЕЛКИ (arrow.py)
+# ============================================
+BASE_ARROW_SIZE = 65
+ARROW_SIZE = scaled(BASE_ARROW_SIZE)
+
+# ============================================
 # ПАНЕЛЬ СПРАВА
 # ============================================
 BASE_PANEL_WIDTH = 240
