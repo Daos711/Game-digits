@@ -6,9 +6,12 @@ import pygame
 from game_digits import get_font_path
 from game_digits.constants import COLORS, TILE_SIZE, TILE_BORDER_COLOR
 from game_digits.scale import (
-    TILE_FONT_SIZE, PANEL_WIDTH,
+    TILE_FONT_SIZE, PANEL_WIDTH, CORNER_RADIUS, scaled,
     FONT_MENU_BUTTON, FONT_MENU_RECORDS_TITLE, FONT_MENU_RECORDS, FONT_MENU_RECORDS_SMALL,
-    BUTTON_WIDTH, BUTTON_HEIGHT, RECORDS_BTN_WIDTH, RECORDS_BTN_HEIGHT
+    BUTTON_WIDTH, BUTTON_HEIGHT, RECORDS_BTN_WIDTH, RECORDS_BTN_HEIGHT,
+    RECORDS_PANEL_HEIGHT, RECORDS_PANEL_TOP, RECORDS_ROW_HEIGHT,
+    RECORDS_HEADER_Y, RECORDS_START_Y,
+    RECORDS_COL_1, RECORDS_COL_2, RECORDS_COL_3, RECORDS_COL_4
 )
 from game_digits import ui_components as ui
 from game_digits import records
@@ -369,81 +372,81 @@ class StartMenu:
             return
 
         # Calculate slide offset (slides down from top)
-        panel_height = 600
+        panel_height = RECORDS_PANEL_HEIGHT
         offset_y = int((1 - self.records_slide_progress) * -panel_height)
 
         # Panel position
-        panel_x = self.PANEL_X + 10
-        panel_y = 90 + offset_y
-        panel_width = self.PANEL_WIDTH - 20
+        panel_x = self.PANEL_X + scaled(10)
+        panel_y = RECORDS_PANEL_TOP + offset_y
+        panel_width = self.PANEL_WIDTH - scaled(20)
 
         # Create panel surface
         panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
 
         # Background
         pygame.draw.rect(panel_surface, (30, 70, 100, 240),
-                        (0, 0, panel_width, panel_height), border_radius=10)
+                        (0, 0, panel_width, panel_height), border_radius=CORNER_RADIUS)
         pygame.draw.rect(panel_surface, (50, 100, 140),
-                        (0, 0, panel_width, panel_height), width=2, border_radius=10)
+                        (0, 0, panel_width, panel_height), width=2, border_radius=CORNER_RADIUS)
 
         # Column positions (center-aligned)
-        col_positions = [20, 65, 120, 175]  # #, Очки, Бонус, Итого
+        col_positions = [RECORDS_COL_1, RECORDS_COL_2, RECORDS_COL_3, RECORDS_COL_4]
 
         # Column headers
-        header_y = 15
         headers = ["#", "Очки", "Бонус", "Итого"]
         for text, center_x in zip(headers, col_positions):
             header = self.records_small_font.render(text, True, (180, 200, 220))
-            header_rect = header.get_rect(center=(center_x, header_y + 7))
+            header_rect = header.get_rect(center=(center_x, RECORDS_HEADER_Y + scaled(7)))
             panel_surface.blit(header, header_rect)
 
         # Divider line
-        pygame.draw.line(panel_surface, (80, 120, 160), (10, 35), (panel_width - 10, 35), 1)
+        divider_y = scaled(35)
+        pygame.draw.line(panel_surface, (80, 120, 160), (scaled(10), divider_y), (panel_width - scaled(10), divider_y), 1)
 
         # Records
         if not self.cached_records:
             # No records message
             no_records = self.records_font.render("Нет записей", True, (150, 170, 190))
-            no_records_rect = no_records.get_rect(center=(panel_width // 2, 100))
+            no_records_rect = no_records.get_rect(center=(panel_width // 2, scaled(100)))
             panel_surface.blit(no_records, no_records_rect)
         else:
-            row_height = 50
+            row_height = RECORDS_ROW_HEIGHT
             for i, record in enumerate(self.cached_records[:10]):
-                row_y = 45 + i * row_height
+                row_y = RECORDS_START_Y + i * row_height
 
                 # Alternate row background
                 if i % 2 == 0:
                     pygame.draw.rect(panel_surface, (40, 80, 120, 100),
-                                    (5, row_y, panel_width - 10, row_height - 5),
-                                    border_radius=5)
+                                    (scaled(5), row_y, panel_width - scaled(10), row_height - scaled(5)),
+                                    border_radius=scaled(5))
 
                 # Position number
                 pos_text = self.records_font.render(f"{i + 1}", True, (200, 180, 100))
-                pos_rect = pos_text.get_rect(center=(col_positions[0], row_y + 12))
+                pos_rect = pos_text.get_rect(center=(col_positions[0], row_y + scaled(12)))
                 panel_surface.blit(pos_text, pos_rect)
 
                 # Score
                 score_text = self.records_font.render(str(record.get('score', 0)), True, (255, 255, 255))
-                score_rect = score_text.get_rect(center=(col_positions[1], row_y + 12))
+                score_rect = score_text.get_rect(center=(col_positions[1], row_y + scaled(12)))
                 panel_surface.blit(score_text, score_rect)
 
                 # Bonus
                 bonus_text = self.records_font.render(str(record.get('bonus', 0)), True, (150, 220, 150))
-                bonus_rect = bonus_text.get_rect(center=(col_positions[2], row_y + 12))
+                bonus_rect = bonus_text.get_rect(center=(col_positions[2], row_y + scaled(12)))
                 panel_surface.blit(bonus_text, bonus_rect)
 
                 # Total
                 total_text = self.records_font.render(str(record.get('total', 0)), True, (255, 220, 100))
-                total_rect = total_text.get_rect(center=(col_positions[3], row_y + 12))
+                total_rect = total_text.get_rect(center=(col_positions[3], row_y + scaled(12)))
                 panel_surface.blit(total_text, total_rect)
 
                 # Date (smaller, below, centered under score-bonus area)
                 date_text = self.records_small_font.render(record.get('date', ''), True, (140, 160, 180))
-                date_rect = date_text.get_rect(center=((col_positions[1] + col_positions[2]) // 2, row_y + 32))
+                date_rect = date_text.get_rect(center=((col_positions[1] + col_positions[2]) // 2, row_y + scaled(32)))
                 panel_surface.blit(date_text, date_rect)
 
         # Draw panel
-        self.screen.blit(panel_surface, (panel_x, max(90, panel_y)))
+        self.screen.blit(panel_surface, (panel_x, max(RECORDS_PANEL_TOP, panel_y)))
 
     def _draw(self):
         """Draw the menu."""

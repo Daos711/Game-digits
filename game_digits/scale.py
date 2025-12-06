@@ -118,3 +118,27 @@ FRAME_WIDTH = scaled(BASE_FRAME_WIDTH)
 BORDER_WIDTH = scaled(BASE_BORDER_WIDTH)
 CORNER_RADIUS = scaled(BASE_CORNER_RADIUS)
 GRID_CELL_SIZE = scaled(BASE_GRID_CELL_SIZE)
+
+# ============================================
+# ПАНЕЛЬ РЕКОРДОВ (start_menu.py)
+# ============================================
+BASE_RECORDS_PANEL_HEIGHT = 600
+BASE_RECORDS_PANEL_TOP = 90       # отступ сверху
+BASE_RECORDS_ROW_HEIGHT = 50
+BASE_RECORDS_HEADER_Y = 15
+BASE_RECORDS_START_Y = 45        # начало списка рекордов
+# Позиции колонок (от левого края панели)
+BASE_RECORDS_COL_1 = 20          # #
+BASE_RECORDS_COL_2 = 65          # Очки
+BASE_RECORDS_COL_3 = 120         # Бонус
+BASE_RECORDS_COL_4 = 175         # Итого
+
+RECORDS_PANEL_HEIGHT = scaled(BASE_RECORDS_PANEL_HEIGHT)
+RECORDS_PANEL_TOP = scaled(BASE_RECORDS_PANEL_TOP)
+RECORDS_ROW_HEIGHT = scaled(BASE_RECORDS_ROW_HEIGHT)
+RECORDS_HEADER_Y = scaled(BASE_RECORDS_HEADER_Y)
+RECORDS_START_Y = scaled(BASE_RECORDS_START_Y)
+RECORDS_COL_1 = scaled(BASE_RECORDS_COL_1)
+RECORDS_COL_2 = scaled(BASE_RECORDS_COL_2)
+RECORDS_COL_3 = scaled(BASE_RECORDS_COL_3)
+RECORDS_COL_4 = scaled(BASE_RECORDS_COL_4)
