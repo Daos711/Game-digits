@@ -353,6 +353,12 @@ class GameApp:
     def handle_event(self, event):
         if event.type == pygame.QUIT:
             return False
+
+        # Обработка движения мыши для hover-эффекта кнопки "В меню"
+        elif event.type == pygame.MOUSEMOTION:
+            if self.is_paused:
+                self.pause_overlay.handle_mouse_move(event.pos)
+
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             pos = pygame.mouse.get_pos()
 
@@ -361,8 +367,10 @@ class GameApp:
                 self.toggle_pause()
                 return True
 
-            # Блокируем игровые взаимодействия на паузе
+            # Обработка клика на паузе
             if self.is_paused:
+                # Проверяем нажатие на кнопку "В меню"
+                self.pause_overlay.handle_mouse_down(pos)
                 return True
 
             # Block interaction during tile appearance animation
@@ -371,6 +379,15 @@ class GameApp:
 
             pos = (pos[0] - self.offset[0], pos[1] - self.offset[1])
             self.handle_mouse_click(pos)
+
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            if self.is_paused:
+                pos = pygame.mouse.get_pos()
+                # Проверяем клик на кнопку "В меню"
+                if self.pause_overlay.handle_mouse_up(pos):
+                    # Возврат в главное меню
+                    return 'menu'
+
         return True
 
     def toggle_pause(self):
@@ -880,7 +897,17 @@ class GameApp:
                 elif event.type == self.COUNTDOWN_EVENT:
                     self.game.handle_countdown()
                 else:
-                    running = self.handle_event(event)
+                    result = self.handle_event(event)
+                    if result == 'menu':
+                        # Возврат в меню из паузы
+                        self.is_paused = False
+                        self.reset_game()
+                        self.state = 'menu'
+                        show_result = False
+                        prepare_to_show_result = False
+                        pending_tile_spawn = False
+                    elif result == False:
+                        running = False
             # Проверяем успешное завершение (все плитки убраны)
             if self.game.prepare_to_end:
                 self.game.prepare_to_end = False

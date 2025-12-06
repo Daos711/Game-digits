@@ -6,7 +6,10 @@ import math
 import random
 import pygame
 from game_digits import get_font_path
-from game_digits.scale import FONT_PAUSE_TEXT, FONT_PAUSE_TITLE, scaled
+from game_digits.scale import (
+    FONT_PAUSE_TEXT, FONT_PAUSE_TITLE, scaled,
+    BUTTON_WIDTH, BUTTON_HEIGHT, FONT_MENU_BUTTON, CORNER_RADIUS
+)
 
 
 class PauseTile:
@@ -346,6 +349,22 @@ class PauseOverlay:
         self.start_time = 0
 
         self.title_font = pygame.font.Font(get_font_path("2204.ttf"), FONT_PAUSE_TITLE)
+        self.button_font = pygame.font.Font(get_font_path("2204.ttf"), FONT_MENU_BUTTON)
+
+        # Кнопка "В меню"
+        btn_width = scaled(160)
+        btn_height = scaled(45)
+        self.menu_button_rect = pygame.Rect(
+            (field_width - btn_width) // 2,
+            field_height - scaled(100),
+            btn_width,
+            btn_height
+        )
+        self.menu_button_hovered = False
+        self.menu_button_pressed = False
+        # Смещение для преобразования в экранные координаты
+        self.offset_x = 0
+        self.offset_y = 0
 
         self._create_tiles()
 
@@ -405,8 +424,81 @@ class PauseOverlay:
             current_time = pygame.time.get_ticks() - self.start_time
             self.pattern.update(current_time)
 
+    def _draw_menu_button(self, surface: pygame.Surface):
+        """Draw the 'В меню' button."""
+        rect = self.menu_button_rect
+
+        # Цвета кнопки (оранжевый градиент как у кнопки паузы)
+        if self.menu_button_pressed:
+            color_top = (180, 120, 0)
+            color_bottom = (130, 85, 0)
+        elif self.menu_button_hovered:
+            color_top = (255, 180, 20)
+            color_bottom = (200, 145, 10)
+        else:
+            color_top = (243, 165, 0)
+            color_bottom = (186, 127, 0)
+
+        # Рисуем кнопку с градиентом
+        btn_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+        for y in range(rect.height):
+            t = y / rect.height
+            r = int(color_top[0] + (color_bottom[0] - color_top[0]) * t)
+            g = int(color_top[1] + (color_bottom[1] - color_top[1]) * t)
+            b = int(color_top[2] + (color_bottom[2] - color_top[2]) * t)
+            pygame.draw.line(btn_surface, (r, g, b), (0, y), (rect.width, y))
+
+        # Маска для скругленных углов
+        mask = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+        pygame.draw.rect(mask, (255, 255, 255, 255), (0, 0, rect.width, rect.height),
+                        border_radius=scaled(8))
+        btn_surface.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+
+        # Текст
+        text = self.button_font.render("В меню", True, (255, 255, 255))
+        text_rect = text.get_rect(center=(rect.width // 2, rect.height // 2))
+
+        # Тень текста
+        shadow = self.button_font.render("В меню", True, (140, 95, 0))
+        btn_surface.blit(shadow, (text_rect.x + 1, text_rect.y + 1))
+        btn_surface.blit(text, text_rect)
+
+        surface.blit(btn_surface, rect.topleft)
+
+    def get_screen_button_rect(self) -> pygame.Rect:
+        """Get button rect in screen coordinates."""
+        return pygame.Rect(
+            self.menu_button_rect.x + self.offset_x,
+            self.menu_button_rect.y + self.offset_y,
+            self.menu_button_rect.width,
+            self.menu_button_rect.height
+        )
+
+    def handle_mouse_move(self, screen_pos: tuple):
+        """Update hover state based on mouse position."""
+        btn_rect = self.get_screen_button_rect()
+        self.menu_button_hovered = btn_rect.collidepoint(screen_pos)
+
+    def handle_mouse_down(self, screen_pos: tuple) -> bool:
+        """Handle mouse button down. Returns True if button was pressed."""
+        btn_rect = self.get_screen_button_rect()
+        if btn_rect.collidepoint(screen_pos):
+            self.menu_button_pressed = True
+            return True
+        return False
+
+    def handle_mouse_up(self, screen_pos: tuple) -> bool:
+        """Handle mouse button up. Returns True if button was clicked."""
+        was_pressed = self.menu_button_pressed
+        self.menu_button_pressed = False
+        btn_rect = self.get_screen_button_rect()
+        return was_pressed and btn_rect.collidepoint(screen_pos)
+
     def draw(self, surface: pygame.Surface, offset_x: int = 0, offset_y: int = 0):
         """Draw the pause overlay."""
+        self.offset_x = offset_x
+        self.offset_y = offset_y
+
         overlay = pygame.Surface((self.field_width, self.field_height), pygame.SRCALPHA)
 
         # Fully opaque dark background
@@ -417,9 +509,12 @@ class PauseOverlay:
         for tile in self.tiles:
             tile.draw(overlay)
 
+        # Draw "В меню" button
+        self._draw_menu_button(overlay)
+
         # Draw "Игра приостановлена" text at bottom
         title_text = self.title_font.render("Игра приостановлена", True, (180, 190, 200))
-        title_rect = title_text.get_rect(center=(self.field_width // 2, self.field_height - 50))
+        title_rect = title_text.get_rect(center=(self.field_width // 2, self.field_height - scaled(40)))
         overlay.blit(title_text, title_rect)
 
         surface.blit(overlay, (offset_x, offset_y))
