@@ -41,8 +41,8 @@ class MenuTile:
         """Draw the tile with letter."""
         surface.fill(color)
 
-        # 3D bevel effect
-        bevel = max(1, scaled(3))
+        # 3D bevel effect (не масштабируется для сохранения объёма)
+        bevel = 3
         dark_factor = 0.4
         dark = tuple(max(0, min(255, int(c * dark_factor))) for c in color)
 
