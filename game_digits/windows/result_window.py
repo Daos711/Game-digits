@@ -121,8 +121,8 @@ class ResultWindow:
             window_surface,
             (0, 0, self.WINDOW_WIDTH, self.WINDOW_HEIGHT),
             self.HEADER_HEIGHT,
-            corner_radius=self.CORNER_RADIUS,
-            cell_size=18,
+            corner_radius=CORNER_RADIUS,
+            cell_size=scaled(18),
             border_color=(145, 179, 163)
         )
 
