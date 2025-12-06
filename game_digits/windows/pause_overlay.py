@@ -6,15 +6,16 @@ import math
 import random
 import pygame
 from game_digits import get_font_path
+from game_digits.scale import FONT_PAUSE_TEXT, FONT_PAUSE_TITLE, scaled
 
 
 class PauseTile:
     """A single animated tile for the pause screen."""
 
-    def __init__(self, letter: str, color: tuple, x: float, y: float, tile_size: int = 52):
+    def __init__(self, letter: str, color: tuple, x: float, y: float, tile_size: int = None):
         self.letter = letter
         self.color = color
-        self.tile_size = tile_size
+        self.tile_size = tile_size if tile_size is not None else scaled(52)
         self.x = x
         self.y = y
 
@@ -23,7 +24,7 @@ class PauseTile:
         self.vy = 0
 
         # Font for the letter
-        self.font = pygame.font.Font(get_font_path("2204.ttf"), 32)
+        self.font = pygame.font.Font(get_font_path("2204.ttf"), FONT_PAUSE_TEXT)
 
         # Pre-render the tile surface
         self._render_tile()
@@ -344,7 +345,7 @@ class PauseOverlay:
         self.pattern_index = 0
         self.start_time = 0
 
-        self.title_font = pygame.font.Font(get_font_path("2204.ttf"), 28)
+        self.title_font = pygame.font.Font(get_font_path("2204.ttf"), FONT_PAUSE_TITLE)
 
         self._create_tiles()
 

@@ -5,7 +5,11 @@ import pygame
 
 from game_digits import get_font_path
 from game_digits.constants import COLORS, TILE_SIZE, TILE_BORDER_COLOR
-from game_digits.scale import TILE_FONT_SIZE
+from game_digits.scale import (
+    TILE_FONT_SIZE, PANEL_WIDTH,
+    FONT_MENU_BUTTON, FONT_MENU_RECORDS_TITLE, FONT_MENU_RECORDS, FONT_MENU_RECORDS_SMALL,
+    BUTTON_WIDTH, BUTTON_HEIGHT, RECORDS_BTN_WIDTH, RECORDS_BTN_HEIGHT
+)
 from game_digits import ui_components as ui
 from game_digits import records
 
@@ -96,7 +100,6 @@ class StartMenu:
     # Records panel constants
     RECORDS_SLIDE_DURATION_OPEN = 400  # ms for opening
     RECORDS_SLIDE_DURATION_CLOSE = 200  # ms for closing (faster)
-    PANEL_WIDTH = 240
 
     def __init__(self, screen, screen_size, redraw_background):
         self.screen = screen
@@ -104,15 +107,16 @@ class StartMenu:
         self.redraw_background = redraw_background
 
         # Динамические размеры панели
+        self.PANEL_WIDTH = PANEL_WIDTH
         self.PANEL_X = self.screen_height  # Панель начинается после игрового поля
         self.PANEL_HEIGHT = self.screen_height
 
         # Load fonts
         bold_font_path = get_font_path("2204.ttf")
-        self.button_font = pygame.font.Font(bold_font_path, 28)
-        self.records_title_font = pygame.font.Font(bold_font_path, 24)
-        self.records_font = pygame.font.Font(bold_font_path, 16)
-        self.records_small_font = pygame.font.Font(bold_font_path, 14)
+        self.button_font = pygame.font.Font(bold_font_path, FONT_MENU_BUTTON)
+        self.records_title_font = pygame.font.Font(bold_font_path, FONT_MENU_RECORDS_TITLE)
+        self.records_font = pygame.font.Font(bold_font_path, FONT_MENU_RECORDS)
+        self.records_small_font = pygame.font.Font(bold_font_path, FONT_MENU_RECORDS_SMALL)
 
         # Title letters and colors (using game tile colors)
         letters = ['Ц', 'И', 'Ф', 'Р', 'Ы']
@@ -141,23 +145,19 @@ class StartMenu:
             self.tiles.append(MenuTile(letter, color, x, y))
 
         # Start game button setup
-        button_width = 200
-        button_height = 50
         self.button_rect = pygame.Rect(
-            field_center_x - button_width // 2,
+            field_center_x - BUTTON_WIDTH // 2,
             field_center_y + TILE_SIZE // 2 + 40,
-            button_width,
-            button_height
+            BUTTON_WIDTH,
+            BUTTON_HEIGHT
         )
 
         # Records button setup (on right panel)
-        records_btn_width = 180
-        records_btn_height = 45
         self.records_button_rect = pygame.Rect(
-            self.PANEL_X + (self.PANEL_WIDTH - records_btn_width) // 2,
+            self.PANEL_X + (self.PANEL_WIDTH - RECORDS_BTN_WIDTH) // 2,
             30,
-            records_btn_width,
-            records_btn_height
+            RECORDS_BTN_WIDTH,
+            RECORDS_BTN_HEIGHT
         )
 
         # State
