@@ -328,9 +328,9 @@ def draw_result_window_header(surface, rect, title, font, close_pressed=False):
     title_rect = title_surface.get_rect(center=(x + w // 2, y + h // 2))
     surface.blit(title_surface, title_rect)
 
-    # Close button - square with rounded corners
-    btn_size = 32
-    btn_margin = 8
+    # Close button - square with rounded corners (уменьшено на 15%)
+    btn_size = 27
+    btn_margin = 7
     btn_x = x + w - btn_size - btn_margin
     btn_y = y + (h - btn_size) // 2
 
@@ -392,14 +392,14 @@ def draw_result_row(surface, rect, label, value, label_font, value_font):
     # Text color - RGB(40, 92, 120)
     text_color = (40, 92, 120)
 
-    # Label on the left
+    # Label on the left (уменьшено на 15%)
     label_surface = label_font.render(label, True, text_color)
-    label_rect = label_surface.get_rect(midleft=(x + 15, y + h // 2))
+    label_rect = label_surface.get_rect(midleft=(x + 13, y + h // 2))
     surface.blit(label_surface, label_rect)
 
     # Value on the right (larger font)
     value_surface = value_font.render(str(value), True, text_color)
-    value_rect = value_surface.get_rect(midright=(x + w - 15, y + h // 2))
+    value_rect = value_surface.get_rect(midright=(x + w - 13, y + h // 2))
     surface.blit(value_surface, value_rect)
 
 

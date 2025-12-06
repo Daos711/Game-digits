@@ -41,9 +41,9 @@ class Tile(pygame.sprite.Sprite):
         # Тонкая рамка по контуру
         pygame.draw.rect(self.image, TILE_BORDER_COLOR, self.image.get_rect(), 1)
 
-        # Текст
+        # Текст (уменьшено на 15%)
         font = pygame.font.Font(
-            get_font_path("OpenSans-VariableFont_wdth,wght.ttf"), 40
+            get_font_path("OpenSans-VariableFont_wdth,wght.ttf"), 34
         )
         text = font.render(str(self.number), True, text_color)
         text_rect = text.get_rect(center=(w // 2, h // 2))

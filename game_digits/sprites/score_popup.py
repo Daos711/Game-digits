@@ -35,8 +35,8 @@ class ScorePopup(pygame.sprite.Sprite):
         # Базовый цвет - тёмно-серый для контраста
         self.base_color = (80, 80, 80)
 
-        # Создаём изображение с тонким шрифтом
-        self.font = pygame.font.SysFont('arial', 36, bold=False)
+        # Создаём изображение с тонким шрифтом (уменьшено на 15%)
+        self.font = pygame.font.SysFont('arial', 31, bold=False)
         prefix = "-" if negative else "+"
         self.base_image = self.font.render(f"{prefix}{value}", True, self.base_color)
         self.image = self.base_image.copy()

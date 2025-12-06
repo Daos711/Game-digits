@@ -23,16 +23,16 @@ class ResultWindow:
     ROW_APPEAR_DELAY = 1000         # Interval between row appearances (1s)
     NUMBER_ANIMATION_DURATION = 2500  # Number animation duration (2.5s)
 
-    # Window dimensions
-    WINDOW_WIDTH = 420
-    WINDOW_HEIGHT = 340
+    # Window dimensions (уменьшено на 15%)
+    WINDOW_WIDTH = 357
+    WINDOW_HEIGHT = 289
 
-    # Layout constants
-    HEADER_HEIGHT = 50
-    PADDING = 20
-    ROW_HEIGHT = 50
-    ROW_GAP = 12
-    CORNER_RADIUS = 10
+    # Layout constants (уменьшено на 15%)
+    HEADER_HEIGHT = 43
+    PADDING = 17
+    ROW_HEIGHT = 43
+    ROW_GAP = 10
+    CORNER_RADIUS = 9
 
     def __init__(self, screen, screen_size, game_score, current_time, redraw_callback):
         self.screen = screen
@@ -50,19 +50,19 @@ class ResultWindow:
         self.bonus = 300 + 5 * self.remaining_time
         self.total_score = self.game_score + self.bonus
 
-        # Load fonts
+        # Load fonts (уменьшено на 15%)
         bold_font_path = get_font_path("2204.ttf")
-        self.title_font = pygame.font.Font(bold_font_path, 32)
-        self.label_font = pygame.font.Font(bold_font_path, 26)
-        self.value_font = pygame.font.Font(bold_font_path, 30)
-        self.button_font = pygame.font.Font(bold_font_path, 28)
+        self.title_font = pygame.font.Font(bold_font_path, 27)
+        self.label_font = pygame.font.Font(bold_font_path, 22)
+        self.value_font = pygame.font.Font(bold_font_path, 26)
+        self.button_font = pygame.font.Font(bold_font_path, 24)
 
         # Button positions (relative to window)
         self.new_game_btn_rel = pygame.Rect(
             self.PADDING,
-            self.HEADER_HEIGHT + self.PADDING + (self.ROW_HEIGHT + self.ROW_GAP) * 3 + 5,
+            self.HEADER_HEIGHT + self.PADDING + (self.ROW_HEIGHT + self.ROW_GAP) * 3 + 4,
             self.WINDOW_WIDTH - 2 * self.PADDING,
-            50
+            43
         )
 
         # Button state tracking
@@ -119,7 +119,7 @@ class ResultWindow:
             (0, 0, self.WINDOW_WIDTH, self.WINDOW_HEIGHT),
             self.HEADER_HEIGHT,
             corner_radius=self.CORNER_RADIUS,
-            cell_size=18,
+            cell_size=15,
             border_color=(145, 179, 163)
         )
 

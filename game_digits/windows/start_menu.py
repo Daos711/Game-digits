@@ -48,8 +48,8 @@ class MenuTile:
         # Border
         pygame.draw.rect(surface, TILE_BORDER_COLOR, surface.get_rect(), 1)
 
-        # Letter
-        font = pygame.font.Font(get_font_path("OpenSans-VariableFont_wdth,wght.ttf"), 40)
+        # Letter (уменьшено на 15%)
+        font = pygame.font.Font(get_font_path("OpenSans-VariableFont_wdth,wght.ttf"), 34)
         text = font.render(self.letter, True, (0, 0, 0))
         text_rect = text.get_rect(center=(w // 2, h // 2))
         surface.blit(text, text_rect)
@@ -95,21 +95,22 @@ class StartMenu:
     # Records panel constants
     RECORDS_SLIDE_DURATION_OPEN = 400  # ms for opening
     RECORDS_SLIDE_DURATION_CLOSE = 200  # ms for closing (faster)
-    PANEL_X = 713  # Right panel X position
-    PANEL_WIDTH = 240
-    PANEL_HEIGHT = 713
+    # Positions (уменьшены на 15%)
+    PANEL_X = 606  # Right panel X position
+    PANEL_WIDTH = 204
+    PANEL_HEIGHT = 606
 
     def __init__(self, screen, screen_size, redraw_background):
         self.screen = screen
         self.screen_width, self.screen_height = screen_size
         self.redraw_background = redraw_background
 
-        # Load fonts
+        # Load fonts (уменьшены на 15%)
         bold_font_path = get_font_path("2204.ttf")
-        self.button_font = pygame.font.Font(bold_font_path, 28)
-        self.records_title_font = pygame.font.Font(bold_font_path, 24)
-        self.records_font = pygame.font.Font(bold_font_path, 16)
-        self.records_small_font = pygame.font.Font(bold_font_path, 14)
+        self.button_font = pygame.font.Font(bold_font_path, 24)
+        self.records_title_font = pygame.font.Font(bold_font_path, 20)
+        self.records_font = pygame.font.Font(bold_font_path, 14)
+        self.records_small_font = pygame.font.Font(bold_font_path, 12)
 
         # Title letters and colors (using game tile colors)
         letters = ['Ц', 'И', 'Ф', 'Р', 'Ы']
@@ -122,36 +123,36 @@ class StartMenu:
         ]
 
         # Calculate tile positions (centered on game field)
-        # Game field is roughly 693x693, starting at (20, 20)
-        field_center_x = 20 + 693 // 2
-        field_center_y = 20 + 693 // 2 - 50  # Slightly above center
+        # Game field is roughly 589x589, starting at (17, 17) (уменьшено на 15%)
+        field_center_x = 17 + 589 // 2
+        field_center_y = 17 + 589 // 2 - 43  # Slightly above center
 
-        total_width = len(letters) * TILE_SIZE + (len(letters) - 1) * 8  # 8px gap
+        total_width = len(letters) * TILE_SIZE + (len(letters) - 1) * 7  # 7px gap (уменьшено)
         start_x = field_center_x - total_width // 2
 
         # Create tiles
         self.tiles = []
         for i, (letter, color) in enumerate(zip(letters, tile_colors)):
-            x = start_x + i * (TILE_SIZE + 8)
+            x = start_x + i * (TILE_SIZE + 7)
             y = field_center_y - TILE_SIZE // 2
             self.tiles.append(MenuTile(letter, color, x, y))
 
-        # Start game button setup
-        button_width = 200
-        button_height = 50
+        # Start game button setup (уменьшено на 15%)
+        button_width = 170
+        button_height = 43
         self.button_rect = pygame.Rect(
             field_center_x - button_width // 2,
-            field_center_y + TILE_SIZE // 2 + 40,
+            field_center_y + TILE_SIZE // 2 + 34,
             button_width,
             button_height
         )
 
-        # Records button setup (on right panel)
-        records_btn_width = 180
-        records_btn_height = 45
+        # Records button setup (on right panel, уменьшено на 15%)
+        records_btn_width = 153
+        records_btn_height = 38
         self.records_button_rect = pygame.Rect(
             self.PANEL_X + (self.PANEL_WIDTH - records_btn_width) // 2,
-            30,
+            26,  # уменьшено
             records_btn_width,
             records_btn_height
         )
@@ -364,14 +365,14 @@ class StartMenu:
         if self.records_slide_progress <= 0:
             return
 
-        # Calculate slide offset (slides down from top)
-        panel_height = 600
+        # Calculate slide offset (slides down from top, уменьшено на 15%)
+        panel_height = 510
         offset_y = int((1 - self.records_slide_progress) * -panel_height)
 
-        # Panel position
-        panel_x = self.PANEL_X + 10
-        panel_y = 90 + offset_y
-        panel_width = self.PANEL_WIDTH - 20
+        # Panel position (уменьшено на 15%)
+        panel_x = self.PANEL_X + 9
+        panel_y = 77 + offset_y
+        panel_width = self.PANEL_WIDTH - 17
 
         # Create panel surface
         panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
@@ -382,64 +383,64 @@ class StartMenu:
         pygame.draw.rect(panel_surface, (50, 100, 140),
                         (0, 0, panel_width, panel_height), width=2, border_radius=10)
 
-        # Column positions (center-aligned)
-        col_positions = [20, 65, 120, 175]  # #, Очки, Бонус, Итого
+        # Column positions (center-aligned, уменьшено на 15%)
+        col_positions = [17, 55, 102, 149]  # #, Очки, Бонус, Итого
 
         # Column headers
-        header_y = 15
+        header_y = 13
         headers = ["#", "Очки", "Бонус", "Итого"]
         for text, center_x in zip(headers, col_positions):
             header = self.records_small_font.render(text, True, (180, 200, 220))
-            header_rect = header.get_rect(center=(center_x, header_y + 7))
+            header_rect = header.get_rect(center=(center_x, header_y + 6))
             panel_surface.blit(header, header_rect)
 
         # Divider line
-        pygame.draw.line(panel_surface, (80, 120, 160), (10, 35), (panel_width - 10, 35), 1)
+        pygame.draw.line(panel_surface, (80, 120, 160), (9, 30), (panel_width - 9, 30), 1)
 
-        # Records
+        # Records (уменьшено на 15%)
         if not self.cached_records:
             # No records message
             no_records = self.records_font.render("Нет записей", True, (150, 170, 190))
-            no_records_rect = no_records.get_rect(center=(panel_width // 2, 100))
+            no_records_rect = no_records.get_rect(center=(panel_width // 2, 85))
             panel_surface.blit(no_records, no_records_rect)
         else:
-            row_height = 50
+            row_height = 43
             for i, record in enumerate(self.cached_records[:10]):
-                row_y = 45 + i * row_height
+                row_y = 38 + i * row_height
 
                 # Alternate row background
                 if i % 2 == 0:
                     pygame.draw.rect(panel_surface, (40, 80, 120, 100),
-                                    (5, row_y, panel_width - 10, row_height - 5),
-                                    border_radius=5)
+                                    (4, row_y, panel_width - 9, row_height - 4),
+                                    border_radius=4)
 
                 # Position number
                 pos_text = self.records_font.render(f"{i + 1}", True, (200, 180, 100))
-                pos_rect = pos_text.get_rect(center=(col_positions[0], row_y + 12))
+                pos_rect = pos_text.get_rect(center=(col_positions[0], row_y + 10))
                 panel_surface.blit(pos_text, pos_rect)
 
                 # Score
                 score_text = self.records_font.render(str(record.get('score', 0)), True, (255, 255, 255))
-                score_rect = score_text.get_rect(center=(col_positions[1], row_y + 12))
+                score_rect = score_text.get_rect(center=(col_positions[1], row_y + 10))
                 panel_surface.blit(score_text, score_rect)
 
                 # Bonus
                 bonus_text = self.records_font.render(str(record.get('bonus', 0)), True, (150, 220, 150))
-                bonus_rect = bonus_text.get_rect(center=(col_positions[2], row_y + 12))
+                bonus_rect = bonus_text.get_rect(center=(col_positions[2], row_y + 10))
                 panel_surface.blit(bonus_text, bonus_rect)
 
                 # Total
                 total_text = self.records_font.render(str(record.get('total', 0)), True, (255, 220, 100))
-                total_rect = total_text.get_rect(center=(col_positions[3], row_y + 12))
+                total_rect = total_text.get_rect(center=(col_positions[3], row_y + 10))
                 panel_surface.blit(total_text, total_rect)
 
                 # Date (smaller, below, centered under score-bonus area)
                 date_text = self.records_small_font.render(record.get('date', ''), True, (140, 160, 180))
-                date_rect = date_text.get_rect(center=((col_positions[1] + col_positions[2]) // 2, row_y + 32))
+                date_rect = date_text.get_rect(center=((col_positions[1] + col_positions[2]) // 2, row_y + 27))
                 panel_surface.blit(date_text, date_rect)
 
         # Draw panel
-        self.screen.blit(panel_surface, (panel_x, max(90, panel_y)))
+        self.screen.blit(panel_surface, (panel_x, max(77, panel_y)))
 
     def _draw(self):
         """Draw the menu."""

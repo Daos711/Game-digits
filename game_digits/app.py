@@ -13,22 +13,22 @@ from game_digits.windows import ResultWindow, StartMenu, PauseOverlay
 
 class GameApp:
     def __init__(self):
-        self.WIDTH, self.HEIGHT = 953, 713
-        self.frame = 10
+        # Размеры уменьшены на 15%
+        self.WIDTH, self.HEIGHT = 810, 606
+        self.frame = 9
         self.speed = 3
-        self.window = self.HEIGHT - 20
-        self.panel_width, self.panel_height = 240, self.HEIGHT
+        self.window = self.HEIGHT - 18
+        self.panel_width, self.panel_height = 204, self.HEIGHT
         self.tile_size, self.gap = TILE_SIZE, GAP
-        self.offset = (23, 23)
+        self.offset = (20, 20)
         self.COLORS = COLORS
         pygame.init()
         pygame.font.init()
-        # Жирные шрифты для UI панели
-        # OpenSans-Bold для кириллицы (Время, Очки, пауза)
+        # Жирные шрифты для UI панели (уменьшены на 15%)
         bold_cyrillic = get_font_path("2204.ttf")
-        self.font_bold_large = pygame.font.Font(bold_cyrillic, 26)   # "Время", "Очки"
-        self.font_bold_medium = pygame.font.Font(bold_cyrillic, 22)  # "пауза"
-        self.font_bold_value = pygame.font.Font(bold_cyrillic, 36)   # цифры
+        self.font_bold_large = pygame.font.Font(bold_cyrillic, 22)   # "Время", "Очки"
+        self.font_bold_medium = pygame.font.Font(bold_cyrillic, 19)  # "пауза"
+        self.font_bold_value = pygame.font.Font(bold_cyrillic, 31)   # цифры
         # Состояние UI
         self.is_paused = False
         self.pause_button_rect = None
@@ -41,7 +41,7 @@ class GameApp:
         self.icon = pygame.image.load(get_image_path("icon.png"))
         pygame.display.set_icon(self.icon)
         # Параметры для клеточного фона (как в школьной тетради)
-        self.grid_cell_size = 18  # Размер клетки в пикселях (мельче)
+        self.grid_cell_size = 15  # Размер клетки (уменьшено на 15%)
         self.grid_line_color = (218, 236, 241)  # Светло-голубые линии
         self.arrows = pygame.sprite.Group()
         self.tiles = pygame.sprite.Group()

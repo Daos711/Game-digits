@@ -11,7 +11,7 @@ from game_digits import get_font_path
 class PauseTile:
     """A single animated tile for the pause screen."""
 
-    def __init__(self, letter: str, color: tuple, x: float, y: float, tile_size: int = 52):
+    def __init__(self, letter: str, color: tuple, x: float, y: float, tile_size: int = 44):
         self.letter = letter
         self.color = color
         self.tile_size = tile_size
@@ -22,8 +22,8 @@ class PauseTile:
         self.vx = 0
         self.vy = 0
 
-        # Font for the letter
-        self.font = pygame.font.Font(get_font_path("2204.ttf"), 32)
+        # Font for the letter (уменьшено на 15%)
+        self.font = pygame.font.Font(get_font_path("2204.ttf"), 27)
 
         # Pre-render the tile surface
         self._render_tile()
@@ -61,7 +61,7 @@ class WavePattern:
         self.tiles = tiles
         self.center_x = center_x
         self.center_y = center_y
-        self.base_spacing = 60
+        self.base_spacing = 51
 
     def update(self, time_ms):
         t = time_ms / 1000.0
@@ -172,7 +172,7 @@ class FloatPattern:
         self.tiles = tiles
         self.center_x = center_x
         self.center_y = center_y
-        self.base_spacing = 60
+        self.base_spacing = 51
 
         # Random parameters for each tile
         for i, tile in enumerate(tiles):
@@ -206,8 +206,8 @@ class SwingPattern:
         self.tiles = tiles
         self.center_x = center_x
         self.center_y = center_y
-        self.base_spacing = 60
-        self.rope_length = 80
+        self.base_spacing = 51
+        self.rope_length = 68
 
         # Different swing parameters for each tile
         for i, tile in enumerate(tiles):
@@ -238,7 +238,7 @@ class BreathePattern:
         self.tiles = tiles
         self.center_x = center_x
         self.center_y = center_y
-        self.base_spacing = 60
+        self.base_spacing = 51
 
     def update(self, time_ms):
         t = time_ms / 1000.0
@@ -262,7 +262,7 @@ class CarouselPattern:
         self.tiles = tiles
         self.center_x = center_x
         self.center_y = center_y
-        self.radius = 100
+        self.radius = 85
 
     def update(self, time_ms):
         t = time_ms / 1000.0
@@ -288,7 +288,7 @@ class TypewriterPattern:
         self.tiles = tiles
         self.center_x = center_x
         self.center_y = center_y
-        self.base_spacing = 60
+        self.base_spacing = 51
         self.char_delay = 400  # ms per character
         self.pause_time = 2000  # ms to pause when complete
         self.cycle_time = len(tiles) * self.char_delay + self.pause_time
