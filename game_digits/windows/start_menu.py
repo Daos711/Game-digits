@@ -6,7 +6,7 @@ import pygame
 from game_digits import get_font_path
 from game_digits.constants import COLORS, TILE_SIZE, TILE_BORDER_COLOR
 from game_digits.scale import (
-    TILE_FONT_SIZE, PANEL_WIDTH, CORNER_RADIUS, scaled,
+    TILE_FONT_SIZE, PANEL_WIDTH, CORNER_RADIUS, BORDER_WIDTH, scaled,
     FONT_MENU_BUTTON, FONT_MENU_RECORDS_TITLE, FONT_MENU_RECORDS, FONT_MENU_RECORDS_SMALL,
     BUTTON_WIDTH, BUTTON_HEIGHT, RECORDS_BTN_WIDTH, RECORDS_BTN_HEIGHT,
     RECORDS_PANEL_HEIGHT, RECORDS_PANEL_TOP, RECORDS_ROW_HEIGHT,
@@ -42,7 +42,7 @@ class MenuTile:
         surface.fill(color)
 
         # 3D bevel effect
-        bevel = 3
+        bevel = max(1, scaled(3))
         dark_factor = 0.4
         dark = tuple(max(0, min(255, int(c * dark_factor))) for c in color)
 
@@ -354,10 +354,10 @@ class StartMenu:
         # Draw button background
         pygame.draw.rect(btn_surface, bg_color,
                         (0, 0, self.records_button_rect.width, self.records_button_rect.height),
-                        border_radius=8)
+                        border_radius=scaled(8))
         pygame.draw.rect(btn_surface, border_color,
                         (0, 0, self.records_button_rect.width, self.records_button_rect.height),
-                        width=2, border_radius=8)
+                        width=BORDER_WIDTH, border_radius=scaled(8))
 
         # Draw text (визуально по центру)
         text = self.button_font.render("Рекорды", True, (255, 255, 255))

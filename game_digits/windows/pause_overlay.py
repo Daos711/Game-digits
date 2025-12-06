@@ -7,7 +7,7 @@ import random
 import pygame
 from game_digits import get_font_path
 from game_digits.scale import (
-    FONT_PAUSE_TEXT, FONT_PAUSE_TITLE, scaled,
+    FONT_PAUSE_TEXT, FONT_PAUSE_TITLE, scaled, BORDER_WIDTH,
     BUTTON_WIDTH, BUTTON_HEIGHT, FONT_MENU_BUTTON, CORNER_RADIUS,
     PATTERN_SPACING, PATTERN_MARGIN, SNAKE_MARGIN, SNAKE_PATH_SPACING,
     CAROUSEL_RADIUS, SWING_ROPE_LENGTH,
@@ -41,7 +41,7 @@ class PauseTile:
         """Pre-render the tile with letter."""
         self.surface = pygame.Surface((self.tile_size, self.tile_size), pygame.SRCALPHA)
 
-        radius = 8
+        radius = scaled(8)
         rect = pygame.Rect(0, 0, self.tile_size, self.tile_size)
 
         pygame.draw.rect(self.surface, self.color, rect, border_radius=radius)
@@ -51,7 +51,7 @@ class PauseTile:
         self.surface.blit(highlight, (0, 0))
 
         border_color = tuple(max(0, c - 40) for c in self.color)
-        pygame.draw.rect(self.surface, border_color, rect, width=2, border_radius=radius)
+        pygame.draw.rect(self.surface, border_color, rect, width=BORDER_WIDTH, border_radius=radius)
 
         text = self.font.render(self.letter, True, (255, 255, 255))
         text_rect = text.get_rect(center=(self.tile_size // 2, self.tile_size // 2))

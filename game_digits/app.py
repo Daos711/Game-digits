@@ -6,7 +6,7 @@ from game_digits.constants import (
     grid_to_pixel, pixel_to_grid, pixel_to_grid_round, create_background_surface
 )
 from game_digits.scale import (
-    PANEL_WIDTH, FRAME_WIDTH, GRID_CELL_SIZE,
+    PANEL_WIDTH, FRAME_WIDTH, GRID_CELL_SIZE, scaled,
     FONT_PANEL_LABEL, FONT_PANEL_VALUE, FONT_PANEL_PAUSE,
     PAUSE_BTN_WIDTH, PAUSE_BTN_HEIGHT, ICON_SIZE,
     VALUE_BAR_HEIGHT, PROGRESS_BAR_HEIGHT, PANEL_PADDING
@@ -220,7 +220,7 @@ class GameApp:
         else:
             self.pause_button_rect = None
 
-        current_y += PAUSE_BTN_HEIGHT + 25
+        current_y += PAUSE_BTN_HEIGHT + scaled(25)
 
         # === 2. Блок "Время" ===
         time_block_y = current_y + time_offset
@@ -238,12 +238,12 @@ class GameApp:
         if time_block_y >= -10:
             self.screen.blit(time_label, (label_x, time_block_y))
 
-            icon_y = time_block_y + time_label.get_height() + 10
+            icon_y = time_block_y + time_label.get_height() + scaled(10)
 
             # СНАЧАЛА рисуем голубую полоску с временем (она будет ПОД иконкой)
             ui.draw_value_bar(
                 self.screen,
-                (bar_x, icon_y + 3, bar_width, VALUE_BAR_HEIGHT),
+                (bar_x, icon_y + scaled(3), bar_width, VALUE_BAR_HEIGHT),
                 self.game.current_time,
                 self.font_bold_value
             )
@@ -252,7 +252,7 @@ class GameApp:
             ui.draw_clock_icon(self.screen, (icon_x + ICON_SIZE // 2, icon_y + ICON_SIZE // 2), ICON_SIZE)
 
             # === 3. Прогресс-бар ===
-            progress_y = icon_y + ICON_SIZE + 15
+            progress_y = icon_y + ICON_SIZE + scaled(15)
             progress_x = panel_x + padding
             progress_width = self.panel_width - padding * 2
 
@@ -276,7 +276,7 @@ class GameApp:
                 progress
             )
 
-        current_y += time_label.get_height() + 10 + ICON_SIZE + 15 + PROGRESS_BAR_HEIGHT + 25  # All time block height
+        current_y += time_label.get_height() + scaled(10) + ICON_SIZE + scaled(15) + PROGRESS_BAR_HEIGHT + scaled(25)
 
         # === 4. Блок "Очки" ===
         score_block_y = current_y + score_offset
@@ -288,12 +288,12 @@ class GameApp:
             label_x = panel_x + (self.panel_width - score_label.get_width()) // 2
             self.screen.blit(score_label, (label_x, score_block_y))
 
-            score_icon_y = score_block_y + score_label.get_height() + 10
+            score_icon_y = score_block_y + score_label.get_height() + scaled(10)
 
             # СНАЧАЛА рисуем голубую полоску с очками (она будет ПОД иконкой)
             ui.draw_value_bar(
                 self.screen,
-                (bar_x, score_icon_y + 3, bar_width, VALUE_BAR_HEIGHT),
+                (bar_x, score_icon_y + scaled(3), bar_width, VALUE_BAR_HEIGHT),
                 self.game.score,
                 self.font_bold_value
             )

@@ -2,7 +2,7 @@ import pygame
 
 from game_digits import get_font_path
 from game_digits.constants import TILE_SIZE, TILE_BORDER_COLOR, grid_to_pixel
-from game_digits.scale import TILE_FONT_SIZE
+from game_digits.scale import TILE_FONT_SIZE, scaled
 
 
 class Tile(pygame.sprite.Sprite):
@@ -23,7 +23,7 @@ class Tile(pygame.sprite.Sprite):
         self.image.fill(self.color)
 
         # === НАСТРАИВАЕМЫЕ ПАРАМЕТРЫ ===
-        bevel = 3                # Толщина фаски (3-6 оптимально)
+        bevel = max(1, scaled(3))  # Толщина фаски (3-6 оптимально)
         dark_factor = 0.4        # Множитель для тёмной грани (0.5-0.8)
 
         def clamp(x: int) -> int:

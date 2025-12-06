@@ -166,7 +166,7 @@ class ResultWindow:
                 self.label_font,
                 self.value_font
             )
-        current_y += self.ROW_HEIGHT + self.ROW_GAP + 5
+        current_y += self.ROW_HEIGHT + self.ROW_GAP + scaled(5)
 
         # "New game" button (show only when animation is complete)
         if rows_to_show >= 3 and current_total == self.total_score:
