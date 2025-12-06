@@ -8,7 +8,12 @@ import pygame
 from game_digits import get_font_path
 from game_digits.scale import (
     FONT_PAUSE_TEXT, FONT_PAUSE_TITLE, scaled,
-    BUTTON_WIDTH, BUTTON_HEIGHT, FONT_MENU_BUTTON, CORNER_RADIUS
+    BUTTON_WIDTH, BUTTON_HEIGHT, FONT_MENU_BUTTON, CORNER_RADIUS,
+    PATTERN_SPACING, PATTERN_MARGIN, SNAKE_MARGIN, SNAKE_PATH_SPACING,
+    CAROUSEL_RADIUS, SWING_ROPE_LENGTH,
+    BOUNCE_SPEED_BASE, BOUNCE_SPEED_RANDOM, SNAKE_SPEED,
+    FLOAT_SPEED_BASE, FLOAT_SPEED_RANDOM,
+    TYPEWRITER_CHAR_DELAY, TYPEWRITER_PAUSE_TIME
 )
 
 
@@ -65,7 +70,7 @@ class WavePattern:
         self.tiles = tiles
         self.center_x = center_x
         self.center_y = center_y
-        self.base_spacing = 60
+        self.base_spacing = PATTERN_SPACING
 
     def update(self, time_ms):
         t = time_ms / 1000.0
@@ -86,14 +91,14 @@ class BouncePattern:
         self.tiles = tiles
         self.width = width
         self.height = height
-        self.margin = 10  # Уменьшенный отступ от краёв
+        self.margin = PATTERN_MARGIN
 
-        # Initialize positions and velocities - SLOWER speed
+        # Initialize positions and velocities
         for i, tile in enumerate(tiles):
-            tile.x = width // 2 + (i - 2) * 60
+            tile.x = width // 2 + (i - 2) * PATTERN_SPACING
             tile.y = height // 2
             angle = random.uniform(0, 2 * math.pi)
-            speed = 0.8 + random.uniform(0, 0.4)  # Reduced from 2-3 to 0.8-1.2
+            speed = BOUNCE_SPEED_BASE + random.uniform(0, BOUNCE_SPEED_RANDOM)
             tile.vx = math.cos(angle) * speed
             tile.vy = math.sin(angle) * speed
 
@@ -126,19 +131,18 @@ class SnakePattern:
         self.head_x = center_x
         self.head_y = center_y
         self.angle = 0
-        self.path_spacing = 30
+        self.path_spacing = SNAKE_PATH_SPACING
 
     def update(self, time_ms):
         t = time_ms / 1000.0
 
-        # Move head in a smooth wandering pattern - SLOWER
+        # Move head in a smooth wandering pattern
         self.angle += math.sin(t * 0.5) * 0.03 + math.cos(t * 0.7) * 0.02
-        speed = 1.2  # Reduced from 3 to 1.2
-        self.head_x += math.cos(self.angle) * speed
-        self.head_y += math.sin(self.angle) * speed
+        self.head_x += math.cos(self.angle) * SNAKE_SPEED
+        self.head_y += math.sin(self.angle) * SNAKE_SPEED
 
         # Bounce off walls
-        margin = 35  # Уменьшенный отступ от краёв
+        margin = SNAKE_MARGIN
         if self.head_x < margin:
             self.head_x = margin
             self.angle = math.pi - self.angle
@@ -176,11 +180,11 @@ class FloatPattern:
         self.tiles = tiles
         self.center_x = center_x
         self.center_y = center_y
-        self.base_spacing = 60
+        self.base_spacing = PATTERN_SPACING
 
         # Random parameters for each tile
         for i, tile in enumerate(tiles):
-            tile.float_speed = 0.8 + random.uniform(0, 0.4)
+            tile.float_speed = FLOAT_SPEED_BASE + random.uniform(0, FLOAT_SPEED_RANDOM)
             tile.float_phase = random.uniform(0, 2 * math.pi)
             tile.float_amplitude = 15 + random.uniform(0, 10)
             tile.drift_speed = 0.3 + random.uniform(0, 0.2)
@@ -210,8 +214,8 @@ class SwingPattern:
         self.tiles = tiles
         self.center_x = center_x
         self.center_y = center_y
-        self.base_spacing = 60
-        self.rope_length = 80
+        self.base_spacing = PATTERN_SPACING
+        self.rope_length = SWING_ROPE_LENGTH
 
         # Different swing parameters for each tile
         for i, tile in enumerate(tiles):
@@ -242,7 +246,7 @@ class BreathePattern:
         self.tiles = tiles
         self.center_x = center_x
         self.center_y = center_y
-        self.base_spacing = 60
+        self.base_spacing = PATTERN_SPACING
 
     def update(self, time_ms):
         t = time_ms / 1000.0
@@ -266,7 +270,7 @@ class CarouselPattern:
         self.tiles = tiles
         self.center_x = center_x
         self.center_y = center_y
-        self.radius = 100
+        self.radius = CAROUSEL_RADIUS
 
     def update(self, time_ms):
         t = time_ms / 1000.0
@@ -292,9 +296,9 @@ class TypewriterPattern:
         self.tiles = tiles
         self.center_x = center_x
         self.center_y = center_y
-        self.base_spacing = 60
-        self.char_delay = 400  # ms per character
-        self.pause_time = 2000  # ms to pause when complete
+        self.base_spacing = PATTERN_SPACING
+        self.char_delay = TYPEWRITER_CHAR_DELAY
+        self.pause_time = TYPEWRITER_PAUSE_TIME
         self.cycle_time = len(tiles) * self.char_delay + self.pause_time
 
     def update(self, time_ms):

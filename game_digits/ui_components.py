@@ -3,6 +3,8 @@ import pygame
 import pygame.gfxdraw
 import math
 
+from game_digits.scale import scaled, CORNER_RADIUS, BORDER_WIDTH
+
 
 def draw_rounded_rect(surface, color, rect, radius):
     """Draw a rounded rectangle."""
@@ -48,7 +50,7 @@ def draw_gradient_rounded_rect(surface, rect, color_top, color_bottom, radius):
 def draw_pause_button(surface, rect, font, text="пауза", is_pressed=False):
     """Draw the pause button with gradient - like reference."""
     x, y, w, h = rect
-    radius = 8  # Менее скруглённые углы
+    radius = scaled(8)  # Менее скруглённые углы
 
     if is_pressed:
         # Более тёмные цвета при нажатии
@@ -93,7 +95,7 @@ def draw_clock_icon(surface, center, size):
     # Более светлый центр для объёма
     pygame.draw.circle(surface, (255, 230, 100), (x, y), int(radius * 0.7))
     # Тёмно-оранжевый контур
-    pygame.draw.circle(surface, (200, 150, 40), (x, y), radius, 2)
+    pygame.draw.circle(surface, (200, 150, 40), (x, y), radius, BORDER_WIDTH)
 
     # Стрелки часов (тёмно-коричневые)
     hand_color = (80, 50, 20)
@@ -103,17 +105,17 @@ def draw_clock_icon(surface, center, size):
     hour_angle = math.radians(-120)  # 10 часов
     hour_end_x = x + hour_length * math.cos(hour_angle)
     hour_end_y = y + hour_length * math.sin(hour_angle)
-    pygame.draw.line(surface, hand_color, (x, y), (hour_end_x, hour_end_y), 3)
+    pygame.draw.line(surface, hand_color, (x, y), (hour_end_x, hour_end_y), max(1, scaled(3)))
 
     # Минутная стрелка (длинная, указывает на ~2)
     min_length = radius * 0.65
     min_angle = math.radians(-30)  # 2 часа
     min_end_x = x + min_length * math.cos(min_angle)
     min_end_y = y + min_length * math.sin(min_angle)
-    pygame.draw.line(surface, hand_color, (x, y), (min_end_x, min_end_y), 2)
+    pygame.draw.line(surface, hand_color, (x, y), (min_end_x, min_end_y), BORDER_WIDTH)
 
     # Центральная точка
-    pygame.draw.circle(surface, hand_color, (x, y), 3)
+    pygame.draw.circle(surface, hand_color, (x, y), max(1, scaled(3)))
 
 
 def draw_sun_icon(surface, center, size):
@@ -152,13 +154,13 @@ def draw_sun_icon(surface, center, size):
     pygame.draw.circle(surface, sun_outer, (x, y), radius)
     pygame.draw.circle(surface, sun_inner, (x, y), int(radius * 0.6))
     # Тёмный контур
-    pygame.draw.circle(surface, (200, 140, 30), (x, y), radius, 2)
+    pygame.draw.circle(surface, (200, 140, 30), (x, y), radius, BORDER_WIDTH)
 
 
 def draw_value_bar(surface, rect, value, font):
     """Draw the blue value bar with number inside - like reference."""
     x, y, w, h = rect
-    radius = 4  # Более угловатые края
+    radius = scaled(4)  # Более угловатые края
 
     # Голубой градиент сверху вниз (из оригинала)
     color_top = (44, 133, 183)
@@ -182,7 +184,7 @@ def draw_progress_bar(surface, rect, progress, radius=None):
     """Draw progress bar with blue background and two-color yellow fill."""
     x, y, w, h = rect
     if radius is None:
-        radius = 4  # Более угловатые края как у value bar
+        radius = scaled(4)  # Более угловатые края как у value bar
 
     # 1. Сначала рисуем синий фон (как у value bar)
     bg_color_top = (44, 133, 183)
@@ -234,7 +236,7 @@ def draw_close_button(surface, rect, is_pressed=False):
         pygame.Rect of the button
     """
     x, y, w, h = rect
-    radius = 8  # Сильно скруглённые углы для квадратной кнопки
+    radius = scaled(8)  # Сильно скруглённые углы для квадратной кнопки
 
     # Colors - RGB(208, 152, 6) base
     if is_pressed:
@@ -285,7 +287,7 @@ def draw_close_button(surface, rect, is_pressed=False):
     x_size = min(w, h) // 4  # Size of X arms
 
     # Thick X lines
-    line_width = 4
+    line_width = max(1, scaled(4))
     pygame.draw.line(surface, x_color, (center_x - x_size, center_y - x_size),
                     (center_x + x_size, center_y + x_size), line_width)
     pygame.draw.line(surface, x_color, (center_x - x_size, center_y + x_size),
@@ -308,7 +310,7 @@ def draw_result_window_header(surface, rect, title, font, close_pressed=False):
         pygame.Rect of the close button
     """
     x, y, w, h = rect
-    radius = 12
+    radius = CORNER_RADIUS
 
     # Header background - yellow RGB(254, 211, 113)
     header_color = (254, 211, 113)
@@ -329,8 +331,8 @@ def draw_result_window_header(surface, rect, title, font, close_pressed=False):
     surface.blit(title_surface, title_rect)
 
     # Close button - square with rounded corners
-    btn_size = 32
-    btn_margin = 8
+    btn_size = scaled(32)
+    btn_margin = scaled(8)
     btn_x = x + w - btn_size - btn_margin
     btn_y = y + (h - btn_size) // 2
 
@@ -368,8 +370,8 @@ def draw_result_row(surface, rect, label, value, label_font, value_font):
         value_font: Font for the value (larger)
     """
     x, y, w, h = rect
-    radius = 10
-    border_width = 2
+    radius = scaled(10)
+    border_width = BORDER_WIDTH
 
     # Create temp surface for proper alpha handling
     temp = pygame.Surface((w, h), pygame.SRCALPHA)
@@ -393,13 +395,14 @@ def draw_result_row(surface, rect, label, value, label_font, value_font):
     text_color = (40, 92, 120)
 
     # Label on the left
+    text_padding = scaled(15)
     label_surface = label_font.render(label, True, text_color)
-    label_rect = label_surface.get_rect(midleft=(x + 15, y + h // 2))
+    label_rect = label_surface.get_rect(midleft=(x + text_padding, y + h // 2))
     surface.blit(label_surface, label_rect)
 
     # Value on the right (larger font)
     value_surface = value_font.render(str(value), True, text_color)
-    value_rect = value_surface.get_rect(midright=(x + w - 15, y + h // 2))
+    value_rect = value_surface.get_rect(midright=(x + w - text_padding, y + h // 2))
     surface.blit(value_surface, value_rect)
 
 
@@ -413,7 +416,7 @@ def draw_congratulation_panel(surface, rect, text, font):
         font: Font for the text
     """
     x, y, w, h = rect
-    radius = 6
+    radius = scaled(6)
 
     # Background - RGB(255, 238, 196)
     bg_color = (255, 238, 196)
@@ -440,7 +443,7 @@ def draw_new_game_button(surface, rect, font, is_pressed=False, text="Новая
         pygame.Rect of the button
     """
     x, y, w, h = rect
-    radius = 20  # Сильно скруглённые углы
+    radius = scaled(20)  # Сильно скруглённые углы
 
     # Colors
     if is_pressed:

@@ -149,3 +149,32 @@ RECORDS_COL_3 = scaled(BASE_RECORDS_COL_3)
 RECORDS_COL_4 = scaled(BASE_RECORDS_COL_4)
 # Высота вычисляется: начало + 10 строк + отступ
 RECORDS_PANEL_HEIGHT = RECORDS_START_Y + 10 * RECORDS_ROW_HEIGHT + scaled(BASE_RECORDS_BOTTOM_PAD)
+
+# ============================================
+# АНИМАЦИИ ПАУЗЫ (pause_overlay.py)
+# ============================================
+# Общие константы для паттернов анимации
+BASE_PATTERN_SPACING = 60         # расстояние между плитками в паттернах
+BASE_PATTERN_MARGIN = 10          # отступ от краёв (BouncePattern)
+BASE_SNAKE_MARGIN = 35            # отступ для змейки
+BASE_SNAKE_PATH_SPACING = 30      # расстояние между плитками в змейке
+BASE_CAROUSEL_RADIUS = 100        # радиус карусели
+BASE_SWING_ROPE_LENGTH = 80       # длина "верёвки" для качелей
+
+PATTERN_SPACING = scaled(BASE_PATTERN_SPACING)
+PATTERN_MARGIN = scaled(BASE_PATTERN_MARGIN)
+SNAKE_MARGIN = scaled(BASE_SNAKE_MARGIN)
+SNAKE_PATH_SPACING = scaled(BASE_SNAKE_PATH_SPACING)
+CAROUSEL_RADIUS = scaled(BASE_CAROUSEL_RADIUS)
+SWING_ROPE_LENGTH = scaled(BASE_SWING_ROPE_LENGTH)
+
+# Скорости анимации (не масштабируются)
+BOUNCE_SPEED_BASE = 0.8
+BOUNCE_SPEED_RANDOM = 0.4
+SNAKE_SPEED = 1.2
+FLOAT_SPEED_BASE = 0.8
+FLOAT_SPEED_RANDOM = 0.4
+
+# Тайминги (в миллисекундах)
+TYPEWRITER_CHAR_DELAY = 400
+TYPEWRITER_PAUSE_TIME = 2000
