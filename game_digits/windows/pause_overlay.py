@@ -351,12 +351,12 @@ class PauseOverlay:
         self.title_font = pygame.font.Font(get_font_path("2204.ttf"), FONT_PAUSE_TITLE)
         self.button_font = pygame.font.Font(get_font_path("2204.ttf"), FONT_MENU_BUTTON)
 
-        # Кнопка "В меню"
+        # Кнопка "В меню" (внизу по центру)
         btn_width = scaled(160)
         btn_height = scaled(45)
         self.menu_button_rect = pygame.Rect(
             (field_width - btn_width) // 2,
-            field_height - scaled(100),
+            field_height - btn_height - scaled(25),  # 25px от нижнего края
             btn_width,
             btn_height
         )
@@ -509,12 +509,7 @@ class PauseOverlay:
         for tile in self.tiles:
             tile.draw(overlay)
 
-        # Draw "В меню" button
+        # Draw "В меню" button at bottom
         self._draw_menu_button(overlay)
-
-        # Draw "Игра приостановлена" text at bottom
-        title_text = self.title_font.render("Игра приостановлена", True, (180, 190, 200))
-        title_rect = title_text.get_rect(center=(self.field_width // 2, self.field_height - scaled(40)))
-        overlay.blit(title_text, title_rect)
 
         surface.blit(overlay, (offset_x, offset_y))
