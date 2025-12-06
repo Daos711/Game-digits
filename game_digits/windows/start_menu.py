@@ -25,7 +25,7 @@ class MenuTile:
         self.color = color
         self.target_x = target_x
         self.target_y = target_y
-        self.x = -TILE_SIZE - 50  # Start off-screen left
+        self.x = -TILE_SIZE - scaled(50)  # Start off-screen left
         self.y = target_y
         self.velocity = 0
 
@@ -132,25 +132,27 @@ class StartMenu:
         ]
 
         # Calculate tile positions (centered on game field)
-        # Game field starts at (20, 20) and is screen_height - 20 in size
-        field_size = self.screen_height - 20
-        field_center_x = 20 + field_size // 2
-        field_center_y = 20 + field_size // 2 - 50  # Slightly above center
+        # Game field starts at (scaled(20), scaled(20)) and is screen_height - scaled(20) in size
+        field_margin = scaled(20)
+        field_size = self.screen_height - field_margin
+        field_center_x = field_margin + field_size // 2
+        field_center_y = field_margin + field_size // 2 - scaled(50)  # Slightly above center
 
-        total_width = len(letters) * TILE_SIZE + (len(letters) - 1) * 8  # 8px gap
+        tile_gap = scaled(8)
+        total_width = len(letters) * TILE_SIZE + (len(letters) - 1) * tile_gap
         start_x = field_center_x - total_width // 2
 
         # Create tiles
         self.tiles = []
         for i, (letter, color) in enumerate(zip(letters, tile_colors)):
-            x = start_x + i * (TILE_SIZE + 8)
+            x = start_x + i * (TILE_SIZE + tile_gap)
             y = field_center_y - TILE_SIZE // 2
             self.tiles.append(MenuTile(letter, color, x, y))
 
         # Start game button setup
         self.button_rect = pygame.Rect(
             field_center_x - BUTTON_WIDTH // 2,
-            field_center_y + TILE_SIZE // 2 + 40,
+            field_center_y + TILE_SIZE // 2 + scaled(40),
             BUTTON_WIDTH,
             BUTTON_HEIGHT
         )
@@ -158,7 +160,7 @@ class StartMenu:
         # Records button setup (on right panel)
         self.records_button_rect = pygame.Rect(
             self.PANEL_X + (self.PANEL_WIDTH - RECORDS_BTN_WIDTH) // 2,
-            30,
+            scaled(30),
             RECORDS_BTN_WIDTH,
             RECORDS_BTN_HEIGHT
         )
@@ -520,7 +522,7 @@ class StartMenu:
     def reset_for_entry(self):
         """Reset tiles for entry animation (coming from left)."""
         for tile in self.tiles:
-            tile.x = -TILE_SIZE - 50
+            tile.x = -TILE_SIZE - scaled(50)
             tile.velocity = 0
             tile.y_offset = 0
             tile.brightness = 0
