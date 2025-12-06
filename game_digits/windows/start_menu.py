@@ -5,6 +5,7 @@ import pygame
 
 from game_digits import get_font_path
 from game_digits.constants import COLORS, TILE_SIZE, TILE_BORDER_COLOR
+from game_digits.scale import TILE_FONT_SIZE
 from game_digits import ui_components as ui
 from game_digits import records
 
@@ -49,7 +50,7 @@ class MenuTile:
         pygame.draw.rect(surface, TILE_BORDER_COLOR, surface.get_rect(), 1)
 
         # Letter
-        font = pygame.font.Font(get_font_path("OpenSans-VariableFont_wdth,wght.ttf"), 40)
+        font = pygame.font.Font(get_font_path("OpenSans-VariableFont_wdth,wght.ttf"), TILE_FONT_SIZE)
         text = font.render(self.letter, True, (0, 0, 0))
         text_rect = text.get_rect(center=(w // 2, h // 2))
         surface.blit(text, text_rect)
@@ -95,14 +96,16 @@ class StartMenu:
     # Records panel constants
     RECORDS_SLIDE_DURATION_OPEN = 400  # ms for opening
     RECORDS_SLIDE_DURATION_CLOSE = 200  # ms for closing (faster)
-    PANEL_X = 713  # Right panel X position
     PANEL_WIDTH = 240
-    PANEL_HEIGHT = 713
 
     def __init__(self, screen, screen_size, redraw_background):
         self.screen = screen
         self.screen_width, self.screen_height = screen_size
         self.redraw_background = redraw_background
+
+        # Динамические размеры панели
+        self.PANEL_X = self.screen_height  # Панель начинается после игрового поля
+        self.PANEL_HEIGHT = self.screen_height
 
         # Load fonts
         bold_font_path = get_font_path("2204.ttf")
@@ -122,9 +125,10 @@ class StartMenu:
         ]
 
         # Calculate tile positions (centered on game field)
-        # Game field is roughly 693x693, starting at (20, 20)
-        field_center_x = 20 + 693 // 2
-        field_center_y = 20 + 693 // 2 - 50  # Slightly above center
+        # Game field starts at (20, 20) and is screen_height - 20 in size
+        field_size = self.screen_height - 20
+        field_center_x = 20 + field_size // 2
+        field_center_y = 20 + field_size // 2 - 50  # Slightly above center
 
         total_width = len(letters) * TILE_SIZE + (len(letters) - 1) * 8  # 8px gap
         start_x = field_center_x - total_width // 2

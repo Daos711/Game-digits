@@ -2,6 +2,7 @@ import pygame
 
 from game_digits import get_font_path
 from game_digits.constants import TILE_SIZE, TILE_BORDER_COLOR, grid_to_pixel
+from game_digits.scale import TILE_FONT_SIZE
 
 
 class Tile(pygame.sprite.Sprite):
@@ -43,7 +44,7 @@ class Tile(pygame.sprite.Sprite):
 
         # Текст
         font = pygame.font.Font(
-            get_font_path("OpenSans-VariableFont_wdth,wght.ttf"), 40
+            get_font_path("OpenSans-VariableFont_wdth,wght.ttf"), TILE_FONT_SIZE
         )
         text = font.render(str(self.number), True, text_color)
         text_rect = text.get_rect(center=(w // 2, h // 2))

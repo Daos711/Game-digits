@@ -13,12 +13,16 @@ from game_digits.windows import ResultWindow, StartMenu, PauseOverlay
 
 class GameApp:
     def __init__(self):
-        self.WIDTH, self.HEIGHT = 953, 713
         self.frame = 10
         self.speed = 2
-        self.window = self.HEIGHT - 20
-        self.panel_width, self.panel_height = 240, self.HEIGHT
         self.tile_size, self.gap = TILE_SIZE, GAP
+        # Вычисляем размеры окна из размера плиток
+        tile_area = BOARD_SIZE * TILE_SIZE + (BOARD_SIZE + 1) * GAP
+        self.HEIGHT = tile_area + 4 * self.frame
+        self.panel_width = 240  # Панель остаётся фиксированной ширины
+        self.WIDTH = self.HEIGHT + self.panel_width
+        self.window = self.HEIGHT - 20
+        self.panel_height = self.HEIGHT
         self.offset = (23, 23)
         self.COLORS = COLORS
         pygame.init()
