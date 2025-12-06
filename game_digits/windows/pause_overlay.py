@@ -86,7 +86,7 @@ class BouncePattern:
         self.tiles = tiles
         self.width = width
         self.height = height
-        self.margin = 30
+        self.margin = 10  # Уменьшенный отступ от краёв
 
         # Initialize positions and velocities - SLOWER speed
         for i, tile in enumerate(tiles):
@@ -138,7 +138,7 @@ class SnakePattern:
         self.head_y += math.sin(self.angle) * speed
 
         # Bounce off walls
-        margin = 80
+        margin = 35  # Уменьшенный отступ от краёв
         if self.head_x < margin:
             self.head_x = margin
             self.angle = math.pi - self.angle
@@ -454,13 +454,14 @@ class PauseOverlay:
                         border_radius=scaled(8))
         btn_surface.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
 
-        # Текст
+        # Текст (небольшой сдвиг вверх для визуального центрирования)
         text = self.button_font.render("В меню", True, (255, 255, 255))
-        text_rect = text.get_rect(center=(rect.width // 2, rect.height // 2))
+        text_rect = text.get_rect(center=(rect.width // 2, rect.height // 2 - 1))
 
         # Тень текста
         shadow = self.button_font.render("В меню", True, (140, 95, 0))
-        btn_surface.blit(shadow, (text_rect.x + 1, text_rect.y + 1))
+        shadow_rect = shadow.get_rect(center=(rect.width // 2 + 1, rect.height // 2))
+        btn_surface.blit(shadow, shadow_rect)
         btn_surface.blit(text, text_rect)
 
         surface.blit(btn_surface, rect.topleft)
