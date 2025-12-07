@@ -1,7 +1,19 @@
+import sys
 from pathlib import Path
 
+
+def _get_base_path():
+    """Возвращает базовый путь - для PyInstaller или обычного запуска."""
+    if getattr(sys, 'frozen', False):
+        # Запуск из скомпилированного exe (PyInstaller)
+        return Path(sys._MEIPASS)
+    else:
+        # Обычный запуск из исходников
+        return Path(__file__).parent
+
+
 # Путь к директории assets
-ASSETS_DIR = Path(__file__).parent / "assets"
+ASSETS_DIR = _get_base_path() / "assets"
 IMAGES_DIR = ASSETS_DIR / "images"
 FONTS_DIR = ASSETS_DIR / "fonts"
 
