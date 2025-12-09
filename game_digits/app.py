@@ -1,6 +1,6 @@
 import pygame
 
-from game_digits import get_image_path, get_font_path
+from game_digits import get_image_path, get_font_path, get_sound_path
 from game_digits.constants import (
     TILE_SIZE, GAP, COLORS, BOARD_SIZE,
     grid_to_pixel, pixel_to_grid, pixel_to_grid_round, create_background_surface
@@ -33,6 +33,10 @@ class GameApp:
         self.COLORS = COLORS
         pygame.init()
         pygame.font.init()
+        pygame.mixer.init()
+        # Загрузка звуков
+        self.sounds = {}
+        self._load_sounds()
         # Жирные шрифты для UI панели
         bold_cyrillic = get_font_path("2204.ttf")
         self.font_bold_large = pygame.font.Font(bold_cyrillic, FONT_PANEL_LABEL)   # "Время", "Очки"
@@ -323,6 +327,27 @@ class GameApp:
         )
         return result_window.show()
 
+    def _load_sounds(self):
+        """Загрузка звуковых эффектов."""
+        sound_files = {
+            'click': 'click.wav',
+            # 'remove': 'remove.wav',
+            # 'move': 'move.wav',
+            # 'spawn': 'spawn.wav',
+        }
+        for name, filename in sound_files.items():
+            try:
+                path = get_sound_path(filename)
+                self.sounds[name] = pygame.mixer.Sound(path)
+            except (pygame.error, FileNotFoundError):
+                self.sounds[name] = None  # Звук не найден - игра работает без него
+
+    def play_sound(self, name):
+        """Воспроизвести звук по имени."""
+        sound = self.sounds.get(name)
+        if sound:
+            sound.play()
+
     def reset_game(self):
         """Reset the game state to start a new game."""
         # Clear all sprites
@@ -472,6 +497,7 @@ class GameApp:
         # Разрешаем выбор новой плитки даже когда другие движутся
         self.arrows.empty()
         self.game.select_tile(tile)
+        self.play_sound('click')
         self.draw_arrows_for_tile(tile)
 
     def spawn_score_animation(self, positions):

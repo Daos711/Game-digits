@@ -16,6 +16,7 @@ def _get_base_path():
 ASSETS_DIR = _get_base_path() / "assets"
 IMAGES_DIR = ASSETS_DIR / "images"
 FONTS_DIR = ASSETS_DIR / "fonts"
+SOUNDS_DIR = ASSETS_DIR / "sounds"
 
 
 def get_asset_path(relative_path: str) -> str:
@@ -31,3 +32,8 @@ def get_image_path(filename: str) -> str:
 def get_font_path(filename: str) -> str:
     """Получает путь к шрифту."""
     return str(FONTS_DIR / filename)
+
+
+def get_sound_path(filename: str) -> str:
+    """Получает путь к звуковому файлу."""
+    return str(SOUNDS_DIR / filename)
