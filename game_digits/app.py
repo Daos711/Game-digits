@@ -954,7 +954,18 @@ class GameApp:
 
             # Проверяем завершение по таймеру (время истекло)
             if self.game.game_over_flag:
+                self.game.game_over_flag = False
                 show_result = True
+                # Сохраняем текущий прогресс перед остановкой
+                if self.timer_running:
+                    elapsed = pygame.time.get_ticks() - self.bar_phase_start
+                    if self.bar_phase == 'emptying':
+                        self.paused_progress = max(0, 1 - elapsed / self.bar_empty_duration)
+                    elif self.bar_phase == 'waiting_spawn':
+                        self.paused_progress = 0
+                    else:  # filling
+                        self.paused_progress = min(1, elapsed / self.bar_fill_duration)
+                self.timer_running = False
 
             if show_result and not any(tile.is_moving for tile in self.tiles) and len(self.score_popups) == 0:
                 # Анимации очков закончились - показываем результат
