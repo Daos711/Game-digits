@@ -33,7 +33,7 @@ class GameApp:
         self.COLORS = COLORS
         pygame.init()
         pygame.font.init()
-        pygame.mixer.init()
+        pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
         # Загрузка звуков
         self.sounds = {}
         self._load_sounds()
