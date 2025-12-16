@@ -17,7 +17,7 @@ from game_digits import get_font_path
 def main():
     # Set up display
     screen_width = 700
-    screen_height = 750
+    screen_height = 800
     screen = pygame.display.set_mode((screen_width, screen_height))
     pygame.display.set_caption("Просмотр всех рангов")
 
@@ -105,12 +105,6 @@ def main():
             if i < len(ranks.RANKS) - 1:
                 div_y = row_y + row_height - 1
                 pygame.draw.line(screen, (235, 230, 220), (30, div_y), (screen_width - 30, div_y), 1)
-
-        # Footer info
-        footer_text = "ESC - выход | Легендарные ранги (3000+) имеют анимированный блик"
-        footer = pygame.font.Font(get_font_path("2204.ttf"), 12).render(footer_text, True, (150, 140, 130))
-        footer_rect = footer.get_rect(center=(screen_width // 2, screen_height - 20))
-        screen.blit(footer, footer_rect)
 
         pygame.display.flip()
         clock.tick(60)
