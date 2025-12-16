@@ -134,34 +134,47 @@ def draw_sound_icon(surface, center, size, sound_enabled=True):
     front_x = speaker_left + body_width + cone_width
 
     if sound_enabled:
-        # Sound waves: 3 solid white arcs ")))" with common center at speaker edge
-        # Each arc is a donut-slice segment, no outline, just solid fill
-        wave_center_x = front_x  # Common center at cone edge
+        # Sound waves: 3 solid filled arc segments ")))" to the RIGHT of speaker
+        # Each arc is a donut-slice (filled polygon), not overlapping the speaker
+        wave_center_x = front_x  # Center at cone edge
         wave_center_y = y
-        arc_thickness = max(2, scaled(3))
-        arc_gap = arc_thickness  # Gap between arcs ≈ thickness
 
-        # Arc angles (opening to the right)
-        start_angle = -math.pi / 2.3
-        end_angle = math.pi / 2.3
+        arc_thickness = size * 0.055  # Thickness of each arc
+        arc_gap = size * 0.045  # Gap between arcs
+        first_gap = size * 0.05  # Gap from speaker to first arc
 
-        # Three arcs with increasing radius
-        radius1 = size * 0.12
-        radius2 = size * 0.22
-        radius3 = size * 0.32
+        # Arc angle spread (opening to the right, ±70 degrees)
+        angle_spread = math.pi / 2.5
+        num_points = 16  # Points per arc edge for smooth curve
 
-        # Draw arcs as thick lines (solid white, no shadow for clean look)
-        # Small arc
-        arc_rect1 = (wave_center_x - radius1, wave_center_y - radius1, radius1 * 2, radius1 * 2)
-        pygame.draw.arc(surface, icon_color, arc_rect1, start_angle, end_angle, arc_thickness)
+        def draw_filled_arc(cx, cy, inner_r, outer_r, spread, color):
+            """Draw a filled arc segment (donut slice) as polygon."""
+            points = []
+            # Outer edge (from -angle to +angle)
+            for i in range(num_points + 1):
+                angle = -spread + (2 * spread * i / num_points)
+                px = cx + outer_r * math.cos(angle)
+                py = cy - outer_r * math.sin(angle)
+                points.append((px, py))
+            # Inner edge (from +angle back to -angle)
+            for i in range(num_points, -1, -1):
+                angle = -spread + (2 * spread * i / num_points)
+                px = cx + inner_r * math.cos(angle)
+                py = cy - inner_r * math.sin(angle)
+                points.append((px, py))
+            pygame.draw.polygon(surface, color, points)
 
-        # Medium arc
-        arc_rect2 = (wave_center_x - radius2, wave_center_y - radius2, radius2 * 2, radius2 * 2)
-        pygame.draw.arc(surface, icon_color, arc_rect2, start_angle, end_angle, arc_thickness)
+        # Three arcs with increasing radius, starting after gap from speaker
+        r1_inner = first_gap
+        r1_outer = r1_inner + arc_thickness
+        r2_inner = r1_outer + arc_gap
+        r2_outer = r2_inner + arc_thickness
+        r3_inner = r2_outer + arc_gap
+        r3_outer = r3_inner + arc_thickness
 
-        # Large arc
-        arc_rect3 = (wave_center_x - radius3, wave_center_y - radius3, radius3 * 2, radius3 * 2)
-        pygame.draw.arc(surface, icon_color, arc_rect3, start_angle, end_angle, arc_thickness)
+        draw_filled_arc(wave_center_x, wave_center_y, r1_inner, r1_outer, angle_spread, icon_color)
+        draw_filled_arc(wave_center_x, wave_center_y, r2_inner, r2_outer, angle_spread, icon_color)
+        draw_filled_arc(wave_center_x, wave_center_y, r3_inner, r3_outer, angle_spread, icon_color)
     else:
         # X mark (muted) - taller X to the right of speaker
         x_center = front_x + size * 0.22
