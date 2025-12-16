@@ -81,7 +81,7 @@ class ResultWindow:
         # Button positions (relative to window) - adjusted for congrats row
         self.new_game_btn_rel = pygame.Rect(
             self.PADDING,
-            self.HEADER_HEIGHT + self.PADDING + (self.ROW_HEIGHT + self.ROW_GAP) * 3 + 5 + self.CONGRATS_HEIGHT,
+            self.HEADER_HEIGHT + self.PADDING + (self.ROW_HEIGHT + self.ROW_GAP) * 3 + self.CONGRATS_HEIGHT + scaled(5),
             self.WINDOW_WIDTH - 2 * self.PADDING,
             scaled(50)
         )
@@ -183,7 +183,7 @@ class ResultWindow:
                 self.label_font,
                 self.value_font
             )
-        current_y += self.ROW_HEIGHT + self.ROW_GAP + scaled(5)
+        current_y += self.ROW_HEIGHT + self.ROW_GAP
 
         # Поздравление при попадании в топ-10
         if self.record_position is not None and rows_to_show >= 3 and current_total == self.total_score:
