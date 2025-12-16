@@ -322,7 +322,8 @@ class GameApp:
             screen_size=(self.WIDTH, self.HEIGHT),
             game_score=self.game.score,
             current_time=self.game.current_time,
-            redraw_callback=redraw_background
+            redraw_callback=redraw_background,
+            play_sound_callback=self.play_sound
         )
         return result_window.show()
 
@@ -332,6 +333,7 @@ class GameApp:
             'click': 'click.wav',
             'remove': 'remove.wav',
             'spawn': 'spawn.wav',
+            'celebration': 'celebration.wav',
         }
         for name, filename in sound_files.items():
             try:

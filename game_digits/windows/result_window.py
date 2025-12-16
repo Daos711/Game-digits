@@ -9,6 +9,7 @@ from game_digits.scale import (
     FONT_RESULT_TITLE, FONT_RESULT_LABEL, FONT_RESULT_VALUE, FONT_RESULT_BUTTON,
     CORNER_RADIUS, scaled
 )
+from game_digits.sprites import ConfettiSystem
 
 
 class ResultWindow:
@@ -37,12 +38,13 @@ class ResultWindow:
     ROW_HEIGHT = scaled(50)
     ROW_GAP = scaled(12)
 
-    def __init__(self, screen, screen_size, game_score, current_time, redraw_callback):
+    def __init__(self, screen, screen_size, game_score, current_time, redraw_callback, play_sound_callback=None):
         self.screen = screen
         self.screen_width, self.screen_height = screen_size
         self.game_score = game_score
         self.current_time = current_time
         self.redraw_callback = redraw_callback
+        self.play_sound = play_sound_callback
 
         # Calculate window position (centered)
         self.window_x = (self.screen_width - self.WINDOW_WIDTH) // 2
@@ -88,6 +90,12 @@ class ResultWindow:
             bonus=self.bonus,
             total=self.total_score
         )
+
+        # Конфетти для топ-10
+        self.confetti = None
+        self.confetti_started = False
+        if self.record_position is not None:
+            self.confetti = ConfettiSystem(self.screen_width, self.screen_height)
 
     def _draw_window(self, rows_to_show=3, current_total=None, opacity=255, overlay_alpha=128):
         """Draw the complete result window with animation state.
@@ -168,6 +176,13 @@ class ResultWindow:
             )
         current_y += self.ROW_HEIGHT + self.ROW_GAP + scaled(5)
 
+        # Поздравление при попадании в топ-10
+        if self.record_position is not None and rows_to_show >= 3 and current_total == self.total_score:
+            place_text = self._get_place_text(self.record_position)
+            congrats_surf = self.label_font.render(place_text, True, (34, 139, 34))  # Зелёный
+            congrats_rect = congrats_surf.get_rect(centerx=self.WINDOW_WIDTH // 2, y=current_y)
+            window_surface.blit(congrats_surf, congrats_rect)
+
         # "New game" button (show only when animation is complete)
         if rows_to_show >= 3 and current_total == self.total_score:
             new_game_btn_rect = ui.draw_new_game_button(
@@ -240,6 +255,17 @@ class ResultWindow:
 
         return window_opacity, overlay_alpha
 
+    def _get_place_text(self, position):
+        """Возвращает текст поздравления с местом."""
+        if position == 1:
+            return "Новый рекорд! 1 место!"
+        elif position == 2:
+            return "Отлично! 2 место!"
+        elif position == 3:
+            return "Отлично! 3 место!"
+        else:
+            return f"Топ-10! {position} место!"
+
     def show(self):
         """Display the result window and wait for user interaction.
 
@@ -285,6 +311,21 @@ class ResultWindow:
                 opacity=window_opacity,
                 overlay_alpha=overlay_alpha
             )
+
+            # Конфетти при попадании в топ-10
+            if self.confetti is not None:
+                # Запускаем конфетти когда анимация завершена
+                if self.animation_complete and not self.confetti_started:
+                    self.confetti.start()
+                    self.confetti_started = True
+                    if self.play_sound:
+                        self.play_sound('celebration')
+
+                # Обновляем и рисуем конфетти
+                if self.confetti_started:
+                    self.confetti.update()
+                    self.confetti.draw(self.screen)
+                    pygame.display.update()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
