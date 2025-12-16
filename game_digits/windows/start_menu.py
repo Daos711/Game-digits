@@ -593,22 +593,33 @@ class StartMenu:
                 pygame.draw.rect(panel_surface, rank_fg, stripe_rect, border_radius=2)
 
                 # Position number with programmatic icons for top-3
-                medal_size = scale.scaled(22)
-                icon_x = col_x[0] - scale.scaled(8)
+                medal_size = scale.scaled(20)
+                icon_x = col_x[0] - scale.scaled(12)
+                num_x = col_x[0] + scale.scaled(10)
+                pos_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(16))
 
                 if i == 0:
-                    # Draw trophy for 1st place
+                    # Draw trophy + "1" for 1st place
                     self._draw_trophy(panel_surface, icon_x, row_center_y, medal_size, (200, 150, 30))
+                    pos_text = pos_font.render("1", True, (200, 150, 30))
+                    pos_rect = pos_text.get_rect(center=(num_x, row_center_y))
+                    panel_surface.blit(pos_text, pos_rect)
                 elif i == 1:
-                    # Draw silver medal
+                    # Draw silver medal + "2"
                     self._draw_medal(panel_surface, icon_x, row_center_y, medal_size, (160, 165, 175), 2)
+                    pos_text = pos_font.render("2", True, (140, 140, 150))
+                    pos_rect = pos_text.get_rect(center=(num_x, row_center_y))
+                    panel_surface.blit(pos_text, pos_rect)
                 elif i == 2:
-                    # Draw bronze medal
+                    # Draw bronze medal + "3"
                     self._draw_medal(panel_surface, icon_x, row_center_y, medal_size, (185, 135, 85), 3)
+                    pos_text = pos_font.render("3", True, (170, 120, 70))
+                    pos_rect = pos_text.get_rect(center=(num_x, row_center_y))
+                    panel_surface.blit(pos_text, pos_rect)
                 else:
-                    # Regular position number
-                    pos_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(18))
-                    pos_text = pos_font.render(str(i + 1), True, (100, 100, 100))
+                    # Regular position number (centered)
+                    pos_font_reg = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(18))
+                    pos_text = pos_font_reg.render(str(i + 1), True, (100, 100, 100))
                     pos_rect = pos_text.get_rect(center=(col_x[0], row_center_y))
                     panel_surface.blit(pos_text, pos_rect)
 
