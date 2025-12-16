@@ -75,36 +75,81 @@ def get_rank_index(total_score: int) -> int:
     return index
 
 
-def draw_rank_badge(surface, rect, rank_name, fg_color, bg_color):
+def draw_rank_badge(surface, rect, rank_name, fg_color, bg_color, max_width=None):
     """
-    Draw a rank badge (capsule/pill shape) on the given surface.
+    Draw a rank badge (capsule/pill shape) with auto-sizing and soft edges.
 
     Args:
         surface: pygame Surface to draw on
-        rect: (x, y, width, height) tuple
+        rect: (x, y, width, height) tuple - x,y is center position, width is max width, height is badge height
         rank_name: Name of the rank to display
         fg_color: Text color
         bg_color: Background color
+        max_width: Maximum allowed width (optional, uses rect width if not set)
     """
     import pygame
     from game_digits import get_font_path, scale
 
-    x, y, width, height = rect
+    center_x, center_y, given_width, height = rect
+    max_w = max_width if max_width else given_width
+    pad_x = scale.scaled(20)  # Horizontal padding around text
+    min_font_size = scale.scaled(14)
+    base_font_size = max(min_font_size, height - scale.scaled(6))
 
-    # Draw pill-shaped background
-    radius = height // 2
-    pygame.draw.rect(surface, bg_color, rect, border_radius=radius)
-
-    # Draw border (darker than bg for better contrast)
-    border_color = tuple(max(0, int(c * 0.75)) for c in bg_color)
-    pygame.draw.rect(surface, border_color, rect, width=2, border_radius=radius)
-
-    # Draw text
-    font_size = max(10, height - scale.scaled(8))
+    # Find the right font size that fits
+    font_size = base_font_size
     font = pygame.font.Font(get_font_path("2204.ttf"), font_size)
-    text = font.render(rank_name, True, fg_color)
-    text_rect = text.get_rect(center=(x + width // 2, y + height // 2))
-    surface.blit(text, text_rect)
+    text_surf = font.render(rank_name, True, fg_color)
+    text_w = text_surf.get_width()
+    badge_w = text_w + 2 * pad_x
+
+    # Reduce font size if needed to fit
+    while badge_w > max_w and font_size > min_font_size:
+        font_size -= 1
+        font = pygame.font.Font(get_font_path("2204.ttf"), font_size)
+        text_surf = font.render(rank_name, True, fg_color)
+        text_w = text_surf.get_width()
+        badge_w = text_w + 2 * pad_x
+
+    # Final clamp
+    badge_w = min(badge_w, max_w)
+
+    # Calculate badge position (centered at center_x, center_y)
+    badge_x = center_x - badge_w // 2
+    badge_y = center_y - height // 2
+    radius = height // 2
+
+    # Create a temporary surface with alpha for soft edges
+    temp_w = badge_w + scale.scaled(8)
+    temp_h = height + scale.scaled(6)
+    temp_surface = pygame.Surface((temp_w, temp_h), pygame.SRCALPHA)
+    offset_x = scale.scaled(4)
+    offset_y = scale.scaled(2)
+
+    # Draw subtle shadow (black with low alpha, offset down)
+    shadow_rect = (offset_x, offset_y + scale.scaled(2), badge_w, height)
+    pygame.draw.rect(temp_surface, (0, 0, 0, 20), shadow_rect, border_radius=radius)
+
+    # Draw feathered/soft edge layers (from outside to inside)
+    # Outer glow layers with increasing alpha
+    for i, (expand, alpha) in enumerate([(3, 40), (2, 70), (1, 110)]):
+        layer_rect = (offset_x - expand, offset_y - expand,
+                     badge_w + expand * 2, height + expand * 2)
+        layer_color = (*bg_color, alpha)
+        pygame.draw.rect(temp_surface, layer_color, layer_rect,
+                        border_radius=radius + expand)
+
+    # Main badge body (slightly transparent for softer look)
+    main_rect = (offset_x, offset_y, badge_w, height)
+    main_color = (*bg_color, 210)
+    pygame.draw.rect(temp_surface, main_color, main_rect, border_radius=radius)
+
+    # Blit temp surface to main surface
+    surface.blit(temp_surface, (badge_x - offset_x, badge_y - offset_y))
+
+    # Draw text on main surface (crisp)
+    text_rect = text_surf.get_rect(center=(center_x, center_y))
+    surface.blit(text_surf, text_rect)
 
 
 def draw_rank_bar(surface, rect, colors_info, time_offset=0):

@@ -200,14 +200,15 @@ class ResultWindow:
             label_rect = rank_label.get_rect(midleft=(row_x + scale.scaled(15), current_y + rank_row_rect.height // 2))
             window_surface.blit(rank_label, label_rect)
 
-            # Rank badge
-            badge_width = scale.scaled(180)
-            badge_height = scale.scaled(26)
-            badge_x = row_x + row_width - badge_width - scale.scaled(15)
-            badge_y = current_y + (rank_row_rect.height - badge_height) // 2
+            # Rank badge (auto-sized, centered)
+            badge_max_width = scale.scaled(180)
+            badge_height = scale.scaled(28)
+            badge_center_x = row_x + row_width - badge_max_width // 2 - scale.scaled(15)
+            badge_center_y = current_y + rank_row_rect.height // 2
 
             # Draw rank badge
-            ranks.draw_rank_badge(window_surface, (badge_x, badge_y, badge_width, badge_height),
+            ranks.draw_rank_badge(window_surface,
+                                 (badge_center_x, badge_center_y, badge_max_width, badge_height),
                                  self.rank_name, self.rank_fg, self.rank_bg)
 
         current_y += self.RANK_ROW_HEIGHT

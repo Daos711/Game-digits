@@ -394,6 +394,78 @@ class StartMenu:
             self.settings_button_pressed, self.settings_button_hovered
         )
 
+    def _draw_trophy(self, surface, center_x, center_y, size, color):
+        """Draw a trophy icon programmatically."""
+        # Trophy dimensions
+        cup_w = size
+        cup_h = int(size * 0.6)
+        stem_w = int(size * 0.25)
+        stem_h = int(size * 0.25)
+        base_w = int(size * 0.5)
+        base_h = int(size * 0.15)
+
+        # Cup (trapezoid shape - wider at top)
+        cup_top = center_y - cup_h // 2 - stem_h // 2
+        cup_points = [
+            (center_x - cup_w // 2, cup_top),  # top-left
+            (center_x + cup_w // 2, cup_top),  # top-right
+            (center_x + cup_w // 3, cup_top + cup_h),  # bottom-right
+            (center_x - cup_w // 3, cup_top + cup_h),  # bottom-left
+        ]
+        pygame.draw.polygon(surface, color, cup_points)
+
+        # Stem
+        stem_top = cup_top + cup_h
+        stem_rect = pygame.Rect(center_x - stem_w // 2, stem_top, stem_w, stem_h)
+        pygame.draw.rect(surface, color, stem_rect)
+
+        # Base
+        base_top = stem_top + stem_h
+        base_rect = pygame.Rect(center_x - base_w // 2, base_top, base_w, base_h)
+        pygame.draw.rect(surface, color, base_rect, border_radius=2)
+
+        # Handles (small arcs on sides)
+        handle_r = int(size * 0.15)
+        pygame.draw.circle(surface, color, (center_x - cup_w // 2 - handle_r // 2, cup_top + cup_h // 2), handle_r, 2)
+        pygame.draw.circle(surface, color, (center_x + cup_w // 2 + handle_r // 2, cup_top + cup_h // 2), handle_r, 2)
+
+    def _draw_medal(self, surface, center_x, center_y, size, color, number):
+        """Draw a medal icon programmatically."""
+        # Medal circle
+        radius = size // 2
+        pygame.draw.circle(surface, color, (center_x, center_y), radius)
+
+        # Darker edge for depth
+        darker = tuple(max(0, int(c * 0.7)) for c in color)
+        pygame.draw.circle(surface, darker, (center_x, center_y), radius, 2)
+
+        # Inner highlight (lighter)
+        lighter = tuple(min(255, int(c * 1.2)) for c in color)
+        pygame.draw.circle(surface, lighter, (center_x - radius // 4, center_y - radius // 4), radius // 4)
+
+        # Ribbon (two small triangles above)
+        ribbon_w = size // 3
+        ribbon_h = size // 2
+        ribbon_top = center_y - radius - ribbon_h
+        # Left ribbon
+        pygame.draw.polygon(surface, (200, 60, 60), [
+            (center_x - ribbon_w, ribbon_top),
+            (center_x - 2, center_y - radius + 2),
+            (center_x - ribbon_w - 3, center_y - radius + 2),
+        ])
+        # Right ribbon
+        pygame.draw.polygon(surface, (180, 50, 50), [
+            (center_x + ribbon_w, ribbon_top),
+            (center_x + 2, center_y - radius + 2),
+            (center_x + ribbon_w + 3, center_y - radius + 2),
+        ])
+
+        # Number in center
+        font = pygame.font.Font(get_font_path("2204.ttf"), size // 2)
+        num_text = font.render(str(number), True, (255, 255, 255))
+        num_rect = num_text.get_rect(center=(center_x, center_y + 1))
+        surface.blit(num_text, num_rect)
+
     def _draw_records_panel(self):
         """Draw the full records table over the game field."""
         if self.records_slide_progress <= 0:
@@ -409,15 +481,15 @@ class StartMenu:
         panel_width = field_size
         panel_height = field_size
 
-        # Create panel surface (fully opaque)
-        panel_surface = pygame.Surface((panel_width, panel_height))
+        # Create panel surface with alpha support for soft shadows
+        panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
 
         # Warm white background (base)
         bg_color = (255, 253, 247)
         panel_surface.fill(bg_color)
 
         # Draw subtle grid lines (like notebook) - only on outer area
-        grid_color = (245, 242, 234)  # Lighter grid
+        grid_color = (245, 242, 234)
         cell_size = scale.scaled(25)
         for x in range(0, panel_width, cell_size):
             pygame.draw.line(panel_surface, grid_color, (x, 0), (x, panel_height), 1)
@@ -442,10 +514,16 @@ class StartMenu:
         table_height = panel_height - table_top - scale.scaled(10)
         content_width = panel_width - 2 * padding
 
-        # Draw solid white "card" background over grid for table area
+        # Draw soft shadow for table card (multiple layers)
+        shadow_offset = scale.scaled(2)
+        for i, alpha in enumerate([15, 25, 20]):
+            shadow_rect = pygame.Rect(padding + shadow_offset, table_top + shadow_offset + i,
+                                     content_width, table_height)
+            pygame.draw.rect(panel_surface, (0, 0, 0, alpha), shadow_rect, border_radius=scale.scaled(6))
+
+        # Draw solid white "card" background (no hard border)
         table_card_rect = pygame.Rect(padding, table_top, content_width, table_height)
-        pygame.draw.rect(panel_surface, (255, 253, 247), table_card_rect, border_radius=scale.scaled(6))
-        pygame.draw.rect(panel_surface, (230, 225, 215), table_card_rect, width=1, border_radius=scale.scaled(6))
+        pygame.draw.rect(panel_surface, (255, 253, 247, 255), table_card_rect, border_radius=scale.scaled(6))
 
         # Column positions (x positions for center/alignment of each column)
         col_x = [
@@ -454,8 +532,9 @@ class StartMenu:
             padding + scale.scaled(210),                   # Очки
             padding + scale.scaled(295),                   # Бонус
             padding + scale.scaled(385),                   # Итого
-            padding + content_width - scale.scaled(95),    # Ранг (badge)
+            padding + content_width - scale.scaled(95),    # Ранг (badge center)
         ]
+        rank_col_max_width = scale.scaled(180)  # Max width for rank badges
 
         # Header
         header_y = table_top + scale.scaled(18)
@@ -473,11 +552,17 @@ class StartMenu:
                         (padding + scale.scaled(5), header_div_y),
                         (panel_width - padding - scale.scaled(5), header_div_y), 1)
 
-        # Fonts for content - LARGER sizes, same font for all numbers
+        # Fonts for content
         data_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(20))
         bold_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(21))
         date_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(16))
-        pos_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(18))
+
+        # Row highlight colors for top-3
+        row_highlights = [
+            (255, 244, 214, 255),  # Gold - 1st place
+            (242, 245, 248, 255),  # Silver - 2nd place
+            (248, 239, 230, 255),  # Bronze - 3rd place
+        ]
 
         if not self.cached_records:
             no_records = data_font.render("Нет записей", True, (150, 140, 130))
@@ -492,62 +577,52 @@ class StartMenu:
                 row_y = start_y + i * row_height
                 row_center_y = row_y + row_height // 2
 
-                # Get rank info (now returns name, fg_color, bg_color)
+                # Get rank info
                 total = record.get('total', 0)
                 rank_name, rank_fg, rank_bg = ranks.get_rank(total)
 
-                # Top-1 highlight
-                if i == 0:
+                # Row highlight for top-3
+                if i < 3:
                     highlight_rect = pygame.Rect(padding + scale.scaled(3), row_y,
                                                 content_width - scale.scaled(6), row_height - scale.scaled(2))
-                    pygame.draw.rect(panel_surface, (255, 247, 218), highlight_rect, border_radius=scale.scaled(4))
+                    pygame.draw.rect(panel_surface, row_highlights[i], highlight_rect, border_radius=scale.scaled(4))
 
                 # Left vertical stripe (rank color)
                 stripe_rect = pygame.Rect(padding + scale.scaled(3), row_y + scale.scaled(5),
                                          stripe_width, row_height - scale.scaled(12))
                 pygame.draw.rect(panel_surface, rank_fg, stripe_rect, border_radius=2)
 
-                # Position number with icons for top-3
-                if i == 0:
-                    pos_str = "🏆 1"
-                    pos_color = (200, 150, 30)
-                    # Gold capsule under position
-                    capsule_rect = pygame.Rect(col_x[0] - scale.scaled(22), row_center_y - scale.scaled(14),
-                                              scale.scaled(44), scale.scaled(28))
-                    pygame.draw.rect(panel_surface, (247, 213, 107), capsule_rect, border_radius=scale.scaled(14))
-                elif i == 1:
-                    pos_str = "🥈 2"
-                    pos_color = (140, 140, 150)
-                    # Silver capsule
-                    capsule_rect = pygame.Rect(col_x[0] - scale.scaled(22), row_center_y - scale.scaled(14),
-                                              scale.scaled(44), scale.scaled(28))
-                    pygame.draw.rect(panel_surface, (215, 222, 232), capsule_rect, border_radius=scale.scaled(14))
-                elif i == 2:
-                    pos_str = "🥉 3"
-                    pos_color = (170, 120, 70)
-                    # Bronze capsule
-                    capsule_rect = pygame.Rect(col_x[0] - scale.scaled(22), row_center_y - scale.scaled(14),
-                                              scale.scaled(44), scale.scaled(28))
-                    pygame.draw.rect(panel_surface, (232, 199, 165), capsule_rect, border_radius=scale.scaled(14))
-                else:
-                    pos_str = str(i + 1)
-                    pos_color = (100, 100, 100)
+                # Position number with programmatic icons for top-3
+                medal_size = scale.scaled(22)
+                icon_x = col_x[0] - scale.scaled(8)
 
-                pos_text = pos_font.render(pos_str, True, pos_color)
-                pos_rect = pos_text.get_rect(center=(col_x[0], row_center_y))
-                panel_surface.blit(pos_text, pos_rect)
+                if i == 0:
+                    # Draw trophy for 1st place
+                    self._draw_trophy(panel_surface, icon_x, row_center_y, medal_size, (200, 150, 30))
+                elif i == 1:
+                    # Draw silver medal
+                    self._draw_medal(panel_surface, icon_x, row_center_y, medal_size, (160, 165, 175), 2)
+                elif i == 2:
+                    # Draw bronze medal
+                    self._draw_medal(panel_surface, icon_x, row_center_y, medal_size, (185, 135, 85), 3)
+                else:
+                    # Regular position number
+                    pos_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(18))
+                    pos_text = pos_font.render(str(i + 1), True, (100, 100, 100))
+                    pos_rect = pos_text.get_rect(center=(col_x[0], row_center_y))
+                    panel_surface.blit(pos_text, pos_rect)
 
                 # Date (left-aligned)
                 date_text = date_font.render(record.get('date', ''), True, (130, 120, 110))
                 date_rect = date_text.get_rect(midleft=(col_x[1] - scale.scaled(35), row_center_y))
                 panel_surface.blit(date_text, date_rect)
 
-                # Score (right-aligned) - same font as bonus
+                # Score (right-aligned)
                 score_text = data_font.render(str(record.get('score', 0)), True, (70, 70, 70))
                 score_rect = score_text.get_rect(midright=(col_x[2] + scale.scaled(28), row_center_y))
                 panel_surface.blit(score_text, score_rect)
 
-                # Bonus (right-aligned, green) - same font as score
+                # Bonus (right-aligned, green)
                 bonus_text = data_font.render(str(record.get('bonus', 0)), True, (50, 140, 50))
                 bonus_rect = bonus_text.get_rect(midright=(col_x[3] + scale.scaled(28), row_center_y))
                 panel_surface.blit(bonus_text, bonus_rect)
@@ -557,12 +632,10 @@ class StartMenu:
                 total_rect = total_text.get_rect(midright=(col_x[4] + scale.scaled(28), row_center_y))
                 panel_surface.blit(total_text, total_rect)
 
-                # Rank badge
-                badge_width = scale.scaled(150)
+                # Rank badge (auto-sized, centered at col_x[5])
                 badge_height = scale.scaled(30)
-                badge_x = col_x[5] - badge_width // 2
-                badge_y = row_center_y - badge_height // 2
-                ranks.draw_rank_badge(panel_surface, (badge_x, badge_y, badge_width, badge_height),
+                ranks.draw_rank_badge(panel_surface,
+                                     (col_x[5], row_center_y, rank_col_max_width, badge_height),
                                      rank_name, rank_fg, rank_bg)
 
                 # Row divider (not after last row)
