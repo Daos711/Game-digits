@@ -56,6 +56,21 @@ class ResultWindow:
         self.bonus = 300 + 5 * self.remaining_time
         self.total_score = self.game_score + self.bonus
 
+        # Save record FIRST to know if we need extra space
+        self.record_position = records.add_record(
+            score=self.game_score,
+            bonus=self.bonus,
+            total=self.total_score,
+            test_mode=self.test_mode
+        )
+
+        # Adjust window height if showing congratulations
+        self.CONGRATS_HEIGHT = scaled(35) if self.record_position is not None else 0
+        self.actual_window_height = self.WINDOW_HEIGHT + self.CONGRATS_HEIGHT
+
+        # Recalculate window position with new height
+        self.window_y = (self.screen_height - self.actual_window_height) // 2
+
         # Load fonts
         bold_font_path = get_font_path("2204.ttf")
         self.title_font = pygame.font.Font(bold_font_path, FONT_RESULT_TITLE)
@@ -63,10 +78,10 @@ class ResultWindow:
         self.value_font = pygame.font.Font(bold_font_path, FONT_RESULT_VALUE)
         self.button_font = pygame.font.Font(bold_font_path, FONT_RESULT_BUTTON)
 
-        # Button positions (relative to window)
+        # Button positions (relative to window) - adjusted for congrats row
         self.new_game_btn_rel = pygame.Rect(
             self.PADDING,
-            self.HEADER_HEIGHT + self.PADDING + (self.ROW_HEIGHT + self.ROW_GAP) * 3 + 5,
+            self.HEADER_HEIGHT + self.PADDING + (self.ROW_HEIGHT + self.ROW_GAP) * 3 + 5 + self.CONGRATS_HEIGHT,
             self.WINDOW_WIDTH - 2 * self.PADDING,
             scaled(50)
         )
@@ -84,14 +99,6 @@ class ResultWindow:
         self.rows_animation_started = False
         self.rows_animation_start_time = 0
         self.animation_complete = False
-
-        # Save record
-        self.record_position = records.add_record(
-            score=self.game_score,
-            bonus=self.bonus,
-            total=self.total_score,
-            test_mode=self.test_mode
-        )
 
         # Конфетти для топ-10
         self.confetti = None
@@ -115,7 +122,7 @@ class ResultWindow:
             self.screen.blit(overlay, (0, 0))
 
         # Create window surface
-        window_surface = pygame.Surface((self.WINDOW_WIDTH, self.WINDOW_HEIGHT), pygame.SRCALPHA)
+        window_surface = pygame.Surface((self.WINDOW_WIDTH, self.actual_window_height), pygame.SRCALPHA)
 
         # Draw header FIRST
         close_btn_rect = ui.draw_result_window_header(
@@ -129,7 +136,7 @@ class ResultWindow:
         # Draw checkered ON TOP with rounded corners visible
         ui.draw_checkered_content_area(
             window_surface,
-            (0, 0, self.WINDOW_WIDTH, self.WINDOW_HEIGHT),
+            (0, 0, self.WINDOW_WIDTH, self.actual_window_height),
             self.HEADER_HEIGHT,
             corner_radius=CORNER_RADIUS,
             cell_size=scaled(18),
