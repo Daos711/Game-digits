@@ -1,7 +1,8 @@
 import random
 import pygame
 
-from game_digits.constants import COLORS, BOARD_SIZE, TILE_SIZE, GAP
+from game_digits import scale
+from game_digits.constants import COLORS, BOARD_SIZE
 from game_digits.sprites import Tile
 from game_digits.patterns import get_random_pattern
 
@@ -128,13 +129,13 @@ class Game:
                 has_moving_tiles = True
                 # Движущаяся плитка может занимать 1-2 ячейки
                 # Вычисляем какие ячейки пересекает rect плитки
-                cell_size = TILE_SIZE + GAP
+                cell_size = scale.TILE_SIZE + scale.GAP
                 # Левый верхний угол
-                left_col = (tile.rect.x - GAP) // cell_size
-                top_row = (tile.rect.y - GAP) // cell_size
+                left_col = (tile.rect.x - scale.GAP) // cell_size
+                top_row = (tile.rect.y - scale.GAP) // cell_size
                 # Правый нижний угол
-                right_col = (tile.rect.x + TILE_SIZE - 1 - GAP) // cell_size
-                bottom_row = (tile.rect.y + TILE_SIZE - 1 - GAP) // cell_size
+                right_col = (tile.rect.x + scale.TILE_SIZE - 1 - scale.GAP) // cell_size
+                bottom_row = (tile.rect.y + scale.TILE_SIZE - 1 - scale.GAP) // cell_size
                 # Добавляем все ячейки которые плитка пересекает
                 for row in range(max(0, top_row), min(BOARD_SIZE, bottom_row + 1)):
                     for col in range(max(0, left_col), min(BOARD_SIZE, right_col + 1)):

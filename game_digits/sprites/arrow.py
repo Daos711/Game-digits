@@ -1,11 +1,13 @@
 import pygame
 
-from game_digits.scale import ARROW_SIZE, BASE_ARROW_SIZE
+from game_digits import scale as scale_module
 
 
 class Arrow(pygame.sprite.Sprite):
     # Кэш для изображений стрелок по направлениям
+    # Ключ включает размер для инвалидации при смене масштаба
     arrow_images = {}
+    _cached_arrow_size = None
 
     def __init__(self, direction, position, game, tile):
         super().__init__()
@@ -17,14 +19,22 @@ class Arrow(pygame.sprite.Sprite):
 
     @classmethod
     def get_arrow_image(cls, direction):
+        arrow_size = scale_module.ARROW_SIZE
+        base_arrow_size = scale_module.BASE_ARROW_SIZE
+
+        # Инвалидация кэша при изменении масштаба
+        if cls._cached_arrow_size != arrow_size:
+            cls.arrow_images.clear()
+            cls._cached_arrow_size = arrow_size
+
         if direction in cls.arrow_images:
             return cls.arrow_images[direction].copy()
 
         # Коэффициент масштабирования
-        scale = ARROW_SIZE / BASE_ARROW_SIZE
+        scale_factor = arrow_size / base_arrow_size
 
         # Создаем базовую стрелку
-        image = pygame.Surface((ARROW_SIZE, ARROW_SIZE), pygame.SRCALPHA)
+        image = pygame.Surface((arrow_size, arrow_size), pygame.SRCALPHA)
 
         # Цвета
         arrow_color = (94, 150, 233)  # Основной цвет стрелки
@@ -34,13 +44,13 @@ class Arrow(pygame.sprite.Sprite):
         # Базовые точки стрелки (для размера 65x65)
         base_points = [(20, 38), (40, 38), (40, 43), (49, 32), (40, 21), (40, 26), (20, 26)]
         # Масштабируем точки
-        points = [(int(x * scale), int(y * scale)) for x, y in base_points]
+        points = [(int(x * scale_factor), int(y * scale_factor)) for x, y in base_points]
 
         # Масштабируем толщину линий и радиусы
-        outer_line_width = max(1, int(7 * scale))
-        inner_line_width = max(1, int(4 * scale))
-        outer_circle_radius = max(1, int(3 * scale))
-        inner_circle_radius = max(1, int(2 * scale))
+        outer_line_width = max(1, int(7 * scale_factor))
+        inner_line_width = max(1, int(4 * scale_factor))
+        outer_circle_radius = max(1, int(3 * scale_factor))
+        inner_circle_radius = max(1, int(2 * scale_factor))
 
         # Рисуем серую обводку (внешняя)
         pygame.draw.lines(image, gray_color, True, points, outer_line_width)

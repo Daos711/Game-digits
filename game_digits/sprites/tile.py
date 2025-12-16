@@ -1,8 +1,8 @@
 import pygame
 
 from game_digits import get_font_path
-from game_digits.constants import TILE_SIZE, TILE_BORDER_COLOR, grid_to_pixel
-from game_digits.scale import TILE_FONT_SIZE, scaled
+from game_digits import scale
+from game_digits.constants import TILE_BORDER_COLOR, grid_to_pixel
 
 
 class Tile(pygame.sprite.Sprite):
@@ -13,7 +13,8 @@ class Tile(pygame.sprite.Sprite):
         self.color = color
         self.is_moving = False
         self.current_direction = None
-        self.image = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        tile_size = scale.TILE_SIZE
+        self.image = pygame.Surface((tile_size, tile_size))
         self.rect = self.image.get_rect()
         self.target_rect = None
         self.rect.topleft = grid_to_pixel(self.position[0], self.position[1])
@@ -23,7 +24,8 @@ class Tile(pygame.sprite.Sprite):
         self.image.fill(self.color)
 
         # === НАСТРАИВАЕМЫЕ ПАРАМЕТРЫ ===
-        bevel = 3  # Толщина фаски (не масштабируется для сохранения объёма)
+        # bevel пропорционален размеру плитки (было 3px при TILE_SIZE=64, ~4.7%)
+        bevel = max(2, round(scale.TILE_SIZE * 3 / 64))
         dark_factor = 0.4        # Множитель для тёмной грани (0.5-0.8)
 
         def clamp(x: int) -> int:
@@ -44,7 +46,7 @@ class Tile(pygame.sprite.Sprite):
 
         # Текст
         font = pygame.font.Font(
-            get_font_path("OpenSans-VariableFont_wdth,wght.ttf"), TILE_FONT_SIZE
+            get_font_path("OpenSans-VariableFont_wdth,wght.ttf"), scale.TILE_FONT_SIZE
         )
         text = font.render(str(self.number), True, text_color)
         text_rect = text.get_rect(center=(w // 2, h // 2))
@@ -75,4 +77,4 @@ class Tile(pygame.sprite.Sprite):
                 y += 1
 
         target_x, target_y = grid_to_pixel(x, y)
-        return pygame.Rect(target_x, target_y, TILE_SIZE, TILE_SIZE)
+        return pygame.Rect(target_x, target_y, scale.TILE_SIZE, scale.TILE_SIZE)

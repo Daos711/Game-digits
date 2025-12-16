@@ -1,15 +1,12 @@
 import pygame
 
 from game_digits import get_image_path, get_font_path, get_sound_path
+from game_digits import settings
+from game_digits import scale
+from game_digits import constants
 from game_digits.constants import (
-    TILE_SIZE, GAP, COLORS, BOARD_SIZE,
+    COLORS, BOARD_SIZE,
     grid_to_pixel, pixel_to_grid, pixel_to_grid_round, create_background_surface
-)
-from game_digits.scale import (
-    PANEL_WIDTH, FRAME_WIDTH, GRID_CELL_SIZE, scaled,
-    FONT_PANEL_LABEL, FONT_PANEL_VALUE, FONT_PANEL_PAUSE,
-    PAUSE_BTN_WIDTH, PAUSE_BTN_HEIGHT, ICON_SIZE, SOUND_ICON_SIZE,
-    VALUE_BAR_HEIGHT, PROGRESS_BAR_HEIGHT, PANEL_PADDING
 )
 from game_digits.game import Game
 from game_digits.sprites import Arrow, ScorePopup
@@ -19,13 +16,13 @@ from game_digits.windows import ResultWindow, StartMenu, PauseOverlay
 
 class GameApp:
     def __init__(self):
-        self.frame = FRAME_WIDTH
-        self.speed = 2
-        self.tile_size, self.gap = TILE_SIZE, GAP
+        self.frame = scale.FRAME_WIDTH
+        self.speed = settings.get_speed()
+        self.tile_size, self.gap = scale.TILE_SIZE, scale.GAP
         # Вычисляем размеры окна из размера плиток
-        tile_area = BOARD_SIZE * TILE_SIZE + (BOARD_SIZE + 1) * GAP
+        tile_area = BOARD_SIZE * scale.TILE_SIZE + (BOARD_SIZE + 1) * scale.GAP
         self.HEIGHT = tile_area + 4 * self.frame
-        self.panel_width = PANEL_WIDTH
+        self.panel_width = scale.PANEL_WIDTH
         self.WIDTH = self.HEIGHT + self.panel_width
         self.window = self.HEIGHT - 2 * self.frame
         self.panel_height = self.HEIGHT
@@ -38,9 +35,9 @@ class GameApp:
         self._load_sounds()
         # Жирные шрифты для UI панели
         bold_cyrillic = get_font_path("2204.ttf")
-        self.font_bold_large = pygame.font.Font(bold_cyrillic, FONT_PANEL_LABEL)   # "Время", "Очки"
-        self.font_bold_medium = pygame.font.Font(bold_cyrillic, FONT_PANEL_PAUSE)  # "пауза"
-        self.font_bold_value = pygame.font.Font(bold_cyrillic, FONT_PANEL_VALUE)   # цифры
+        self.font_bold_large = pygame.font.Font(bold_cyrillic, scale.FONT_PANEL_LABEL)   # "Время", "Очки"
+        self.font_bold_medium = pygame.font.Font(bold_cyrillic, scale.FONT_PANEL_PAUSE)  # "пауза"
+        self.font_bold_value = pygame.font.Font(bold_cyrillic, scale.FONT_PANEL_VALUE)   # цифры
         # Состояние UI
         self.is_paused = False
         self.pause_button_rect = None
@@ -55,7 +52,7 @@ class GameApp:
         self.icon = pygame.image.load(get_image_path("icon.png"))
         pygame.display.set_icon(self.icon)
         # Параметры для клеточного фона (как в школьной тетради)
-        self.grid_cell_size = GRID_CELL_SIZE
+        self.grid_cell_size = scale.GRID_CELL_SIZE
         self.grid_line_color = (218, 236, 241)  # Светло-голубые линии
         self.arrows = pygame.sprite.Group()
         self.tiles = pygame.sprite.Group()
@@ -201,7 +198,7 @@ class GameApp:
 
     def draw_score_and_timer_window(self):
         panel_x = self.HEIGHT  # Начало правой панели
-        padding = PANEL_PADDING
+        padding = scale.PANEL_PADDING
 
         # Get animation offsets for each element group
         pause_offset = self._get_panel_element_offset(0)
@@ -212,39 +209,39 @@ class GameApp:
 
         # === 1. Кнопка "Пауза" и иконка звука ===
         # Кнопка паузы левее центра, иконка звука у правого края
-        button_x = panel_x + padding + scaled(20)
+        button_x = panel_x + padding + scale.scaled(20)
         button_y = current_y + pause_offset
 
         # Only draw if visible (y >= 0 means on screen)
         if button_y >= -10:
             self.pause_button_rect = ui.draw_pause_button(
                 self.screen,
-                (button_x, button_y, PAUSE_BTN_WIDTH, PAUSE_BTN_HEIGHT),
+                (button_x, button_y, scale.PAUSE_BTN_WIDTH, scale.PAUSE_BTN_HEIGHT),
                 self.font_bold_medium,
                 is_pressed=self.is_paused
             )
 
             # Иконка звука у правого края панели
-            sound_icon_x = panel_x + self.panel_width - padding - SOUND_ICON_SIZE // 2
-            sound_icon_y = button_y + PAUSE_BTN_HEIGHT // 2
+            sound_icon_x = panel_x + self.panel_width - padding - scale.SOUND_ICON_SIZE // 2
+            sound_icon_y = button_y + scale.PAUSE_BTN_HEIGHT // 2
             ui.draw_sound_icon(
                 self.screen,
                 (sound_icon_x, sound_icon_y),
-                SOUND_ICON_SIZE,
+                scale.SOUND_ICON_SIZE,
                 sound_enabled=self.sound_enabled
             )
             # Сохраняем rect для обработки кликов
             self.sound_button_rect = pygame.Rect(
-                sound_icon_x - SOUND_ICON_SIZE // 2,
-                sound_icon_y - SOUND_ICON_SIZE // 2,
-                SOUND_ICON_SIZE,
-                SOUND_ICON_SIZE
+                sound_icon_x - scale.SOUND_ICON_SIZE // 2,
+                sound_icon_y - scale.SOUND_ICON_SIZE // 2,
+                scale.SOUND_ICON_SIZE,
+                scale.SOUND_ICON_SIZE
             )
         else:
             self.pause_button_rect = None
             self.sound_button_rect = None
 
-        current_y += PAUSE_BTN_HEIGHT + scaled(25)
+        current_y += scale.PAUSE_BTN_HEIGHT + scale.scaled(25)
 
         # === 2. Блок "Время" ===
         time_block_y = current_y + time_offset
@@ -255,28 +252,28 @@ class GameApp:
 
         # Строка со значением времени (иконка + полоска)
         icon_x = panel_x + padding
-        bar_x = icon_x + ICON_SIZE // 2
+        bar_x = icon_x + scale.ICON_SIZE // 2
         bar_width = self.panel_width - padding - bar_x + panel_x
 
         # Only draw if visible (entering from top)
         if time_block_y >= -10:
             self.screen.blit(time_label, (label_x, time_block_y))
 
-            icon_y = time_block_y + time_label.get_height() + scaled(10)
+            icon_y = time_block_y + time_label.get_height() + scale.scaled(10)
 
             # СНАЧАЛА рисуем голубую полоску с временем (она будет ПОД иконкой)
             ui.draw_value_bar(
                 self.screen,
-                (bar_x, icon_y + scaled(3), bar_width, VALUE_BAR_HEIGHT),
+                (bar_x, icon_y + scale.scaled(3), bar_width, scale.VALUE_BAR_HEIGHT),
                 self.game.current_time,
                 self.font_bold_value
             )
 
             # ЗАТЕМ рисуем иконку часов ПОВЕРХ полоски
-            ui.draw_clock_icon(self.screen, (icon_x + ICON_SIZE // 2, icon_y + ICON_SIZE // 2), ICON_SIZE)
+            ui.draw_clock_icon(self.screen, (icon_x + scale.ICON_SIZE // 2, icon_y + scale.ICON_SIZE // 2), scale.ICON_SIZE)
 
             # === 3. Прогресс-бар ===
-            progress_y = icon_y + ICON_SIZE + scaled(15)
+            progress_y = icon_y + scale.ICON_SIZE + scale.scaled(15)
             progress_x = panel_x + padding
             progress_width = self.panel_width - padding * 2
 
@@ -296,11 +293,11 @@ class GameApp:
 
             ui.draw_progress_bar(
                 self.screen,
-                (progress_x, progress_y, progress_width, PROGRESS_BAR_HEIGHT),
+                (progress_x, progress_y, progress_width, scale.PROGRESS_BAR_HEIGHT),
                 progress
             )
 
-        current_y += time_label.get_height() + scaled(10) + ICON_SIZE + scaled(15) + PROGRESS_BAR_HEIGHT + scaled(25)
+        current_y += time_label.get_height() + scale.scaled(10) + scale.ICON_SIZE + scale.scaled(15) + scale.PROGRESS_BAR_HEIGHT + scale.scaled(25)
 
         # === 4. Блок "Очки" ===
         score_block_y = current_y + score_offset
@@ -312,18 +309,18 @@ class GameApp:
             label_x = panel_x + (self.panel_width - score_label.get_width()) // 2
             self.screen.blit(score_label, (label_x, score_block_y))
 
-            score_icon_y = score_block_y + score_label.get_height() + scaled(10)
+            score_icon_y = score_block_y + score_label.get_height() + scale.scaled(10)
 
             # СНАЧАЛА рисуем голубую полоску с очками (она будет ПОД иконкой)
             ui.draw_value_bar(
                 self.screen,
-                (bar_x, score_icon_y + scaled(3), bar_width, VALUE_BAR_HEIGHT),
+                (bar_x, score_icon_y + scale.scaled(3), bar_width, scale.VALUE_BAR_HEIGHT),
                 self.game.score,
                 self.font_bold_value
             )
 
             # ЗАТЕМ рисуем иконку солнца ПОВЕРХ полоски
-            ui.draw_sun_icon(self.screen, (icon_x + ICON_SIZE // 2, score_icon_y + ICON_SIZE // 2), ICON_SIZE)
+            ui.draw_sun_icon(self.screen, (icon_x + scale.ICON_SIZE // 2, score_icon_y + scale.ICON_SIZE // 2), scale.ICON_SIZE)
 
     def show_result_window(self):
         """Display the game result window with final score.
@@ -544,13 +541,13 @@ class GameApp:
         # Вычисляем ячейки где ФИЗИЧЕСКИ находятся движущиеся плитки (1-2 ячейки)
         # Исключаем стартовую позицию - плитка оттуда уезжает
         occupied_by_moving = set()
-        cell_size = TILE_SIZE + GAP
+        cell_size = scale.TILE_SIZE + scale.GAP
         for t in self.tiles:
             if t.is_moving:
-                left_col = (t.rect.x - GAP) // cell_size
-                top_row = (t.rect.y - GAP) // cell_size
-                right_col = (t.rect.x + TILE_SIZE - 1 - GAP) // cell_size
-                bottom_row = (t.rect.y + TILE_SIZE - 1 - GAP) // cell_size
+                left_col = (t.rect.x - scale.GAP) // cell_size
+                top_row = (t.rect.y - scale.GAP) // cell_size
+                right_col = (t.rect.x + scale.TILE_SIZE - 1 - scale.GAP) // cell_size
+                bottom_row = (t.rect.y + scale.TILE_SIZE - 1 - scale.GAP) // cell_size
                 for row in range(max(0, top_row), min(BOARD_SIZE, bottom_row + 1)):
                     for col in range(max(0, left_col), min(BOARD_SIZE, right_col + 1)):
                         # Исключаем стартовую позицию - плитка оттуда уезжает
@@ -596,13 +593,13 @@ class GameApp:
         # Позиции, где сейчас визуально находятся движущиеся плитки (1-2 ячейки)
         # Исключаем стартовые позиции - плитки оттуда уезжают
         occupied_by_moving = set()
-        cell_size = TILE_SIZE + GAP
+        cell_size = scale.TILE_SIZE + scale.GAP
         for tile in self.tiles:
             if tile.is_moving:
-                left_col = (tile.rect.x - GAP) // cell_size
-                top_row = (tile.rect.y - GAP) // cell_size
-                right_col = (tile.rect.x + TILE_SIZE - 1 - GAP) // cell_size
-                bottom_row = (tile.rect.y + TILE_SIZE - 1 - GAP) // cell_size
+                left_col = (tile.rect.x - scale.GAP) // cell_size
+                top_row = (tile.rect.y - scale.GAP) // cell_size
+                right_col = (tile.rect.x + scale.TILE_SIZE - 1 - scale.GAP) // cell_size
+                bottom_row = (tile.rect.y + scale.TILE_SIZE - 1 - scale.GAP) // cell_size
                 for row in range(max(0, top_row), min(BOARD_SIZE, bottom_row + 1)):
                     for col in range(max(0, left_col), min(BOARD_SIZE, right_col + 1)):
                         # Исключаем стартовую позицию - плитка оттуда уезжает
@@ -648,7 +645,7 @@ class GameApp:
                     dir2 = other.current_direction
 
                     # Порог для определения "одной линии" - половина размера ячейки
-                    threshold = (TILE_SIZE + GAP) // 2
+                    threshold = (scale.TILE_SIZE + scale.GAP) // 2
 
                     # Проверяем противоположные направления
                     horizontal_opposite = (dir1, dir2) in [("left", "right"), ("right", "left")]
@@ -853,8 +850,11 @@ class GameApp:
             # === MENU STATE ===
             if self.state == 'menu':
                 # Show start menu
-                start_game = self.start_menu.show()
-                if start_game:
+                result = self.start_menu.show()
+                if result == 'settings_changed':
+                    # Settings were changed, need to restart app
+                    return 'restart'
+                elif result:
                     self.state = 'playing'
                     # Start panel animation
                     self.panel_animation_active = True

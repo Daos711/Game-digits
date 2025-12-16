@@ -1,7 +1,7 @@
 import pygame
 
-from game_digits.constants import TILE_SIZE, GAP, grid_to_pixel_center
-from game_digits.scale import scaled
+from game_digits import scale
+from game_digits.constants import grid_to_pixel_center
 
 
 class ScorePopup(pygame.sprite.Sprite):
@@ -37,7 +37,7 @@ class ScorePopup(pygame.sprite.Sprite):
         self.base_color = (80, 80, 80)
 
         # Создаём изображение с тонким шрифтом
-        self.font = pygame.font.SysFont('arial', scaled(36), bold=False)
+        self.font = pygame.font.SysFont('arial', scale.scaled(36), bold=False)
         prefix = "-" if negative else "+"
         self.base_image = self.font.render(f"{prefix}{value}", True, self.base_color)
         self.image = self.base_image.copy()
