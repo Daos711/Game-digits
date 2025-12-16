@@ -95,9 +95,9 @@ def draw_rank_badge(surface, rect, rank_name, fg_color, bg_color):
     radius = height // 2
     pygame.draw.rect(surface, bg_color, rect, border_radius=radius)
 
-    # Draw subtle border (slightly darker than bg)
-    border_color = tuple(max(0, int(c * 0.85)) for c in bg_color)
-    pygame.draw.rect(surface, border_color, rect, width=1, border_radius=radius)
+    # Draw border (darker than bg for better contrast)
+    border_color = tuple(max(0, int(c * 0.75)) for c in bg_color)
+    pygame.draw.rect(surface, border_color, rect, width=2, border_radius=radius)
 
     # Draw text
     font_size = max(10, height - scale.scaled(8))
