@@ -4,7 +4,7 @@ import pygame
 from game_digits import get_font_path
 from game_digits import ui_components as ui
 from game_digits import settings
-from game_digits.scale import scaled, CORNER_RADIUS
+from game_digits import scale
 
 
 class SettingsWindow:
@@ -16,17 +16,14 @@ class SettingsWindow:
         redraw_callback: Function to call to redraw background
     """
 
-    # Window dimensions
-    WINDOW_WIDTH = scaled(380)
-    WINDOW_HEIGHT = scaled(250)
-
-    # Layout
-    HEADER_HEIGHT = scaled(50)
-    PADDING = scaled(25)
-    ROW_HEIGHT = scaled(50)
-    ROW_GAP = scaled(20)
-
     def __init__(self, screen, screen_size, redraw_callback):
+        # Window dimensions - computed at runtime
+        self.WINDOW_WIDTH = scale.scaled(380)
+        self.WINDOW_HEIGHT = scale.scaled(250)
+        self.HEADER_HEIGHT = scale.scaled(50)
+        self.PADDING = scale.scaled(25)
+        self.ROW_HEIGHT = scale.scaled(50)
+        self.ROW_GAP = scale.scaled(20)
         self.screen = screen
         self.screen_width, self.screen_height = screen_size
         self.redraw_callback = redraw_callback
@@ -37,15 +34,15 @@ class SettingsWindow:
 
         # Load fonts
         bold_font_path = get_font_path("2204.ttf")
-        self.title_font = pygame.font.Font(bold_font_path, scaled(28))
-        self.label_font = pygame.font.Font(bold_font_path, scaled(22))
-        self.value_font = pygame.font.Font(bold_font_path, scaled(20))
-        self.button_font = pygame.font.Font(bold_font_path, scaled(24))
+        self.title_font = pygame.font.Font(bold_font_path, scale.scaled(28))
+        self.label_font = pygame.font.Font(bold_font_path, scale.scaled(22))
+        self.value_font = pygame.font.Font(bold_font_path, scale.scaled(20))
+        self.button_font = pygame.font.Font(bold_font_path, scale.scaled(24))
 
         # Button dimensions
-        self.arrow_btn_size = scaled(36)
+        self.arrow_btn_size = scale.scaled(36)
         self.apply_btn_width = self.WINDOW_WIDTH - 2 * self.PADDING
-        self.apply_btn_height = scaled(45)
+        self.apply_btn_height = scale.scaled(45)
 
         # State
         self.close_pressed = False
@@ -59,8 +56,8 @@ class SettingsWindow:
 
     def _get_close_button_rect(self):
         """Get the close button rectangle."""
-        btn_size = scaled(32)
-        btn_margin = scaled(8)
+        btn_size = scale.scaled(32)
+        btn_margin = scale.scaled(8)
         return pygame.Rect(
             self.window_x + self.WINDOW_WIDTH - btn_size - btn_margin,
             self.window_y + (self.HEADER_HEIGHT - btn_size) // 2,
@@ -100,7 +97,7 @@ class SettingsWindow:
     def _draw_arrow_button(self, surface, rect, direction, is_pressed=False):
         """Draw an arrow button (< or >)."""
         x, y, w, h = rect
-        radius = scaled(6)
+        radius = scale.scaled(6)
 
         if is_pressed:
             color_top = (200, 135, 0)
@@ -145,8 +142,8 @@ class SettingsWindow:
             window_surface,
             (0, 0, self.WINDOW_WIDTH, self.WINDOW_HEIGHT),
             self.HEADER_HEIGHT,
-            corner_radius=CORNER_RADIUS,
-            cell_size=scaled(18),
+            corner_radius=scale.CORNER_RADIUS,
+            cell_size=scale.scaled(18),
             border_color=(100, 150, 130),
             border_width=2
         )
@@ -171,13 +168,13 @@ class SettingsWindow:
         current_y += self.ROW_HEIGHT
 
         # Value display area (between arrows)
-        value_area_x = self.PADDING + self.arrow_btn_size + scaled(15)
-        value_area_width = self.WINDOW_WIDTH - 2 * self.PADDING - 2 * self.arrow_btn_size - scaled(30)
+        value_area_x = self.PADDING + self.arrow_btn_size + scale.scaled(15)
+        value_area_width = self.WINDOW_WIDTH - 2 * self.PADDING - 2 * self.arrow_btn_size - scale.scaled(30)
 
         # Draw value background
         value_rect = (value_area_x, current_y, value_area_width, self.ROW_HEIGHT)
-        pygame.draw.rect(window_surface, (230, 240, 250), value_rect, border_radius=scaled(8))
-        pygame.draw.rect(window_surface, (150, 180, 200), value_rect, width=2, border_radius=scaled(8))
+        pygame.draw.rect(window_surface, (230, 240, 250), value_rect, border_radius=scale.scaled(8))
+        pygame.draw.rect(window_surface, (150, 180, 200), value_rect, width=2, border_radius=scale.scaled(8))
 
         # Draw current preset name
         preset_name = settings.get_preset_name()

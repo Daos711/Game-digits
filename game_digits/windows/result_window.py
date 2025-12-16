@@ -5,10 +5,7 @@ import pygame
 from game_digits import get_font_path
 from game_digits import ui_components as ui
 from game_digits import records
-from game_digits.scale import (
-    FONT_RESULT_TITLE, FONT_RESULT_LABEL, FONT_RESULT_VALUE, FONT_RESULT_BUTTON,
-    CORNER_RADIUS, scaled
-)
+from game_digits import scale
 from game_digits.sprites import ConfettiSystem
 
 
@@ -29,14 +26,14 @@ class ResultWindow:
     NUMBER_ANIMATION_DURATION = 2500  # Number animation duration (2.5s)
 
     # Window dimensions (масштабируемые)
-    WINDOW_WIDTH = scaled(420)
-    WINDOW_HEIGHT = scaled(340)
+    WINDOW_WIDTH = scale.scaled(420)
+    WINDOW_HEIGHT = scale.scaled(340)
 
     # Layout constants (масштабируемые)
-    HEADER_HEIGHT = scaled(50)
-    PADDING = scaled(20)
-    ROW_HEIGHT = scaled(50)
-    ROW_GAP = scaled(12)
+    HEADER_HEIGHT = scale.scaled(50)
+    PADDING = scale.scaled(20)
+    ROW_HEIGHT = scale.scaled(50)
+    ROW_GAP = scale.scaled(12)
 
     def __init__(self, screen, screen_size, game_score, current_time, redraw_callback, play_sound_callback=None, test_mode=False):
         self.screen = screen
@@ -65,7 +62,7 @@ class ResultWindow:
         )
 
         # Adjust window height if showing congratulations
-        self.CONGRATS_HEIGHT = scaled(35) if self.record_position is not None else 0
+        self.CONGRATS_HEIGHT = scale.scaled(35) if self.record_position is not None else 0
         self.actual_window_height = self.WINDOW_HEIGHT + self.CONGRATS_HEIGHT
 
         # Recalculate window position with new height
@@ -73,17 +70,17 @@ class ResultWindow:
 
         # Load fonts
         bold_font_path = get_font_path("2204.ttf")
-        self.title_font = pygame.font.Font(bold_font_path, FONT_RESULT_TITLE)
-        self.label_font = pygame.font.Font(bold_font_path, FONT_RESULT_LABEL)
-        self.value_font = pygame.font.Font(bold_font_path, FONT_RESULT_VALUE)
-        self.button_font = pygame.font.Font(bold_font_path, FONT_RESULT_BUTTON)
+        self.title_font = pygame.font.Font(bold_font_path, scale.FONT_RESULT_TITLE)
+        self.label_font = pygame.font.Font(bold_font_path, scale.FONT_RESULT_LABEL)
+        self.value_font = pygame.font.Font(bold_font_path, scale.FONT_RESULT_VALUE)
+        self.button_font = pygame.font.Font(bold_font_path, scale.FONT_RESULT_BUTTON)
 
         # Button positions (relative to window) - adjusted for congrats row
         self.new_game_btn_rel = pygame.Rect(
             self.PADDING,
-            self.HEADER_HEIGHT + self.PADDING + (self.ROW_HEIGHT + self.ROW_GAP) * 3 + self.CONGRATS_HEIGHT + scaled(12),
+            self.HEADER_HEIGHT + self.PADDING + (self.ROW_HEIGHT + self.ROW_GAP) * 3 + self.CONGRATS_HEIGHT + scale.scaled(12),
             self.WINDOW_WIDTH - 2 * self.PADDING,
-            scaled(50)
+            scale.scaled(50)
         )
 
         # Button state tracking
@@ -138,8 +135,8 @@ class ResultWindow:
             window_surface,
             (0, 0, self.WINDOW_WIDTH, self.actual_window_height),
             self.HEADER_HEIGHT,
-            corner_radius=CORNER_RADIUS,
-            cell_size=scaled(18),
+            corner_radius=scale.CORNER_RADIUS,
+            cell_size=scale.scaled(18),
             border_color=(145, 179, 163)
         )
 
@@ -191,9 +188,9 @@ class ResultWindow:
             congrats_bg_color = (255, 238, 194)  # Светло-жёлтый
             congrats_text_color = (171, 78, 59)   # Красно-коричневый
             congrats_rect = pygame.Rect(row_x, current_y, row_width, self.CONGRATS_HEIGHT)
-            pygame.draw.rect(window_surface, congrats_bg_color, congrats_rect, border_radius=scaled(8))
+            pygame.draw.rect(window_surface, congrats_bg_color, congrats_rect, border_radius=scale.scaled(8))
             # Тонкая обводка
-            pygame.draw.rect(window_surface, (220, 200, 160), congrats_rect, width=1, border_radius=scaled(8))
+            pygame.draw.rect(window_surface, (220, 200, 160), congrats_rect, width=1, border_radius=scale.scaled(8))
             # Текст по центру рамки
             place_text = self._get_place_text(self.record_position)
             congrats_surf = self.label_font.render(place_text, True, congrats_text_color)

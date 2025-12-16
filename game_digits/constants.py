@@ -3,7 +3,17 @@ from game_digits import scale
 
 BOARD_SIZE = 10
 
-# Динамические значения из scale
+
+# Динамические значения - читаются из scale при каждом вызове
+def get_tile_size():
+    return scale.TILE_SIZE
+
+
+def get_gap():
+    return scale.GAP
+
+
+# Для обратной совместимости - эти значения обновляются через recalculate()
 TILE_SIZE = scale.TILE_SIZE
 GAP = scale.GAP
 
@@ -71,26 +81,32 @@ def create_background_surface(width, height):
 
 def grid_to_pixel(row, col):
     """Преобразует координаты сетки в пиксельные координаты (topleft)."""
-    x = (col + 1) * GAP + col * TILE_SIZE
-    y = (row + 1) * GAP + row * TILE_SIZE
+    tile_size = scale.TILE_SIZE
+    gap = scale.GAP
+    x = (col + 1) * gap + col * tile_size
+    y = (row + 1) * gap + row * tile_size
     return x, y
 
 
 def grid_to_pixel_center(row, col):
     """Преобразует координаты сетки в пиксельные координаты центра ячейки."""
     x, y = grid_to_pixel(row, col)
-    return x + TILE_SIZE // 2, y + TILE_SIZE // 2
+    return x + scale.TILE_SIZE // 2, y + scale.TILE_SIZE // 2
 
 
 def pixel_to_grid(x, y):
     """Преобразует пиксельные координаты в координаты сетки."""
-    col = (x - GAP) // (TILE_SIZE + GAP)
-    row = (y - GAP) // (TILE_SIZE + GAP)
+    tile_size = scale.TILE_SIZE
+    gap = scale.GAP
+    col = (x - gap) // (tile_size + gap)
+    row = (y - gap) // (tile_size + gap)
     return row, col
 
 
 def pixel_to_grid_round(x, y):
     """Преобразует пиксельные координаты в координаты сетки с округлением."""
-    col = round((x - GAP) / (TILE_SIZE + GAP))
-    row = round((y - GAP) / (TILE_SIZE + GAP))
+    tile_size = scale.TILE_SIZE
+    gap = scale.GAP
+    col = round((x - gap) / (tile_size + gap))
+    row = round((y - gap) / (tile_size + gap))
     return row, col
