@@ -4,7 +4,7 @@ Test mode application for quick result window testing.
 """
 import pygame
 
-from game_digits import get_image_path, get_font_path
+from game_digits import get_image_path, get_font_path, get_sound_path
 from game_digits.constants import (
     TILE_SIZE, GAP, COLORS,
     grid_to_pixel, pixel_to_grid, pixel_to_grid_round, create_background_surface
@@ -40,8 +40,11 @@ class TestGameApp:
         self.offset = (23, 23)
         self.COLORS = COLORS
 
+        pygame.mixer.pre_init(frequency=44100, size=-16, channels=1, buffer=256)
         pygame.init()
-        pygame.font.init()
+        # Загрузка звуков
+        self.sounds = {}
+        self._load_sounds()
 
         bold_cyrillic = get_font_path("2204.ttf")
         self.font_bold_large = pygame.font.Font(bold_cyrillic, FONT_PANEL_LABEL)
@@ -282,6 +285,26 @@ class TestGameApp:
             )
             ui.draw_sun_icon(self.screen, (icon_x + ICON_SIZE // 2, score_icon_y + ICON_SIZE // 2), ICON_SIZE)
 
+    def _load_sounds(self):
+        """Загрузка звуковых эффектов."""
+        sound_files = {
+            'remove': 'remove.wav',
+            'spawn': 'spawn.wav',
+            'celebration': 'celebration.wav',
+        }
+        for name, filename in sound_files.items():
+            try:
+                path = get_sound_path(filename)
+                self.sounds[name] = pygame.mixer.Sound(path)
+            except (pygame.error, FileNotFoundError):
+                self.sounds[name] = None
+
+    def play_sound(self, name):
+        """Воспроизвести звук по имени."""
+        sound = self.sounds.get(name)
+        if sound:
+            sound.play()
+
     def show_result_window(self):
         """Display the game result window with final score.
 
@@ -300,7 +323,8 @@ class TestGameApp:
             screen_size=(self.WIDTH, self.HEIGHT),
             game_score=self.game.score,
             current_time=self.game.current_time,
-            redraw_callback=redraw_background
+            redraw_callback=redraw_background,
+            play_sound_callback=self.play_sound
         )
         return result_window.show()
 

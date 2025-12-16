@@ -330,7 +330,6 @@ class GameApp:
     def _load_sounds(self):
         """Загрузка звуковых эффектов."""
         sound_files = {
-            'click': 'click.wav',
             'remove': 'remove.wav',
             'spawn': 'spawn.wav',
             'celebration': 'celebration.wav',
