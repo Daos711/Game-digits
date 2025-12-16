@@ -162,7 +162,10 @@ class SettingsWindow:
             (0, 0, self.WINDOW_WIDTH, self.HEADER_HEIGHT),
             "Настройки",
             self.title_font,
-            close_pressed=self.close_pressed
+            close_pressed=self.close_pressed,
+            corner_radius=self.corner_radius,
+            close_btn_size=self.close_btn_size,
+            close_btn_margin=self.close_btn_margin
         )
 
         # === Resolution setting ===

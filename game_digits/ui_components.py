@@ -411,7 +411,8 @@ def draw_close_button(surface, rect, is_pressed=False):
     return pygame.Rect(x, y, w, h)
 
 
-def draw_result_window_header(surface, rect, title, font, close_pressed=False):
+def draw_result_window_header(surface, rect, title, font, close_pressed=False,
+                               corner_radius=None, close_btn_size=None, close_btn_margin=None):
     """Draw the yellow header bar with title and close button.
 
     Args:
@@ -420,12 +421,15 @@ def draw_result_window_header(surface, rect, title, font, close_pressed=False):
         title: Title text to display
         font: Font for the title
         close_pressed: If True, draw close button in pressed state
+        corner_radius: Optional fixed corner radius (uses scale.CORNER_RADIUS if None)
+        close_btn_size: Optional fixed close button size (uses scale.scaled(32) if None)
+        close_btn_margin: Optional fixed close button margin (uses scale.scaled(8) if None)
 
     Returns:
         pygame.Rect of the close button
     """
     x, y, w, h = rect
-    radius = scale.CORNER_RADIUS
+    radius = corner_radius if corner_radius is not None else scale.CORNER_RADIUS
 
     # Header background - yellow RGB(254, 211, 113)
     header_color = (254, 211, 113)
@@ -446,8 +450,8 @@ def draw_result_window_header(surface, rect, title, font, close_pressed=False):
     surface.blit(title_surface, title_rect)
 
     # Close button - square with rounded corners
-    btn_size = scale.scaled(32)
-    btn_margin = scale.scaled(8)
+    btn_size = close_btn_size if close_btn_size is not None else scale.scaled(32)
+    btn_margin = close_btn_margin if close_btn_margin is not None else scale.scaled(8)
     btn_x = x + w - btn_size - btn_margin
     btn_y = y + (h - btn_size) // 2
 
