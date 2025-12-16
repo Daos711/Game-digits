@@ -3,40 +3,37 @@ Rank system based on total score.
 Rankings from the original game community.
 """
 
-# Rank definitions: (min_score, name, colors)
-# Colors progress from simple to impressive as rank increases
-# Each rank has: (primary_color, secondary_color, style)
-# style: 'solid', 'gradient', 'gradient_triple', 'rainbow'
-
+# Rank definitions: (min_score, name, fg_color, bg_color)
+# fg_color = text color, bg_color = badge background color
 RANKS = [
-    # Начальные ранги - простые цвета
-    (0,    "Новичок",                    ((140, 140, 140), None, 'solid')),
-    (1800, "Любитель",                   ((100, 180, 100), None, 'solid')),
-    (2000, "Энтузиаст",                  ((80, 160, 80), None, 'solid')),
-    (2200, "Юниор",                      ((60, 180, 180), None, 'solid')),
+    # Начальные ранги
+    (0,    "Новичок",                    (122, 127, 134), (238, 240, 242)),
+    (1800, "Любитель",                   (46, 125, 50),   (231, 244, 232)),
+    (2000, "Энтузиаст",                  (0, 137, 123),   (224, 245, 242)),
+    (2200, "Юниор",                      (30, 136, 229),  (227, 241, 255)),
 
-    # Разряды - синяя гамма
-    (2300, "3 разряд",                   ((70, 130, 200), None, 'solid')),
-    (2400, "2 разряд",                   ((50, 100, 200), None, 'solid')),
-    (2500, "1 разряд",                   ((80, 80, 200), (130, 80, 200), 'gradient')),
+    # Разряды
+    (2300, "3 разряд",                   (166, 106, 46),  (244, 233, 223)),
+    (2400, "2 разряд",                   (96, 125, 139),  (233, 238, 242)),
+    (2500, "1 разряд",                   (184, 134, 11),  (255, 243, 204)),
 
-    # Мастерские ранги - тёплые тона
-    (2600, "Кандидат в мастера",         ((180, 80, 180), (220, 100, 150), 'gradient')),
-    (2700, "Мастер",                     ((220, 150, 50), (240, 180, 80), 'gradient')),
-    (2800, "Мастер международного класса", ((220, 100, 50), (240, 150, 50), 'gradient')),
+    # Мастерские ранги
+    (2600, "Кандидат в мастера",         (106, 27, 154),  (241, 230, 250)),
+    (2700, "Мастер",                     (40, 53, 147),   (230, 234, 251)),
+    (2800, "Мастер международного класса", (0, 102, 204),   (225, 240, 255)),
 
-    # Элитные ранги - красные и золотые
-    (2900, "Эксперт",                    ((200, 50, 50), (240, 80, 80), 'gradient')),
-    (3000, "Гроссмейстер",               ((180, 30, 60), (220, 50, 80), 'gradient')),
-    (3100, "Соломон",                    ((212, 175, 55), (255, 215, 0), 'gradient')),
+    # Элитные ранги
+    (2900, "Эксперт",                    (13, 71, 161),   (227, 236, 255)),
+    (3000, "Гроссмейстер",               (183, 28, 28),   (252, 229, 229)),
+    (3100, "Соломон",                    (47, 143, 58),   (230, 255, 233)),
 
-    # Легендарные ранги - особые эффекты
-    (3200, "Сверхчеловек",               ((255, 200, 50), (255, 150, 0), (255, 100, 50), 'gradient_triple')),
-    (3300, "Титан",                      ((200, 50, 200), (50, 150, 255), (50, 220, 150), 'gradient_triple')),
-    (3400, "Зевс-Демиург",               ((255, 215, 0), (200, 80, 200), (100, 150, 255), 'gradient_triple')),
+    # Легендарные ранги
+    (3200, "Сверхчеловек",               (122, 155, 0),   (243, 255, 224)),
+    (3300, "Титан",                      (245, 124, 0),   (255, 233, 214)),
+    (3400, "Зевс-Демиург",               (94, 53, 177),   (240, 234, 254)),
 
-    # Запредельный ранг - радуга
-    (3500, "Unreal",                     ((255, 0, 0), (255, 255, 0), (0, 255, 0), (0, 255, 255), (0, 0, 255), (255, 0, 255), 'rainbow')),
+    # Запредельный ранг
+    (3500, "Unreal",                     (213, 0, 249),   (252, 230, 255)),
 ]
 
 
@@ -45,19 +42,21 @@ def get_rank(total_score: int) -> tuple:
     Get rank info for a given total score.
 
     Returns:
-        tuple: (name, colors_info) where colors_info is (color1, color2/None, style)
+        tuple: (name, fg_color, bg_color)
     """
     rank_name = RANKS[0][1]
-    rank_colors = RANKS[0][2]
+    fg_color = RANKS[0][2]
+    bg_color = RANKS[0][3]
 
-    for min_score, name, colors in RANKS:
+    for min_score, name, fg, bg in RANKS:
         if total_score >= min_score:
             rank_name = name
-            rank_colors = colors
+            fg_color = fg
+            bg_color = bg
         else:
             break
 
-    return rank_name, rank_colors
+    return rank_name, fg_color, bg_color
 
 
 def get_rank_name(total_score: int) -> str:
@@ -68,7 +67,7 @@ def get_rank_name(total_score: int) -> str:
 def get_rank_index(total_score: int) -> int:
     """Get the rank index (0-based) for a given total score."""
     index = 0
-    for i, (min_score, _, _) in enumerate(RANKS):
+    for i, (min_score, _, _, _) in enumerate(RANKS):
         if total_score >= min_score:
             index = i
         else:
@@ -76,66 +75,56 @@ def get_rank_index(total_score: int) -> int:
     return index
 
 
-def draw_rank_bar(surface, rect, colors_info, time_offset=0):
+def draw_rank_badge(surface, rect, rank_name, fg_color, bg_color):
     """
-    Draw a rank color bar on the given surface.
+    Draw a rank badge (capsule/pill shape) on the given surface.
 
     Args:
         surface: pygame Surface to draw on
         rect: (x, y, width, height) tuple
-        colors_info: (color1, color2/more, style) from RANKS
-        time_offset: for animated effects (rainbow)
+        rank_name: Name of the rank to display
+        fg_color: Text color
+        bg_color: Background color
+    """
+    import pygame
+    from game_digits import get_font_path, scale
+
+    x, y, width, height = rect
+
+    # Draw pill-shaped background
+    radius = height // 2
+    pygame.draw.rect(surface, bg_color, rect, border_radius=radius)
+
+    # Draw subtle border (slightly darker than bg)
+    border_color = tuple(max(0, int(c * 0.85)) for c in bg_color)
+    pygame.draw.rect(surface, border_color, rect, width=1, border_radius=radius)
+
+    # Draw text
+    font_size = max(10, height - scale.scaled(8))
+    font = pygame.font.Font(get_font_path("2204.ttf"), font_size)
+    text = font.render(rank_name, True, fg_color)
+    text_rect = text.get_rect(center=(x + width // 2, y + height // 2))
+    surface.blit(text, text_rect)
+
+
+def draw_rank_bar(surface, rect, colors_info, time_offset=0):
+    """
+    Legacy function for backward compatibility.
+    Now draws a simple colored bar.
     """
     import pygame
 
     x, y, width, height = rect
 
-    if colors_info[-1] == 'solid':
-        color = colors_info[0]
-        pygame.draw.rect(surface, color, rect)
+    # Use first color for solid bar
+    if isinstance(colors_info, tuple) and len(colors_info) >= 2:
+        # New format: (fg_color, bg_color) - use bg_color for bar
+        color = colors_info[1] if len(colors_info) == 2 else colors_info[0]
+    else:
+        color = colors_info[0] if colors_info else (150, 150, 150)
 
-    elif colors_info[-1] == 'gradient':
-        color1, color2 = colors_info[0], colors_info[1]
-        for i in range(width):
-            t = i / max(1, width - 1)
-            r = int(color1[0] + (color2[0] - color1[0]) * t)
-            g = int(color1[1] + (color2[1] - color1[1]) * t)
-            b = int(color1[2] + (color2[2] - color1[2]) * t)
-            pygame.draw.line(surface, (r, g, b), (x + i, y), (x + i, y + height - 1))
-
-    elif colors_info[-1] == 'gradient_triple':
-        color1, color2, color3 = colors_info[0], colors_info[1], colors_info[2]
-        for i in range(width):
-            t = i / max(1, width - 1)
-            if t < 0.5:
-                t2 = t * 2
-                r = int(color1[0] + (color2[0] - color1[0]) * t2)
-                g = int(color1[1] + (color2[1] - color1[1]) * t2)
-                b = int(color1[2] + (color2[2] - color1[2]) * t2)
-            else:
-                t2 = (t - 0.5) * 2
-                r = int(color2[0] + (color3[0] - color2[0]) * t2)
-                g = int(color2[1] + (color3[1] - color2[1]) * t2)
-                b = int(color2[2] + (color3[2] - color2[2]) * t2)
-            pygame.draw.line(surface, (r, g, b), (x + i, y), (x + i, y + height - 1))
-
-    elif colors_info[-1] == 'rainbow':
-        # Rainbow gradient with optional animation
-        colors = colors_info[:-1]  # All colors except 'rainbow'
-        num_colors = len(colors)
-        for i in range(width):
-            t = ((i / max(1, width - 1)) + time_offset) % 1.0
-            segment = t * (num_colors - 1)
-            idx1 = int(segment)
-            idx2 = min(idx1 + 1, num_colors - 1)
-            local_t = segment - idx1
-
-            c1, c2 = colors[idx1], colors[idx2]
-            r = int(c1[0] + (c2[0] - c1[0]) * local_t)
-            g = int(c1[1] + (c2[1] - c1[1]) * local_t)
-            b = int(c1[2] + (c2[2] - c1[2]) * local_t)
-            pygame.draw.line(surface, (r, g, b), (x + i, y), (x + i, y + height - 1))
+    pygame.draw.rect(surface, color, rect, border_radius=height // 2)
 
     # Add subtle border
-    border_color = (50, 50, 50)
-    pygame.draw.rect(surface, border_color, rect, 1)
+    border_color = tuple(max(0, int(c * 0.85)) for c in color)
+    pygame.draw.rect(surface, border_color, rect, width=1, border_radius=height // 2)

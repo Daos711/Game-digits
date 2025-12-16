@@ -73,6 +73,10 @@ class SettingsWindow:
         self.size_changed = False
         self.speed_changed = False
 
+        # Animation state
+        self.animation_start_time = 0
+        self.FADE_IN_DURATION = 200  # ms
+
     def _get_close_button_rect(self):
         """Get the close button rectangle."""
         return pygame.Rect(
@@ -209,8 +213,8 @@ class SettingsWindow:
         self._draw_arrow_button(surface, left_rect, 'left', left_pressed)
         self._draw_arrow_button(surface, right_rect, 'right', right_pressed)
 
-    def _draw_window(self):
-        """Draw the settings window."""
+    def _draw_window_surface(self):
+        """Draw and return the settings window surface."""
         # Create window surface
         window_surface = pygame.Surface(
             (self.WINDOW_WIDTH, self.WINDOW_HEIGHT),
@@ -270,8 +274,7 @@ class SettingsWindow:
                                is_pressed=self.apply_pressed, text="Применить",
                                corner_radius=self.button_radius)
 
-        # Blit window to screen
-        self.screen.blit(window_surface, (self.window_x, self.window_y))
+        return window_surface
 
     def show(self):
         """Show the settings window and handle events.
@@ -283,18 +286,29 @@ class SettingsWindow:
         """
         clock = pygame.time.Clock()
         running = True
+        self.animation_start_time = pygame.time.get_ticks()
 
         while running:
+            current_time = pygame.time.get_ticks()
+
+            # Calculate fade-in progress
+            elapsed = current_time - self.animation_start_time
+            fade_progress = min(1.0, elapsed / self.FADE_IN_DURATION)
+
             # Redraw background
             self.redraw_callback()
 
-            # Draw semi-transparent overlay
+            # Draw semi-transparent overlay with fade-in
+            overlay_alpha = int(100 * fade_progress)
             overlay = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
-            overlay.fill((0, 0, 0, 100))
+            overlay.fill((0, 0, 0, overlay_alpha))
             self.screen.blit(overlay, (0, 0))
 
-            # Draw window
-            self._draw_window()
+            # Draw window with fade-in
+            window_surface = self._draw_window_surface()
+            if fade_progress < 1.0:
+                window_surface.set_alpha(int(255 * fade_progress))
+            self.screen.blit(window_surface, (self.window_x, self.window_y))
 
             pygame.display.flip()
 

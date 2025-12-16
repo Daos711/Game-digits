@@ -53,8 +53,8 @@ class ResultWindow:
         self.bonus = 300 + 5 * self.remaining_time
         self.total_score = self.game_score + self.bonus
 
-        # Get rank info
-        self.rank_name, self.rank_colors = ranks.get_rank(self.total_score)
+        # Get rank info (name, fg_color, bg_color)
+        self.rank_name, self.rank_fg, self.rank_bg = ranks.get_rank(self.total_score)
 
         # Add height for rank row
         self.RANK_ROW_HEIGHT = scale.scaled(45)
@@ -193,29 +193,22 @@ class ResultWindow:
         if rows_to_show >= 3 and current_total == self.total_score:
             # Rank row background
             rank_row_rect = pygame.Rect(row_x, current_y, row_width, self.RANK_ROW_HEIGHT - self.ROW_GAP)
-            pygame.draw.rect(window_surface, (240, 245, 235), rank_row_rect, border_radius=scale.scaled(8))
+            pygame.draw.rect(window_surface, (250, 248, 242), rank_row_rect, border_radius=scale.scaled(8))
 
-            # "Ранг:" label
-            rank_label = self.label_font.render("Ваш ранг:", True, (60, 60, 60))
+            # "Ваш ранг:" label
+            rank_label = self.label_font.render("Ваш ранг:", True, (80, 70, 60))
             label_rect = rank_label.get_rect(midleft=(row_x + scale.scaled(15), current_y + rank_row_rect.height // 2))
             window_surface.blit(rank_label, label_rect)
 
-            # Rank color bar with name
-            bar_width = scale.scaled(180)
-            bar_height = scale.scaled(24)
-            bar_x = row_x + row_width - bar_width - scale.scaled(15)
-            bar_y = current_y + (rank_row_rect.height - bar_height) // 2
+            # Rank badge
+            badge_width = scale.scaled(180)
+            badge_height = scale.scaled(26)
+            badge_x = row_x + row_width - badge_width - scale.scaled(15)
+            badge_y = current_y + (rank_row_rect.height - badge_height) // 2
 
-            # Draw rank bar
-            ranks.draw_rank_bar(window_surface, (bar_x, bar_y, bar_width, bar_height), self.rank_colors)
-
-            # Rank name on bar
-            rank_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(13))
-            rank_text = rank_font.render(self.rank_name, True, (255, 255, 255))
-            rank_shadow = rank_font.render(self.rank_name, True, (0, 0, 0))
-            text_rect = rank_text.get_rect(center=(bar_x + bar_width // 2, bar_y + bar_height // 2))
-            window_surface.blit(rank_shadow, (text_rect.x + 1, text_rect.y + 1))
-            window_surface.blit(rank_text, text_rect)
+            # Draw rank badge
+            ranks.draw_rank_badge(window_surface, (badge_x, badge_y, badge_width, badge_height),
+                                 self.rank_name, self.rank_fg, self.rank_bg)
 
         current_y += self.RANK_ROW_HEIGHT
 
