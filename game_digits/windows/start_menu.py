@@ -8,6 +8,7 @@ from game_digits import scale
 from game_digits.constants import COLORS, TILE_BORDER_COLOR
 from game_digits import ui_components as ui
 from game_digits import records
+from game_digits import ranks
 from game_digits.windows.settings_window import SettingsWindow
 
 
@@ -394,86 +395,147 @@ class StartMenu:
         )
 
     def _draw_records_panel(self):
-        """Draw the records list on the right panel."""
+        """Draw the full records table over the game field."""
         if self.records_slide_progress <= 0:
             return
 
-        # Calculate slide offset (slides down from top)
-        panel_height = scale.RECORDS_PANEL_HEIGHT
-        offset_y = int((1 - self.records_slide_progress) * -panel_height)
+        # Game field dimensions
+        frame = scale.FRAME_WIDTH
+        field_x = 2 * frame
+        field_y = 2 * frame
+        field_size = self.screen_height - 4 * frame
 
-        # Panel position
-        panel_x = self.PANEL_X + scale.scaled(10)
-        panel_y = scale.RECORDS_PANEL_TOP + offset_y
-        panel_width = self.PANEL_WIDTH - scale.scaled(20)
+        # Panel dimensions (over game field)
+        panel_padding = scale.scaled(15)
+        panel_x = field_x + panel_padding
+        panel_y = field_y + panel_padding
+        panel_width = field_size - 2 * panel_padding
+        panel_height = field_size - 2 * panel_padding
+
+        # Slide animation (fade + scale)
+        alpha = int(255 * self.records_slide_progress)
 
         # Create panel surface
         panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
 
-        # Background
-        pygame.draw.rect(panel_surface, (30, 70, 100, 240),
-                        (0, 0, panel_width, panel_height), border_radius=scale.CORNER_RADIUS)
-        pygame.draw.rect(panel_surface, (50, 100, 140),
-                        (0, 0, panel_width, panel_height), width=scale.BORDER_WIDTH, border_radius=scale.CORNER_RADIUS)
+        # Background with rounded corners
+        pygame.draw.rect(panel_surface, (25, 50, 75, 245),
+                        (0, 0, panel_width, panel_height), border_radius=scale.scaled(12))
+        pygame.draw.rect(panel_surface, (60, 100, 140),
+                        (0, 0, panel_width, panel_height), width=2, border_radius=scale.scaled(12))
 
-        # Column positions (center-aligned)
-        col_positions = [scale.RECORDS_COL_1, scale.RECORDS_COL_2, scale.RECORDS_COL_3, scale.RECORDS_COL_4]
+        # Title
+        title_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(28))
+        title = title_font.render("Таблица рекордов", True, (255, 220, 100))
+        title_rect = title.get_rect(center=(panel_width // 2, scale.scaled(30)))
+        panel_surface.blit(title, title_rect)
 
-        # Column headers
-        headers = ["#", "Очки", "Бонус", "Итого"]
-        for text, center_x in zip(headers, col_positions):
-            header = self.records_small_font.render(text, True, (180, 200, 220))
-            header_rect = header.get_rect(center=(center_x, scale.RECORDS_HEADER_Y + scale.scaled(7)))
+        # Column positions (proportional to panel width)
+        # Columns: # | Дата | Очки | Бонус | Итого | Ранг
+        col_widths = [0.06, 0.14, 0.12, 0.12, 0.12, 0.44]  # Proportions
+        col_positions = []
+        x = 0
+        for w in col_widths:
+            col_positions.append(int(x + w * panel_width / 2))
+            x += w * panel_width
+
+        # Header
+        header_y = scale.scaled(55)
+        headers = ["#", "Дата", "Очки", "Бонус", "Итого", "Ранг"]
+        header_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(14))
+        for text, cx in zip(headers, col_positions):
+            header = header_font.render(text, True, (180, 200, 220))
+            header_rect = header.get_rect(center=(cx, header_y))
             panel_surface.blit(header, header_rect)
 
         # Divider line
-        divider_y = scale.scaled(35)
-        pygame.draw.line(panel_surface, (80, 120, 160), (scale.scaled(10), divider_y), (panel_width - scale.scaled(10), divider_y), 1)
+        divider_y = scale.scaled(70)
+        pygame.draw.line(panel_surface, (80, 120, 160),
+                        (scale.scaled(10), divider_y),
+                        (panel_width - scale.scaled(10), divider_y), 1)
 
         # Records
+        row_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(15))
+        small_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(12))
+
         if not self.cached_records:
-            # No records message
-            no_records = self.records_font.render("Нет записей", True, (150, 170, 190))
-            no_records_rect = no_records.get_rect(center=(panel_width // 2, scale.scaled(100)))
+            no_records = row_font.render("Нет записей", True, (150, 170, 190))
+            no_records_rect = no_records.get_rect(center=(panel_width // 2, panel_height // 2))
             panel_surface.blit(no_records, no_records_rect)
         else:
-            row_height = scale.RECORDS_ROW_HEIGHT
+            row_height = scale.scaled(38)
+            start_y = scale.scaled(80)
+
             for i, record in enumerate(self.cached_records[:10]):
-                row_y = scale.RECORDS_START_Y + i * row_height
+                row_y = start_y + i * row_height
 
                 # Alternate row background
                 if i % 2 == 0:
-                    pygame.draw.rect(panel_surface, (40, 80, 120, 100),
-                                    (scale.scaled(5), row_y, panel_width - scale.scaled(10), row_height - scale.scaled(5)),
-                                    border_radius=scale.scaled(5))
+                    pygame.draw.rect(panel_surface, (35, 65, 95, 150),
+                                    (scale.scaled(8), row_y - scale.scaled(2),
+                                     panel_width - scale.scaled(16), row_height - scale.scaled(4)),
+                                    border_radius=scale.scaled(4))
+
+                # Get rank info
+                total = record.get('total', 0)
+                rank_name, rank_colors = ranks.get_rank(total)
 
                 # Position number
-                pos_text = self.records_font.render(f"{i + 1}", True, (200, 180, 100))
-                pos_rect = pos_text.get_rect(center=(col_positions[0], row_y + scale.scaled(12)))
+                pos_color = (255, 215, 0) if i == 0 else (200, 200, 200) if i == 1 else (180, 130, 80) if i == 2 else (150, 170, 190)
+                pos_text = row_font.render(f"{i + 1}", True, pos_color)
+                pos_rect = pos_text.get_rect(center=(col_positions[0], row_y + row_height // 2 - scale.scaled(2)))
                 panel_surface.blit(pos_text, pos_rect)
 
-                # Score
-                score_text = self.records_font.render(str(record.get('score', 0)), True, (255, 255, 255))
-                score_rect = score_text.get_rect(center=(col_positions[1], row_y + scale.scaled(12)))
+                # Date
+                date_text = small_font.render(record.get('date', ''), True, (160, 180, 200))
+                date_rect = date_text.get_rect(center=(col_positions[1], row_y + row_height // 2 - scale.scaled(2)))
+                panel_surface.blit(date_text, date_rect)
+
+                # Score (Очки / Первая строка)
+                score_text = row_font.render(str(record.get('score', 0)), True, (255, 255, 255))
+                score_rect = score_text.get_rect(center=(col_positions[2], row_y + row_height // 2 - scale.scaled(2)))
                 panel_surface.blit(score_text, score_rect)
 
                 # Bonus
-                bonus_text = self.records_font.render(str(record.get('bonus', 0)), True, (150, 220, 150))
-                bonus_rect = bonus_text.get_rect(center=(col_positions[2], row_y + scale.scaled(12)))
+                bonus_text = row_font.render(str(record.get('bonus', 0)), True, (150, 220, 150))
+                bonus_rect = bonus_text.get_rect(center=(col_positions[3], row_y + row_height // 2 - scale.scaled(2)))
                 panel_surface.blit(bonus_text, bonus_rect)
 
-                # Total
-                total_text = self.records_font.render(str(record.get('total', 0)), True, (255, 220, 100))
-                total_rect = total_text.get_rect(center=(col_positions[3], row_y + scale.scaled(12)))
+                # Total (Итого)
+                total_text = row_font.render(str(total), True, (255, 220, 100))
+                total_rect = total_text.get_rect(center=(col_positions[4], row_y + row_height // 2 - scale.scaled(2)))
                 panel_surface.blit(total_text, total_rect)
 
-                # Date (smaller, below, centered under score-bonus area)
-                date_text = self.records_small_font.render(record.get('date', ''), True, (140, 160, 180))
-                date_rect = date_text.get_rect(center=((col_positions[1] + col_positions[2]) // 2, row_y + scale.scaled(32)))
-                panel_surface.blit(date_text, date_rect)
+                # Rank with color bar
+                rank_bar_width = int(col_widths[5] * panel_width * 0.85)
+                rank_bar_height = scale.scaled(18)
+                rank_bar_x = col_positions[5] - rank_bar_width // 2 + scale.scaled(15)
+                rank_bar_y = row_y + (row_height - rank_bar_height) // 2 - scale.scaled(2)
+
+                # Draw rank color bar
+                ranks.draw_rank_bar(panel_surface,
+                                   (rank_bar_x, rank_bar_y, rank_bar_width, rank_bar_height),
+                                   rank_colors)
+
+                # Rank name on top of bar
+                rank_text = small_font.render(rank_name, True, (255, 255, 255))
+                # Add shadow for readability
+                rank_shadow = small_font.render(rank_name, True, (0, 0, 0))
+                rank_text_rect = rank_text.get_rect(center=(rank_bar_x + rank_bar_width // 2, rank_bar_y + rank_bar_height // 2))
+                panel_surface.blit(rank_shadow, (rank_text_rect.x + 1, rank_text_rect.y + 1))
+                panel_surface.blit(rank_text, rank_text_rect)
+
+        # Close hint
+        hint_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(12))
+        hint = hint_font.render("Нажмите для закрытия", True, (120, 140, 160))
+        hint_rect = hint.get_rect(center=(panel_width // 2, panel_height - scale.scaled(15)))
+        panel_surface.blit(hint, hint_rect)
+
+        # Apply alpha
+        panel_surface.set_alpha(alpha)
 
         # Draw panel
-        self.screen.blit(panel_surface, (panel_x, max(scale.RECORDS_PANEL_TOP, panel_y)))
+        self.screen.blit(panel_surface, (panel_x, panel_y))
 
     def _draw(self):
         """Draw the menu."""
