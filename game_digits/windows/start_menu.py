@@ -8,6 +8,7 @@ from game_digits import scale
 from game_digits.constants import COLORS, TILE_BORDER_COLOR
 from game_digits import ui_components as ui
 from game_digits import records
+from game_digits import ranks
 from game_digits.windows.settings_window import SettingsWindow
 
 
@@ -393,113 +394,307 @@ class StartMenu:
             self.settings_button_pressed, self.settings_button_hovered
         )
 
+    def _draw_trophy(self, surface, center_x, center_y, size, color):
+        """Draw a trophy icon programmatically."""
+        # Trophy dimensions
+        cup_w = size
+        cup_h = int(size * 0.6)
+        stem_w = int(size * 0.25)
+        stem_h = int(size * 0.25)
+        base_w = int(size * 0.5)
+        base_h = int(size * 0.15)
+
+        # Cup (trapezoid shape - wider at top)
+        cup_top = center_y - cup_h // 2 - stem_h // 2
+        cup_points = [
+            (center_x - cup_w // 2, cup_top),  # top-left
+            (center_x + cup_w // 2, cup_top),  # top-right
+            (center_x + cup_w // 3, cup_top + cup_h),  # bottom-right
+            (center_x - cup_w // 3, cup_top + cup_h),  # bottom-left
+        ]
+        pygame.draw.polygon(surface, color, cup_points)
+
+        # Stem
+        stem_top = cup_top + cup_h
+        stem_rect = pygame.Rect(center_x - stem_w // 2, stem_top, stem_w, stem_h)
+        pygame.draw.rect(surface, color, stem_rect)
+
+        # Base
+        base_top = stem_top + stem_h
+        base_rect = pygame.Rect(center_x - base_w // 2, base_top, base_w, base_h)
+        pygame.draw.rect(surface, color, base_rect, border_radius=2)
+
+        # Handles (small arcs on sides)
+        handle_r = int(size * 0.15)
+        pygame.draw.circle(surface, color, (center_x - cup_w // 2 - handle_r // 2, cup_top + cup_h // 2), handle_r, 2)
+        pygame.draw.circle(surface, color, (center_x + cup_w // 2 + handle_r // 2, cup_top + cup_h // 2), handle_r, 2)
+
+    def _draw_medal(self, surface, center_x, center_y, size, color, number):
+        """Draw a medal icon programmatically."""
+        # Medal circle
+        radius = size // 2
+        pygame.draw.circle(surface, color, (center_x, center_y), radius)
+
+        # Darker edge for depth
+        darker = tuple(max(0, int(c * 0.7)) for c in color)
+        pygame.draw.circle(surface, darker, (center_x, center_y), radius, 2)
+
+        # Inner highlight (lighter)
+        lighter = tuple(min(255, int(c * 1.2)) for c in color)
+        pygame.draw.circle(surface, lighter, (center_x - radius // 4, center_y - radius // 4), radius // 4)
+
+        # Ribbon (two small triangles above)
+        ribbon_w = size // 3
+        ribbon_h = size // 2
+        ribbon_top = center_y - radius - ribbon_h
+        # Left ribbon
+        pygame.draw.polygon(surface, (200, 60, 60), [
+            (center_x - ribbon_w, ribbon_top),
+            (center_x - 2, center_y - radius + 2),
+            (center_x - ribbon_w - 3, center_y - radius + 2),
+        ])
+        # Right ribbon
+        pygame.draw.polygon(surface, (180, 50, 50), [
+            (center_x + ribbon_w, ribbon_top),
+            (center_x + 2, center_y - radius + 2),
+            (center_x + ribbon_w + 3, center_y - radius + 2),
+        ])
+
+        # Number in center
+        font = pygame.font.Font(get_font_path("2204.ttf"), size // 2)
+        num_text = font.render(str(number), True, (255, 255, 255))
+        num_rect = num_text.get_rect(center=(center_x, center_y + 1))
+        surface.blit(num_text, num_rect)
+
     def _draw_records_panel(self):
-        """Draw the records list on the right panel."""
+        """Draw the full records table over the game field."""
         if self.records_slide_progress <= 0:
             return
 
-        # Calculate slide offset (slides down from top)
-        panel_height = scale.RECORDS_PANEL_HEIGHT
-        offset_y = int((1 - self.records_slide_progress) * -panel_height)
+        # Game field dimensions - draw directly on the field
+        frame = scale.FRAME_WIDTH
+        field_x = 2 * frame
+        field_y = 2 * frame
+        field_size = self.screen_height - 4 * frame
 
-        # Panel position
-        panel_x = self.PANEL_X + scale.scaled(10)
-        panel_y = scale.RECORDS_PANEL_TOP + offset_y
-        panel_width = self.PANEL_WIDTH - scale.scaled(20)
+        # Panel covers the entire game field
+        panel_width = field_size
+        panel_height = field_size
 
-        # Create panel surface
+        # Create panel surface with alpha support for soft shadows
         panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
 
-        # Background
-        pygame.draw.rect(panel_surface, (30, 70, 100, 240),
-                        (0, 0, panel_width, panel_height), border_radius=scale.CORNER_RADIUS)
-        pygame.draw.rect(panel_surface, (50, 100, 140),
-                        (0, 0, panel_width, panel_height), width=scale.BORDER_WIDTH, border_radius=scale.CORNER_RADIUS)
+        # Warm white background (base)
+        bg_color = (255, 253, 247)
+        panel_surface.fill(bg_color)
 
-        # Column positions (center-aligned)
-        col_positions = [scale.RECORDS_COL_1, scale.RECORDS_COL_2, scale.RECORDS_COL_3, scale.RECORDS_COL_4]
+        # Draw subtle grid lines (like notebook) - only on outer area
+        grid_color = (245, 242, 234)
+        cell_size = scale.scaled(25)
+        for x in range(0, panel_width, cell_size):
+            pygame.draw.line(panel_surface, grid_color, (x, 0), (x, panel_height), 1)
+        for y in range(0, panel_height, cell_size):
+            pygame.draw.line(panel_surface, grid_color, (0, y), (panel_width, y), 1)
 
-        # Column headers
-        headers = ["#", "Очки", "Бонус", "Итого"]
-        for text, center_x in zip(headers, col_positions):
-            header = self.records_small_font.render(text, True, (180, 200, 220))
-            header_rect = header.get_rect(center=(center_x, scale.RECORDS_HEADER_Y + scale.scaled(7)))
+        # Title
+        title_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(32))
+        title = title_font.render("Таблица рекордов", True, (80, 70, 60))
+        title_rect = title.get_rect(center=(panel_width // 2, scale.scaled(35)))
+        panel_surface.blit(title, title_rect)
+
+        # Decorative line under title
+        line_y = scale.scaled(60)
+        pygame.draw.line(panel_surface, (220, 200, 140),
+                        (scale.scaled(40), line_y),
+                        (panel_width - scale.scaled(40), line_y), 2)
+
+        # Table area dimensions (for solid card background)
+        padding = scale.scaled(12)
+        table_top = scale.scaled(70)
+        table_height = panel_height - table_top - scale.scaled(10)
+        content_width = panel_width - 2 * padding
+
+        # Draw soft shadow for table card (multiple layers)
+        shadow_offset = scale.scaled(2)
+        for i, alpha in enumerate([15, 25, 20]):
+            shadow_rect = pygame.Rect(padding + shadow_offset, table_top + shadow_offset + i,
+                                     content_width, table_height)
+            pygame.draw.rect(panel_surface, (0, 0, 0, alpha), shadow_rect, border_radius=scale.scaled(6))
+
+        # Draw solid white "card" background (no hard border)
+        table_card_rect = pygame.Rect(padding, table_top, content_width, table_height)
+        pygame.draw.rect(panel_surface, (255, 253, 247, 255), table_card_rect, border_radius=scale.scaled(6))
+
+        # Column positions (x positions for center/alignment of each column)
+        col_x = [
+            padding + scale.scaled(35),                    # #
+            padding + scale.scaled(115),                   # Дата
+            padding + scale.scaled(210),                   # Очки
+            padding + scale.scaled(295),                   # Бонус
+            padding + scale.scaled(385),                   # Итого
+            padding + content_width - scale.scaled(95),    # Ранг (badge center)
+        ]
+        rank_col_max_width = scale.scaled(180)  # Max width for rank badges
+
+        # Header
+        header_y = table_top + scale.scaled(18)
+        headers = ["#", "Дата", "Очки", "Бонус", "Итого", "Ранг"]
+        header_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(16))
+        header_color = (120, 110, 100)
+        for text, cx in zip(headers, col_x):
+            header = header_font.render(text, True, header_color)
+            header_rect = header.get_rect(center=(cx, header_y))
             panel_surface.blit(header, header_rect)
 
-        # Divider line
-        divider_y = scale.scaled(35)
-        pygame.draw.line(panel_surface, (80, 120, 160), (scale.scaled(10), divider_y), (panel_width - scale.scaled(10), divider_y), 1)
+        # Header divider
+        header_div_y = table_top + scale.scaled(35)
+        pygame.draw.line(panel_surface, (200, 190, 170),
+                        (padding + scale.scaled(5), header_div_y),
+                        (panel_width - padding - scale.scaled(5), header_div_y), 1)
 
-        # Records
+        # Fonts for content
+        data_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(20))
+        bold_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(21))
+        date_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(16))
+
+        # Row highlight colors for top-3
+        row_highlights = [
+            (255, 244, 214, 255),  # Gold - 1st place
+            (242, 245, 248, 255),  # Silver - 2nd place
+            (248, 239, 230, 255),  # Bronze - 3rd place
+        ]
+
         if not self.cached_records:
-            # No records message
-            no_records = self.records_font.render("Нет записей", True, (150, 170, 190))
-            no_records_rect = no_records.get_rect(center=(panel_width // 2, scale.scaled(100)))
+            no_records = data_font.render("Нет записей", True, (150, 140, 130))
+            no_records_rect = no_records.get_rect(center=(panel_width // 2, panel_height // 2))
             panel_surface.blit(no_records, no_records_rect)
         else:
-            row_height = scale.RECORDS_ROW_HEIGHT
+            row_height = scale.scaled(45)
+            start_y = table_top + scale.scaled(42)
+            stripe_width = scale.scaled(5)
+
             for i, record in enumerate(self.cached_records[:10]):
-                row_y = scale.RECORDS_START_Y + i * row_height
+                row_y = start_y + i * row_height
+                row_center_y = row_y + row_height // 2
 
-                # Alternate row background
-                if i % 2 == 0:
-                    pygame.draw.rect(panel_surface, (40, 80, 120, 100),
-                                    (scale.scaled(5), row_y, panel_width - scale.scaled(10), row_height - scale.scaled(5)),
-                                    border_radius=scale.scaled(5))
+                # Get rank info
+                total = record.get('total', 0)
+                rank_name, rank_fg, rank_bg = ranks.get_rank(total)
 
-                # Position number
-                pos_text = self.records_font.render(f"{i + 1}", True, (200, 180, 100))
-                pos_rect = pos_text.get_rect(center=(col_positions[0], row_y + scale.scaled(12)))
-                panel_surface.blit(pos_text, pos_rect)
+                # Row highlight for top-3
+                if i < 3:
+                    highlight_rect = pygame.Rect(padding + scale.scaled(3), row_y,
+                                                content_width - scale.scaled(6), row_height - scale.scaled(2))
+                    pygame.draw.rect(panel_surface, row_highlights[i], highlight_rect, border_radius=scale.scaled(4))
 
-                # Score
-                score_text = self.records_font.render(str(record.get('score', 0)), True, (255, 255, 255))
-                score_rect = score_text.get_rect(center=(col_positions[1], row_y + scale.scaled(12)))
-                panel_surface.blit(score_text, score_rect)
+                # Left vertical stripe (rank color)
+                stripe_rect = pygame.Rect(padding + scale.scaled(3), row_y + scale.scaled(5),
+                                         stripe_width, row_height - scale.scaled(12))
+                pygame.draw.rect(panel_surface, rank_fg, stripe_rect, border_radius=2)
 
-                # Bonus
-                bonus_text = self.records_font.render(str(record.get('bonus', 0)), True, (150, 220, 150))
-                bonus_rect = bonus_text.get_rect(center=(col_positions[2], row_y + scale.scaled(12)))
-                panel_surface.blit(bonus_text, bonus_rect)
+                # Position number with programmatic icons for top-3
+                medal_size = scale.scaled(20)
+                icon_x = col_x[0] - scale.scaled(12)
+                num_x = col_x[0] + scale.scaled(10)
+                pos_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(16))
 
-                # Total
-                total_text = self.records_font.render(str(record.get('total', 0)), True, (255, 220, 100))
-                total_rect = total_text.get_rect(center=(col_positions[3], row_y + scale.scaled(12)))
-                panel_surface.blit(total_text, total_rect)
+                if i == 0:
+                    # Draw trophy + "1" for 1st place
+                    self._draw_trophy(panel_surface, icon_x, row_center_y, medal_size, (200, 150, 30))
+                    pos_text = pos_font.render("1", True, (200, 150, 30))
+                    pos_rect = pos_text.get_rect(center=(num_x, row_center_y))
+                    panel_surface.blit(pos_text, pos_rect)
+                elif i == 1:
+                    # Draw silver medal + "2"
+                    self._draw_medal(panel_surface, icon_x, row_center_y, medal_size, (160, 165, 175), 2)
+                    pos_text = pos_font.render("2", True, (140, 140, 150))
+                    pos_rect = pos_text.get_rect(center=(num_x, row_center_y))
+                    panel_surface.blit(pos_text, pos_rect)
+                elif i == 2:
+                    # Draw bronze medal + "3"
+                    self._draw_medal(panel_surface, icon_x, row_center_y, medal_size, (185, 135, 85), 3)
+                    pos_text = pos_font.render("3", True, (170, 120, 70))
+                    pos_rect = pos_text.get_rect(center=(num_x, row_center_y))
+                    panel_surface.blit(pos_text, pos_rect)
+                else:
+                    # Regular position number (centered)
+                    pos_font_reg = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(18))
+                    pos_text = pos_font_reg.render(str(i + 1), True, (100, 100, 100))
+                    pos_rect = pos_text.get_rect(center=(col_x[0], row_center_y))
+                    panel_surface.blit(pos_text, pos_rect)
 
-                # Date (smaller, below, centered under score-bonus area)
-                date_text = self.records_small_font.render(record.get('date', ''), True, (140, 160, 180))
-                date_rect = date_text.get_rect(center=((col_positions[1] + col_positions[2]) // 2, row_y + scale.scaled(32)))
+                # Date (left-aligned)
+                date_text = date_font.render(record.get('date', ''), True, (130, 120, 110))
+                date_rect = date_text.get_rect(midleft=(col_x[1] - scale.scaled(35), row_center_y))
                 panel_surface.blit(date_text, date_rect)
 
-        # Draw panel
-        self.screen.blit(panel_surface, (panel_x, max(scale.RECORDS_PANEL_TOP, panel_y)))
+                # Score (right-aligned)
+                score_text = data_font.render(str(record.get('score', 0)), True, (70, 70, 70))
+                score_rect = score_text.get_rect(midright=(col_x[2] + scale.scaled(28), row_center_y))
+                panel_surface.blit(score_text, score_rect)
+
+                # Bonus (right-aligned, green)
+                bonus_text = data_font.render(str(record.get('bonus', 0)), True, (50, 140, 50))
+                bonus_rect = bonus_text.get_rect(midright=(col_x[3] + scale.scaled(28), row_center_y))
+                panel_surface.blit(bonus_text, bonus_rect)
+
+                # Total (right-aligned, bold, golden)
+                total_text = bold_font.render(str(total), True, (180, 130, 30))
+                total_rect = total_text.get_rect(midright=(col_x[4] + scale.scaled(28), row_center_y))
+                panel_surface.blit(total_text, total_rect)
+
+                # Rank badge (auto-sized, centered at col_x[5]) with animation
+                badge_height = scale.scaled(30)
+                current_time = pygame.time.get_ticks()
+                ranks.draw_rank_badge(panel_surface,
+                                     (col_x[5], row_center_y, rank_col_max_width, badge_height),
+                                     rank_name, rank_fg, rank_bg, time_ms=current_time)
+
+                # Row divider (not after last row)
+                if i < min(len(self.cached_records), 10) - 1:
+                    div_y = row_y + row_height - scale.scaled(1)
+                    pygame.draw.line(panel_surface, (232, 225, 210),
+                                    (padding + stripe_width + scale.scaled(10), div_y),
+                                    (panel_width - padding - scale.scaled(5), div_y), 1)
+
+        # Apply fade animation
+        if self.records_slide_progress < 1:
+            alpha = int(255 * self.records_slide_progress)
+            panel_surface.set_alpha(alpha)
+
+        # Draw panel on game field
+        self.screen.blit(panel_surface, (field_x, field_y))
+
 
     def _draw(self):
         """Draw the menu."""
         # Draw background
         self.redraw_background()
 
-        # Draw tiles
-        for tile in self.tiles:
-            tile.draw(self.screen)
+        # Draw tiles and button only when records panel is not fully visible
+        records_fully_visible = self.show_records and self.records_slide_progress >= 1.0
 
-        # Draw start game button with opacity
-        if self.button_opacity > 0:
-            # Create temporary surface for button with alpha
-            btn_surface = pygame.Surface(
-                (self.button_rect.width, self.button_rect.height),
-                pygame.SRCALPHA
-            )
-            ui.draw_new_game_button(
-                btn_surface,
-                (0, 0, self.button_rect.width, self.button_rect.height),
-                self.button_font,
-                is_pressed=self.button_pressed,
-                text="Начать игру"
-            )
-            btn_surface.set_alpha(self.button_opacity)
-            self.screen.blit(btn_surface, self.button_rect.topleft)
+        if not records_fully_visible:
+            # Draw tiles
+            for tile in self.tiles:
+                tile.draw(self.screen)
+
+            # Draw start game button with opacity
+            if self.button_opacity > 0:
+                # Create temporary surface for button with alpha
+                btn_surface = pygame.Surface(
+                    (self.button_rect.width, self.button_rect.height),
+                    pygame.SRCALPHA
+                )
+                ui.draw_new_game_button(
+                    btn_surface,
+                    (0, 0, self.button_rect.width, self.button_rect.height),
+                    self.button_font,
+                    is_pressed=self.button_pressed,
+                    text="Начать игру"
+                )
+                btn_surface.set_alpha(self.button_opacity)
+                self.screen.blit(btn_surface, self.button_rect.topleft)
 
         # Draw records button
         self._draw_records_button()
@@ -618,14 +813,15 @@ class StartMenu:
                     pygame.quit()
                     sys.exit()
                 elif event.type == pygame.MOUSEBUTTONDOWN and self.state == 'idle':
-                    if self.button_rect.collidepoint(event.pos):
+                    # Block start button when records are shown, but allow settings
+                    if self.button_rect.collidepoint(event.pos) and not self.show_records:
                         self.button_pressed = True
                     elif self.records_button_rect.collidepoint(event.pos):
                         self.records_button_pressed = True
                     elif self.settings_button_rect.collidepoint(event.pos):
                         self.settings_button_pressed = True
                 elif event.type == pygame.MOUSEBUTTONUP:
-                    if self.button_pressed and self.button_rect.collidepoint(event.pos):
+                    if self.button_pressed and self.button_rect.collidepoint(event.pos) and not self.show_records:
                         self.start_exit_animation()
                     elif self.records_button_pressed and self.records_button_rect.collidepoint(event.pos):
                         self._toggle_records()
@@ -638,7 +834,8 @@ class StartMenu:
                     self.settings_button_pressed = False
                 elif event.type == pygame.KEYDOWN and self.state == 'idle':
                     if event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
-                        self.start_exit_animation()
+                        if not self.show_records:
+                            self.start_exit_animation()
                     elif event.key == pygame.K_ESCAPE and self.show_records:
                         self._toggle_records()
 

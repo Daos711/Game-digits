@@ -30,7 +30,6 @@ class TestGameApp:
         self.WIDTH = self.window + 2 * self.frame + self.panel_width
         self.HEIGHT = self.window + 2 * self.frame
 
-        self.speed = settings.get_speed()
         self.tile_size, self.gap = scale.TILE_SIZE, scale.GAP
         self.offset = (23, 23)
         self.COLORS = COLORS
@@ -387,6 +386,8 @@ class TestGameApp:
                 return True
 
             if self.is_paused:
+                # Проверяем нажатие на кнопку "В меню"
+                self.pause_overlay.handle_mouse_down(pos)
                 return True
 
             if self.game.is_initializing:
@@ -394,6 +395,15 @@ class TestGameApp:
 
             pos = (pos[0] - self.offset[0], pos[1] - self.offset[1])
             self.handle_mouse_click(pos)
+
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            if self.is_paused:
+                pos = pygame.mouse.get_pos()
+                # Проверяем клик на кнопку "В меню"
+                if self.pause_overlay.handle_mouse_up(pos):
+                    # Возврат в главное меню
+                    return 'menu'
+
         return True
 
     def toggle_pause(self):
@@ -695,13 +705,14 @@ class TestGameApp:
         dx = target_rect.topleft[0] - tile.rect.topleft[0]
         dy = target_rect.topleft[1] - tile.rect.topleft[1]
 
+        speed = settings.get_speed()
         if dx == 0 and dy != 0:
             # Ограничиваем шаг чтобы не перескочить цель
-            step_y = min(self.speed, abs(dy)) * (1 if dy > 0 else -1)
+            step_y = min(speed, abs(dy)) * (1 if dy > 0 else -1)
             tile.rect.y += step_y
         elif dy == 0 and dx != 0:
             # Ограничиваем шаг чтобы не перескочить цель
-            step_x = min(self.speed, abs(dx)) * (1 if dx > 0 else -1)
+            step_x = min(speed, abs(dx)) * (1 if dx > 0 else -1)
             tile.rect.x += step_x
 
         if hasattr(tile, 'last_grid_pos'):
@@ -806,7 +817,16 @@ class TestGameApp:
                 elif event.type == self.COUNTDOWN_EVENT:
                     self.game.handle_countdown()
                 else:
-                    running = self.handle_event(event)
+                    result = self.handle_event(event)
+                    if result == 'menu':
+                        # Возврат в меню из паузы
+                        self.is_paused = False
+                        self.reset_game()
+                        self.state = 'menu'
+                        show_result = False
+                        prepare_to_show_result = False
+                    elif result == False:
+                        running = False
 
             if self.game.prepare_to_end:
                 self.game.prepare_to_end = False

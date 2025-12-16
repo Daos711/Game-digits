@@ -8,6 +8,8 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+from game_digits.ranks import get_rank_name
+
 
 def get_records_path(test_mode=False):
     """Get the path to the records file."""
@@ -36,7 +38,19 @@ def load_records(test_mode=False):
             records = json.load(f)
         # Ensure records are sorted by total descending
         records.sort(key=lambda x: x.get('total', 0), reverse=True)
-        return records[:10]  # Keep only top 10
+        records = records[:10]  # Keep only top 10
+
+        # Migration: add rank field if missing
+        needs_save = False
+        for rec in records:
+            if 'rank' not in rec:
+                rec['rank'] = get_rank_name(rec.get('total', 0))
+                needs_save = True
+
+        if needs_save:
+            save_records(records, test_mode)
+
+        return records
     except (json.JSONDecodeError, IOError):
         return []
 
@@ -80,7 +94,8 @@ def add_record(score, bonus, total, test_mode=False):
         'score': score,
         'bonus': bonus,
         'total': total,
-        'date': datetime.now().strftime('%d.%m.%Y')
+        'date': datetime.now().strftime('%d.%m.%Y'),
+        'rank': get_rank_name(total)
     }
 
     # Check if this score qualifies for top 10
