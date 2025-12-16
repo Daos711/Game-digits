@@ -33,6 +33,7 @@ class SettingsWindow:
         self.cell_size = scale.scaled(18)
         self.value_gap = scale.scaled(15)
         self.value_border_radius = scale.scaled(8)
+        self.button_radius = scale.scaled(20)
 
         self.screen = screen
         self.screen_width, self.screen_height = screen_size
@@ -210,7 +211,8 @@ class SettingsWindow:
                      self.WINDOW_HEIGHT - self.PADDING - self.apply_btn_height,
                      self.apply_btn_width, self.apply_btn_height)
         ui.draw_new_game_button(window_surface, apply_rect, self.button_font,
-                               is_pressed=self.apply_pressed, text="Применить")
+                               is_pressed=self.apply_pressed, text="Применить",
+                               corner_radius=self.button_radius)
 
         # Blit window to screen
         self.screen.blit(window_surface, (self.window_x, self.window_y))

@@ -548,7 +548,7 @@ def draw_congratulation_panel(surface, rect, text, font):
     surface.blit(text_surface, text_rect)
 
 
-def draw_new_game_button(surface, rect, font, is_pressed=False, text="Новая игра"):
+def draw_new_game_button(surface, rect, font, is_pressed=False, text="Новая игра", corner_radius=None):
     """Draw glossy yellow-orange button.
 
     Args:
@@ -557,12 +557,13 @@ def draw_new_game_button(surface, rect, font, is_pressed=False, text="Новая
         font: Font for the button text
         is_pressed: If True, draw pressed state
         text: Button text (default: "Новая игра")
+        corner_radius: Optional fixed corner radius (uses scale.scaled(20) if None)
 
     Returns:
         pygame.Rect of the button
     """
     x, y, w, h = rect
-    radius = scale.scaled(20)  # Сильно скруглённые углы
+    radius = corner_radius if corner_radius is not None else scale.scaled(20)
 
     # Colors
     if is_pressed:

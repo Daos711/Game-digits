@@ -24,7 +24,7 @@ class Tile(pygame.sprite.Sprite):
         self.image.fill(self.color)
 
         # === НАСТРАИВАЕМЫЕ ПАРАМЕТРЫ ===
-        bevel = 3  # Толщина фаски (не масштабируется для сохранения объёма)
+        bevel = scale.scaled(3)  # Толщина фаски (масштабируется)
         dark_factor = 0.4        # Множитель для тёмной грани (0.5-0.8)
 
         def clamp(x: int) -> int:
