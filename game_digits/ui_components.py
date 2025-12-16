@@ -134,25 +134,33 @@ def draw_sound_icon(surface, center, size, sound_enabled=True):
     front_x = speaker_left + body_width + cone_width
 
     if sound_enabled:
-        # Sound waves (2 concentric arcs) - spaced apart
-        wave_start_x = front_x + size * 0.05
+        # Sound waves (3 arcs like parentheses) - tall vertical arcs
+        wave_start_x = front_x + size * 0.04
         line_width = max(2, scaled(3))
 
-        # Small arc
-        arc_w1 = size * 0.15
-        arc_h1 = size * 0.30
+        # Small arc - fairly tall
+        arc_w1 = size * 0.12
+        arc_h1 = size * 0.45
         arc_rect1 = (wave_start_x, y - arc_h1 / 2, arc_w1, arc_h1)
         arc_rect1_shadow = (wave_start_x + shadow_offset, y - arc_h1 / 2 + shadow_offset, arc_w1, arc_h1)
-        pygame.draw.arc(surface, shadow_color, arc_rect1_shadow, -math.pi / 3, math.pi / 3, line_width)
-        pygame.draw.arc(surface, icon_color, arc_rect1, -math.pi / 3, math.pi / 3, line_width)
+        pygame.draw.arc(surface, shadow_color, arc_rect1_shadow, -math.pi / 2.5, math.pi / 2.5, line_width)
+        pygame.draw.arc(surface, icon_color, arc_rect1, -math.pi / 2.5, math.pi / 2.5, line_width)
 
-        # Medium arc - more spaced out
-        arc_w2 = size * 0.22
-        arc_h2 = size * 0.44
-        arc_rect2 = (wave_start_x + size * 0.12, y - arc_h2 / 2, arc_w2, arc_h2)
-        arc_rect2_shadow = (wave_start_x + size * 0.12 + shadow_offset, y - arc_h2 / 2 + shadow_offset, arc_w2, arc_h2)
-        pygame.draw.arc(surface, shadow_color, arc_rect2_shadow, -math.pi / 3, math.pi / 3, line_width)
-        pygame.draw.arc(surface, icon_color, arc_rect2, -math.pi / 3, math.pi / 3, line_width)
+        # Medium arc - taller
+        arc_w2 = size * 0.15
+        arc_h2 = size * 0.60
+        arc_rect2 = (wave_start_x + size * 0.10, y - arc_h2 / 2, arc_w2, arc_h2)
+        arc_rect2_shadow = (wave_start_x + size * 0.10 + shadow_offset, y - arc_h2 / 2 + shadow_offset, arc_w2, arc_h2)
+        pygame.draw.arc(surface, shadow_color, arc_rect2_shadow, -math.pi / 2.5, math.pi / 2.5, line_width)
+        pygame.draw.arc(surface, icon_color, arc_rect2, -math.pi / 2.5, math.pi / 2.5, line_width)
+
+        # Large arc - almost as tall as speaker cone
+        arc_w3 = size * 0.18
+        arc_h3 = size * 0.75
+        arc_rect3 = (wave_start_x + size * 0.22, y - arc_h3 / 2, arc_w3, arc_h3)
+        arc_rect3_shadow = (wave_start_x + size * 0.22 + shadow_offset, y - arc_h3 / 2 + shadow_offset, arc_w3, arc_h3)
+        pygame.draw.arc(surface, shadow_color, arc_rect3_shadow, -math.pi / 2.5, math.pi / 2.5, line_width)
+        pygame.draw.arc(surface, icon_color, arc_rect3, -math.pi / 2.5, math.pi / 2.5, line_width)
     else:
         # X mark (muted) - taller X to the right of speaker
         x_center = front_x + size * 0.22
