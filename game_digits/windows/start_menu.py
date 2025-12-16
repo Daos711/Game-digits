@@ -399,40 +399,46 @@ class StartMenu:
         if self.records_slide_progress <= 0:
             return
 
-        # Game field dimensions
+        # Game field dimensions - draw directly on the field
         frame = scale.FRAME_WIDTH
         field_x = 2 * frame
         field_y = 2 * frame
         field_size = self.screen_height - 4 * frame
 
-        # Panel dimensions (over game field)
-        panel_padding = scale.scaled(15)
-        panel_x = field_x + panel_padding
-        panel_y = field_y + panel_padding
-        panel_width = field_size - 2 * panel_padding
-        panel_height = field_size - 2 * panel_padding
+        # Panel covers the entire game field
+        panel_width = field_size
+        panel_height = field_size
 
-        # Slide animation (fade + scale)
-        alpha = int(255 * self.records_slide_progress)
+        # Create panel surface (fully opaque)
+        panel_surface = pygame.Surface((panel_width, panel_height))
 
-        # Create panel surface
-        panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
+        # Light checkered background (like game field)
+        bg_color = (252, 250, 248)  # Very light, almost white
+        panel_surface.fill(bg_color)
 
-        # Background with rounded corners
-        pygame.draw.rect(panel_surface, (25, 50, 75, 245),
-                        (0, 0, panel_width, panel_height), border_radius=scale.scaled(12))
-        pygame.draw.rect(panel_surface, (60, 100, 140),
-                        (0, 0, panel_width, panel_height), width=2, border_radius=scale.scaled(12))
+        # Draw grid lines (like notebook)
+        grid_color = (230, 235, 240)
+        cell_size = scale.scaled(18)
+        for x in range(0, panel_width, cell_size):
+            pygame.draw.line(panel_surface, grid_color, (x, 0), (x, panel_height), 1)
+        for y in range(0, panel_height, cell_size):
+            pygame.draw.line(panel_surface, grid_color, (0, y), (panel_width, y), 1)
 
-        # Title
-        title_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(28))
-        title = title_font.render("Таблица рекордов", True, (255, 220, 100))
-        title_rect = title.get_rect(center=(panel_width // 2, scale.scaled(30)))
+        # Title with decorative line
+        title_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(26))
+        title = title_font.render("Таблица рекордов", True, (80, 80, 80))
+        title_rect = title.get_rect(center=(panel_width // 2, scale.scaled(28)))
         panel_surface.blit(title, title_rect)
+
+        # Decorative line under title
+        line_y = scale.scaled(48)
+        pygame.draw.line(panel_surface, (200, 180, 100),
+                        (scale.scaled(30), line_y),
+                        (panel_width - scale.scaled(30), line_y), 2)
 
         # Column positions (proportional to panel width)
         # Columns: # | Дата | Очки | Бонус | Итого | Ранг
-        col_widths = [0.06, 0.14, 0.12, 0.12, 0.12, 0.44]  # Proportions
+        col_widths = [0.06, 0.14, 0.12, 0.12, 0.13, 0.43]
         col_positions = []
         x = 0
         for w in col_widths:
@@ -440,128 +446,120 @@ class StartMenu:
             x += w * panel_width
 
         # Header
-        header_y = scale.scaled(55)
+        header_y = scale.scaled(60)
         headers = ["#", "Дата", "Очки", "Бонус", "Итого", "Ранг"]
-        header_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(14))
+        header_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(13))
         for text, cx in zip(headers, col_positions):
-            header = header_font.render(text, True, (180, 200, 220))
+            header = header_font.render(text, True, (100, 100, 100))
             header_rect = header.get_rect(center=(cx, header_y))
             panel_surface.blit(header, header_rect)
 
-        # Divider line
-        divider_y = scale.scaled(70)
-        pygame.draw.line(panel_surface, (80, 120, 160),
-                        (scale.scaled(10), divider_y),
-                        (panel_width - scale.scaled(10), divider_y), 1)
-
         # Records
-        row_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(15))
-        small_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(12))
+        row_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(14))
+        small_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(11))
 
         if not self.cached_records:
-            no_records = row_font.render("Нет записей", True, (150, 170, 190))
+            no_records = row_font.render("Нет записей", True, (150, 150, 150))
             no_records_rect = no_records.get_rect(center=(panel_width // 2, panel_height // 2))
             panel_surface.blit(no_records, no_records_rect)
         else:
-            row_height = scale.scaled(38)
-            start_y = scale.scaled(80)
+            row_height = scale.scaled(36)
+            start_y = scale.scaled(78)
 
             for i, record in enumerate(self.cached_records[:10]):
                 row_y = start_y + i * row_height
 
-                # Alternate row background
+                # Alternate row background (very subtle)
                 if i % 2 == 0:
-                    pygame.draw.rect(panel_surface, (35, 65, 95, 150),
-                                    (scale.scaled(8), row_y - scale.scaled(2),
-                                     panel_width - scale.scaled(16), row_height - scale.scaled(4)),
-                                    border_radius=scale.scaled(4))
+                    row_bg = pygame.Surface((panel_width - scale.scaled(20), row_height - scale.scaled(4)), pygame.SRCALPHA)
+                    row_bg.fill((240, 235, 220, 180))
+                    panel_surface.blit(row_bg, (scale.scaled(10), row_y - scale.scaled(1)))
 
                 # Get rank info
                 total = record.get('total', 0)
                 rank_name, rank_colors = ranks.get_rank(total)
 
-                # Position number
-                pos_color = (255, 215, 0) if i == 0 else (200, 200, 200) if i == 1 else (180, 130, 80) if i == 2 else (150, 170, 190)
+                # Get rank text color (darker version of first rank color for readability)
+                base_color = rank_colors[0]
+                # Make color darker for text readability on light background
+                rank_text_color = tuple(max(0, int(c * 0.7)) for c in base_color)
+
+                # Position number (gold/silver/bronze for top 3)
+                if i == 0:
+                    pos_color = (200, 160, 40)  # Gold
+                elif i == 1:
+                    pos_color = (140, 140, 150)  # Silver
+                elif i == 2:
+                    pos_color = (160, 110, 60)  # Bronze
+                else:
+                    pos_color = (120, 120, 120)
                 pos_text = row_font.render(f"{i + 1}", True, pos_color)
                 pos_rect = pos_text.get_rect(center=(col_positions[0], row_y + row_height // 2 - scale.scaled(2)))
                 panel_surface.blit(pos_text, pos_rect)
 
                 # Date
-                date_text = small_font.render(record.get('date', ''), True, (160, 180, 200))
+                date_text = small_font.render(record.get('date', ''), True, (130, 130, 130))
                 date_rect = date_text.get_rect(center=(col_positions[1], row_y + row_height // 2 - scale.scaled(2)))
                 panel_surface.blit(date_text, date_rect)
 
-                # Score (Очки / Первая строка)
-                score_text = row_font.render(str(record.get('score', 0)), True, (255, 255, 255))
+                # Score
+                score_text = row_font.render(str(record.get('score', 0)), True, (80, 80, 80))
                 score_rect = score_text.get_rect(center=(col_positions[2], row_y + row_height // 2 - scale.scaled(2)))
                 panel_surface.blit(score_text, score_rect)
 
                 # Bonus
-                bonus_text = row_font.render(str(record.get('bonus', 0)), True, (150, 220, 150))
+                bonus_text = row_font.render(str(record.get('bonus', 0)), True, (60, 140, 60))
                 bonus_rect = bonus_text.get_rect(center=(col_positions[3], row_y + row_height // 2 - scale.scaled(2)))
                 panel_surface.blit(bonus_text, bonus_rect)
 
-                # Total (Итого)
-                total_text = row_font.render(str(total), True, (255, 220, 100))
+                # Total
+                total_text = row_font.render(str(total), True, (180, 140, 40))
                 total_rect = total_text.get_rect(center=(col_positions[4], row_y + row_height // 2 - scale.scaled(2)))
                 panel_surface.blit(total_text, total_rect)
 
-                # Rank with color bar
-                rank_bar_width = int(col_widths[5] * panel_width * 0.85)
-                rank_bar_height = scale.scaled(18)
-                rank_bar_x = col_positions[5] - rank_bar_width // 2 + scale.scaled(15)
-                rank_bar_y = row_y + (row_height - rank_bar_height) // 2 - scale.scaled(2)
+                # Rank name (colored text, no bar)
+                rank_text = row_font.render(rank_name, True, rank_text_color)
+                rank_rect = rank_text.get_rect(center=(col_positions[5], row_y + row_height // 2 - scale.scaled(2)))
+                panel_surface.blit(rank_text, rank_rect)
 
-                # Draw rank color bar
-                ranks.draw_rank_bar(panel_surface,
-                                   (rank_bar_x, rank_bar_y, rank_bar_width, rank_bar_height),
-                                   rank_colors)
+        # Apply fade animation
+        if self.records_slide_progress < 1:
+            alpha = int(255 * self.records_slide_progress)
+            panel_surface.set_alpha(alpha)
 
-                # Rank name on top of bar
-                rank_text = small_font.render(rank_name, True, (255, 255, 255))
-                # Add shadow for readability
-                rank_shadow = small_font.render(rank_name, True, (0, 0, 0))
-                rank_text_rect = rank_text.get_rect(center=(rank_bar_x + rank_bar_width // 2, rank_bar_y + rank_bar_height // 2))
-                panel_surface.blit(rank_shadow, (rank_text_rect.x + 1, rank_text_rect.y + 1))
-                panel_surface.blit(rank_text, rank_text_rect)
+        # Draw panel on game field
+        self.screen.blit(panel_surface, (field_x, field_y))
 
-        # Close hint
-        hint_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(12))
-        hint = hint_font.render("Нажмите для закрытия", True, (120, 140, 160))
-        hint_rect = hint.get_rect(center=(panel_width // 2, panel_height - scale.scaled(15)))
-        panel_surface.blit(hint, hint_rect)
-
-        # Apply alpha
-        panel_surface.set_alpha(alpha)
-
-        # Draw panel
-        self.screen.blit(panel_surface, (panel_x, panel_y))
 
     def _draw(self):
         """Draw the menu."""
         # Draw background
         self.redraw_background()
 
-        # Draw tiles
-        for tile in self.tiles:
-            tile.draw(self.screen)
+        # Draw tiles and button only when records panel is not fully visible
+        records_fully_visible = self.show_records and self.records_slide_progress >= 1.0
 
-        # Draw start game button with opacity
-        if self.button_opacity > 0:
-            # Create temporary surface for button with alpha
-            btn_surface = pygame.Surface(
-                (self.button_rect.width, self.button_rect.height),
-                pygame.SRCALPHA
-            )
-            ui.draw_new_game_button(
-                btn_surface,
-                (0, 0, self.button_rect.width, self.button_rect.height),
-                self.button_font,
-                is_pressed=self.button_pressed,
-                text="Начать игру"
-            )
-            btn_surface.set_alpha(self.button_opacity)
-            self.screen.blit(btn_surface, self.button_rect.topleft)
+        if not records_fully_visible:
+            # Draw tiles
+            for tile in self.tiles:
+                tile.draw(self.screen)
+
+            # Draw start game button with opacity
+            if self.button_opacity > 0:
+                # Create temporary surface for button with alpha
+                btn_surface = pygame.Surface(
+                    (self.button_rect.width, self.button_rect.height),
+                    pygame.SRCALPHA
+                )
+                ui.draw_new_game_button(
+                    btn_surface,
+                    (0, 0, self.button_rect.width, self.button_rect.height),
+                    self.button_font,
+                    is_pressed=self.button_pressed,
+                    text="Начать игру"
+                )
+                btn_surface.set_alpha(self.button_opacity)
+                self.screen.blit(btn_surface, self.button_rect.topleft)
 
         # Draw records button
         self._draw_records_button()
@@ -680,18 +678,19 @@ class StartMenu:
                     pygame.quit()
                     sys.exit()
                 elif event.type == pygame.MOUSEBUTTONDOWN and self.state == 'idle':
-                    if self.button_rect.collidepoint(event.pos):
+                    # Block start button when records are shown
+                    if self.button_rect.collidepoint(event.pos) and not self.show_records:
                         self.button_pressed = True
                     elif self.records_button_rect.collidepoint(event.pos):
                         self.records_button_pressed = True
-                    elif self.settings_button_rect.collidepoint(event.pos):
+                    elif self.settings_button_rect.collidepoint(event.pos) and not self.show_records:
                         self.settings_button_pressed = True
                 elif event.type == pygame.MOUSEBUTTONUP:
-                    if self.button_pressed and self.button_rect.collidepoint(event.pos):
+                    if self.button_pressed and self.button_rect.collidepoint(event.pos) and not self.show_records:
                         self.start_exit_animation()
                     elif self.records_button_pressed and self.records_button_rect.collidepoint(event.pos):
                         self._toggle_records()
-                    elif self.settings_button_pressed and self.settings_button_rect.collidepoint(event.pos):
+                    elif self.settings_button_pressed and self.settings_button_rect.collidepoint(event.pos) and not self.show_records:
                         self._open_settings()
                         if self.settings_changed:
                             return 'settings_changed'
@@ -700,7 +699,8 @@ class StartMenu:
                     self.settings_button_pressed = False
                 elif event.type == pygame.KEYDOWN and self.state == 'idle':
                     if event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
-                        self.start_exit_animation()
+                        if not self.show_records:
+                            self.start_exit_animation()
                     elif event.key == pygame.K_ESCAPE and self.show_records:
                         self._toggle_records()
 
