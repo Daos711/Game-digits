@@ -1,6 +1,7 @@
 import pygame
 
 from game_digits import get_image_path, get_font_path, get_sound_path
+from game_digits import settings
 from game_digits.constants import (
     TILE_SIZE, GAP, COLORS, BOARD_SIZE,
     grid_to_pixel, pixel_to_grid, pixel_to_grid_round, create_background_surface
@@ -20,7 +21,7 @@ from game_digits.windows import ResultWindow, StartMenu, PauseOverlay
 class GameApp:
     def __init__(self):
         self.frame = FRAME_WIDTH
-        self.speed = 2
+        self.speed = settings.get_speed()
         self.tile_size, self.gap = TILE_SIZE, GAP
         # Вычисляем размеры окна из размера плиток
         tile_area = BOARD_SIZE * TILE_SIZE + (BOARD_SIZE + 1) * GAP
@@ -853,8 +854,11 @@ class GameApp:
             # === MENU STATE ===
             if self.state == 'menu':
                 # Show start menu
-                start_game = self.start_menu.show()
-                if start_game:
+                result = self.start_menu.show()
+                if result == 'settings_changed':
+                    # Settings were changed, need to restart app
+                    return 'restart'
+                elif result:
                     self.state = 'playing'
                     # Start panel animation
                     self.panel_animation_active = True

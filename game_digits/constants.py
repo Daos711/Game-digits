@@ -1,7 +1,11 @@
 # Размеры сетки (импортируем из scale.py для легкого изменения)
-from game_digits.scale import TILE_SIZE, GAP
+from game_digits import scale
 
 BOARD_SIZE = 10
+
+# Динамические значения из scale
+TILE_SIZE = scale.TILE_SIZE
+GAP = scale.GAP
 
 # Цвета плиток
 COLORS = {
@@ -23,6 +27,13 @@ TILE_BORDER_COLOR = (71, 74, 72)
 
 # Шаг между диагональными линиями (пиксели)
 STRIPE_SPACING = 8
+
+
+def recalculate():
+    """Пересчитать значения после изменения настроек масштаба."""
+    global TILE_SIZE, GAP
+    TILE_SIZE = scale.TILE_SIZE
+    GAP = scale.GAP
 
 
 def create_background_surface(width, height):

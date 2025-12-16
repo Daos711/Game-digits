@@ -15,6 +15,7 @@ from game_digits.scale import (
 )
 from game_digits import ui_components as ui
 from game_digits import records
+from game_digits.windows.settings_window import SettingsWindow
 
 
 class MenuTile:
@@ -166,11 +167,20 @@ class StartMenu:
             RECORDS_BTN_HEIGHT
         )
 
+        # Settings button setup (on right panel, below records button)
+        self.settings_button_rect = pygame.Rect(
+            self.PANEL_X + (self.PANEL_WIDTH - RECORDS_BTN_WIDTH) // 2,
+            scaled(30) + RECORDS_BTN_HEIGHT + scaled(15),
+            RECORDS_BTN_WIDTH,
+            RECORDS_BTN_HEIGHT
+        )
+
         # State
         self.state = 'entering'  # 'entering', 'idle', 'exiting'
         self.animation_start_time = 0
         self.button_pressed = False
         self.records_button_pressed = False
+        self.settings_button_pressed = False
         self.button_opacity = 0
         self.tiles_arrived = [False] * len(self.tiles)
 
@@ -182,6 +192,10 @@ class StartMenu:
         # Hover state
         self.button_hovered = False
         self.records_button_hovered = False
+        self.settings_button_hovered = False
+
+        # Settings changed flag
+        self.settings_changed = False
 
         # Records display state
         self.show_records = False
@@ -252,6 +266,7 @@ class StartMenu:
 
         self.button_hovered = self.button_rect.collidepoint(mouse_pos)
         self.records_button_hovered = self.records_button_rect.collidepoint(mouse_pos)
+        self.settings_button_hovered = self.settings_button_rect.collidepoint(mouse_pos)
 
         # Target brightness
         target = 0.5 if self.button_hovered else 0
@@ -331,16 +346,16 @@ class StartMenu:
 
         return all_exited
 
-    def _draw_records_button(self):
-        """Draw the records button on the right panel."""
+    def _draw_panel_button(self, rect, text, is_pressed, is_hovered):
+        """Draw a panel button (Records or Settings)."""
         if self.button_opacity <= 0:
             return
 
         # Button colors
-        if self.records_button_pressed:
+        if is_pressed:
             bg_color = (40, 100, 140)
             border_color = (30, 80, 120)
-        elif self.records_button_hovered:
+        elif is_hovered:
             bg_color = (70, 140, 180)
             border_color = (50, 120, 160)
         else:
@@ -348,26 +363,39 @@ class StartMenu:
             border_color = (40, 100, 140)
 
         btn_surface = pygame.Surface(
-            (self.records_button_rect.width, self.records_button_rect.height),
+            (rect.width, rect.height),
             pygame.SRCALPHA
         )
 
         # Draw button background
         pygame.draw.rect(btn_surface, bg_color,
-                        (0, 0, self.records_button_rect.width, self.records_button_rect.height),
+                        (0, 0, rect.width, rect.height),
                         border_radius=scaled(8))
         pygame.draw.rect(btn_surface, border_color,
-                        (0, 0, self.records_button_rect.width, self.records_button_rect.height),
+                        (0, 0, rect.width, rect.height),
                         width=BORDER_WIDTH, border_radius=scaled(8))
 
         # Draw text (визуально по центру)
-        text = self.button_font.render("Рекорды", True, (255, 255, 255))
-        text_rect = text.get_rect(center=(self.records_button_rect.width // 2,
-                                          self.records_button_rect.height // 2 - 1))
-        btn_surface.blit(text, text_rect)
+        text_surf = self.button_font.render(text, True, (255, 255, 255))
+        text_rect = text_surf.get_rect(center=(rect.width // 2, rect.height // 2 - 1))
+        btn_surface.blit(text_surf, text_rect)
 
         btn_surface.set_alpha(self.button_opacity)
-        self.screen.blit(btn_surface, self.records_button_rect.topleft)
+        self.screen.blit(btn_surface, rect.topleft)
+
+    def _draw_records_button(self):
+        """Draw the records button on the right panel."""
+        self._draw_panel_button(
+            self.records_button_rect, "Рекорды",
+            self.records_button_pressed, self.records_button_hovered
+        )
+
+    def _draw_settings_button(self):
+        """Draw the settings button on the right panel."""
+        self._draw_panel_button(
+            self.settings_button_rect, "Настройки",
+            self.settings_button_pressed, self.settings_button_hovered
+        )
 
     def _draw_records_panel(self):
         """Draw the records list on the right panel."""
@@ -480,11 +508,25 @@ class StartMenu:
         # Draw records button
         self._draw_records_button()
 
+        # Draw settings button
+        self._draw_settings_button()
+
         # Draw records panel if visible
         if self.show_records or self.records_sliding:
             self._draw_records_panel()
 
         pygame.display.update()
+
+    def _open_settings(self):
+        """Open settings window."""
+        settings_window = SettingsWindow(
+            self.screen,
+            (self.screen_width, self.screen_height),
+            self.redraw_background
+        )
+        result = settings_window.show()
+        if result == 'apply':
+            self.settings_changed = True
 
     def _toggle_records(self):
         """Toggle records panel visibility."""
@@ -584,13 +626,20 @@ class StartMenu:
                         self.button_pressed = True
                     elif self.records_button_rect.collidepoint(event.pos):
                         self.records_button_pressed = True
+                    elif self.settings_button_rect.collidepoint(event.pos):
+                        self.settings_button_pressed = True
                 elif event.type == pygame.MOUSEBUTTONUP:
                     if self.button_pressed and self.button_rect.collidepoint(event.pos):
                         self.start_exit_animation()
                     elif self.records_button_pressed and self.records_button_rect.collidepoint(event.pos):
                         self._toggle_records()
+                    elif self.settings_button_pressed and self.settings_button_rect.collidepoint(event.pos):
+                        self._open_settings()
+                        if self.settings_changed:
+                            return 'settings_changed'
                     self.button_pressed = False
                     self.records_button_pressed = False
+                    self.settings_button_pressed = False
                 elif event.type == pygame.KEYDOWN and self.state == 'idle':
                     if event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
                         self.start_exit_animation()
