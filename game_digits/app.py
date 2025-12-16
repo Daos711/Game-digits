@@ -494,7 +494,6 @@ class GameApp:
                     self.bar_phase_start = pygame.time.get_ticks()
                 return
         # Разрешаем выбор новой плитки даже когда другие движутся
-        self.play_sound('click')
         self.arrows.empty()
         self.game.select_tile(tile)
         self.draw_arrows_for_tile(tile)
