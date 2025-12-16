@@ -119,23 +119,25 @@ class SettingsWindow:
 
         ui.draw_gradient_rounded_rect(surface, rect, color_top, color_bottom, radius)
 
-        # Draw arrow
+        # Draw arrow (центрируем по центру тяжести треугольника)
         arrow_color = (255, 255, 255)
         center_x = x + w // 2
         center_y = y + h // 2
         arrow_size = w // 3
+        # Смещение для центрирования центра тяжести треугольника
+        offset_x = arrow_size // 6
 
         if direction == 'left':
             points = [
-                (center_x + arrow_size // 2, center_y - arrow_size),
-                (center_x - arrow_size // 2, center_y),
-                (center_x + arrow_size // 2, center_y + arrow_size),
+                (center_x + arrow_size // 2 - offset_x, center_y - arrow_size),
+                (center_x - arrow_size // 2 - offset_x, center_y),
+                (center_x + arrow_size // 2 - offset_x, center_y + arrow_size),
             ]
         else:  # right
             points = [
-                (center_x - arrow_size // 2, center_y - arrow_size),
-                (center_x + arrow_size // 2, center_y),
-                (center_x - arrow_size // 2, center_y + arrow_size),
+                (center_x - arrow_size // 2 + offset_x, center_y - arrow_size),
+                (center_x + arrow_size // 2 + offset_x, center_y),
+                (center_x - arrow_size // 2 + offset_x, center_y + arrow_size),
             ]
 
         pygame.draw.polygon(surface, arrow_color, points)
