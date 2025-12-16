@@ -210,11 +210,8 @@ class TestGameApp:
         current_y = padding
 
         # Pause button and sound icon
-        gap_between = scaled(15)
-        total_width = PAUSE_BTN_WIDTH + gap_between + SOUND_ICON_SIZE
-        start_x = panel_x + (self.panel_width - total_width) // 2
-
-        button_x = start_x
+        # Кнопка паузы правее центра, иконка звука у правого края
+        button_x = panel_x + (self.panel_width - PAUSE_BTN_WIDTH) // 2 + scaled(15)
         button_y = current_y + pause_offset
 
         if button_y >= -10:
@@ -225,8 +222,8 @@ class TestGameApp:
                 is_pressed=self.is_paused
             )
 
-            # Sound icon next to pause button
-            sound_icon_x = button_x + PAUSE_BTN_WIDTH + gap_between + SOUND_ICON_SIZE // 2
+            # Sound icon at right edge of panel
+            sound_icon_x = panel_x + self.panel_width - padding - SOUND_ICON_SIZE // 2
             sound_icon_y = button_y + PAUSE_BTN_HEIGHT // 2
             ui.draw_sound_icon(
                 self.screen,

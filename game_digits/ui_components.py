@@ -96,14 +96,14 @@ def draw_sound_icon(surface, center, size, sound_enabled=True):
     shadow_color = (40, 100, 140)  # Dark blue shadow
     shadow_offset = max(1, scaled(2))
 
-    # Speaker dimensions
+    # Speaker dimensions - bigger cone
     body_width = size * 0.18
-    body_height = size * 0.35
-    cone_width = size * 0.22
-    cone_expand = size * 0.15  # How much cone expands
+    body_height = size * 0.32
+    cone_width = size * 0.28
+    cone_expand = size * 0.28  # Much bigger cone expansion
 
     # Speaker position (left side of icon)
-    speaker_left = x - size * 0.35
+    speaker_left = x - size * 0.4
 
     # Speaker body (small rectangle on the left)
     body_rect = [
@@ -138,43 +138,43 @@ def draw_sound_icon(surface, center, size, sound_enabled=True):
                     (front_x, y + body_height / 2 + cone_expand - 2), 1)
 
     if sound_enabled:
-        # Sound waves (2-3 concentric arcs)
-        wave_center_x = front_x + size * 0.08
+        # Sound waves (2-3 concentric arcs) - bigger
+        wave_center_x = front_x + size * 0.06
         line_width = max(2, scaled(3))
 
         # Small arc
-        arc_rect1 = (wave_center_x, y - size * 0.12, size * 0.12, size * 0.24)
-        # Draw shadow
-        arc_rect1_shadow = (wave_center_x + shadow_offset, y - size * 0.12 + shadow_offset, size * 0.12, size * 0.24)
+        arc_rect1 = (wave_center_x, y - size * 0.18, size * 0.18, size * 0.36)
+        arc_rect1_shadow = (wave_center_x + shadow_offset, y - size * 0.18 + shadow_offset, size * 0.18, size * 0.36)
         pygame.draw.arc(surface, shadow_color, arc_rect1_shadow, -math.pi / 3, math.pi / 3, line_width)
         pygame.draw.arc(surface, icon_color, arc_rect1, -math.pi / 3, math.pi / 3, line_width)
 
         # Medium arc
-        arc_rect2 = (wave_center_x + size * 0.06, y - size * 0.2, size * 0.18, size * 0.4)
-        arc_rect2_shadow = (wave_center_x + size * 0.06 + shadow_offset, y - size * 0.2 + shadow_offset, size * 0.18, size * 0.4)
+        arc_rect2 = (wave_center_x + size * 0.08, y - size * 0.28, size * 0.26, size * 0.56)
+        arc_rect2_shadow = (wave_center_x + size * 0.08 + shadow_offset, y - size * 0.28 + shadow_offset, size * 0.26, size * 0.56)
         pygame.draw.arc(surface, shadow_color, arc_rect2_shadow, -math.pi / 3, math.pi / 3, line_width)
         pygame.draw.arc(surface, icon_color, arc_rect2, -math.pi / 3, math.pi / 3, line_width)
     else:
-        # X mark (muted) - large X to the right of speaker
-        x_center = front_x + size * 0.18
-        x_size = size * 0.14
+        # X mark (muted) - taller X to the right of speaker
+        x_center = front_x + size * 0.22
+        x_width = size * 0.12
+        x_height = size * 0.22  # Taller vertically
         line_width = max(3, scaled(4))
 
         # Draw shadow
         pygame.draw.line(surface, shadow_color,
-                        (x_center - x_size + shadow_offset, y - x_size + shadow_offset),
-                        (x_center + x_size + shadow_offset, y + x_size + shadow_offset), line_width)
+                        (x_center - x_width + shadow_offset, y - x_height + shadow_offset),
+                        (x_center + x_width + shadow_offset, y + x_height + shadow_offset), line_width)
         pygame.draw.line(surface, shadow_color,
-                        (x_center - x_size + shadow_offset, y + x_size + shadow_offset),
-                        (x_center + x_size + shadow_offset, y - x_size + shadow_offset), line_width)
+                        (x_center - x_width + shadow_offset, y + x_height + shadow_offset),
+                        (x_center + x_width + shadow_offset, y - x_height + shadow_offset), line_width)
 
         # Draw main X
         pygame.draw.line(surface, icon_color,
-                        (x_center - x_size, y - x_size),
-                        (x_center + x_size, y + x_size), line_width)
+                        (x_center - x_width, y - x_height),
+                        (x_center + x_width, y + x_height), line_width)
         pygame.draw.line(surface, icon_color,
-                        (x_center - x_size, y + x_size),
-                        (x_center + x_size, y - x_size), line_width)
+                        (x_center - x_width, y + x_height),
+                        (x_center + x_width, y - x_height), line_width)
 
 
 def draw_clock_icon(surface, center, size):
