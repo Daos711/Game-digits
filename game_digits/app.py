@@ -31,9 +31,8 @@ class GameApp:
         self.panel_height = self.HEIGHT
         self.offset = (23, 23)
         self.COLORS = COLORS
+        pygame.mixer.pre_init(frequency=44100, size=-16, channels=1, buffer=256)
         pygame.init()
-        pygame.font.init()
-        pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
         # Загрузка звуков
         self.sounds = {}
         self._load_sounds()
