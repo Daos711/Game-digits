@@ -25,17 +25,16 @@ class ResultWindow:
     ROW_APPEAR_DELAY = 1000         # Interval between row appearances (1s)
     NUMBER_ANIMATION_DURATION = 2500  # Number animation duration (2.5s)
 
-    # Window dimensions (масштабируемые)
-    WINDOW_WIDTH = scale.scaled(420)
-    WINDOW_HEIGHT = scale.scaled(340)
-
-    # Layout constants (масштабируемые)
-    HEADER_HEIGHT = scale.scaled(50)
-    PADDING = scale.scaled(20)
-    ROW_HEIGHT = scale.scaled(50)
-    ROW_GAP = scale.scaled(12)
-
     def __init__(self, screen, screen_size, game_score, current_time, redraw_callback, play_sound_callback=None, test_mode=False):
+        # Window dimensions (масштабируемые - вычисляем в __init__ для динамического масштаба)
+        self.WINDOW_WIDTH = scale.scaled(420)
+        self.WINDOW_HEIGHT = scale.scaled(340)
+
+        # Layout constants (масштабируемые)
+        self.HEADER_HEIGHT = scale.scaled(50)
+        self.PADDING = scale.scaled(20)
+        self.ROW_HEIGHT = scale.scaled(50)
+        self.ROW_GAP = scale.scaled(12)
         self.screen = screen
         self.screen_width, self.screen_height = screen_size
         self.game_score = game_score
