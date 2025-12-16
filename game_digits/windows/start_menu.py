@@ -104,10 +104,11 @@ class StartMenu:
     RECORDS_SLIDE_DURATION_OPEN = 400  # ms for opening
     RECORDS_SLIDE_DURATION_CLOSE = 200  # ms for closing (faster)
 
-    def __init__(self, screen, screen_size, redraw_background):
+    def __init__(self, screen, screen_size, redraw_background, test_mode=False):
         self.screen = screen
         self.screen_width, self.screen_height = screen_size
         self.redraw_background = redraw_background
+        self.test_mode = test_mode
 
         # Динамические размеры панели
         self.PANEL_WIDTH = PANEL_WIDTH
@@ -517,7 +518,7 @@ class StartMenu:
                 # Show records
                 self.show_records = True
                 self.records_slide_direction = 1
-                self.cached_records = records.load_records()
+                self.cached_records = records.load_records(self.test_mode)
 
     def reset_for_entry(self):
         """Reset tiles for entry animation (coming from left)."""

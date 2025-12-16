@@ -101,7 +101,8 @@ class TestGameApp:
         self.start_menu = StartMenu(
             screen=self.screen,
             screen_size=(self.WIDTH, self.HEIGHT),
-            redraw_background=self.draw_background_for_menu
+            redraw_background=self.draw_background_for_menu,
+            test_mode=True
         )
 
         # Create pause overlay
