@@ -139,9 +139,9 @@ def draw_sound_icon(surface, center, size, sound_enabled=True):
         wave_center_x = front_x  # Center at cone edge
         wave_center_y = y
 
-        arc_thickness = size * 0.05  # Thickness of each arc
-        arc_gap = size * 0.07  # Gap between arcs
-        first_gap = size * 0.08  # Gap from speaker to first arc
+        arc_thickness = size * 0.045  # Thickness of each arc
+        arc_gap = size * 0.09  # Gap between arcs
+        first_gap = size * 0.10  # Gap from speaker to first arc
 
         # Arc angle spread (opening to the right, ±70 degrees)
         angle_spread = math.pi / 2.5
