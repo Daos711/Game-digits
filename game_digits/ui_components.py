@@ -131,26 +131,26 @@ def draw_sound_icon(surface, center, size, sound_enabled=True):
     pygame.draw.polygon(surface, icon_color, body_rect)
     pygame.draw.polygon(surface, icon_color, cone_points)
 
-    # Front edge line (thin vertical separator on cone front)
     front_x = speaker_left + body_width + cone_width
-    pygame.draw.line(surface, shadow_color,
-                    (front_x, y - body_height / 2 - cone_expand + 2),
-                    (front_x, y + body_height / 2 + cone_expand - 2), 1)
 
     if sound_enabled:
-        # Sound waves (2-3 concentric arcs) - bigger
-        wave_center_x = front_x + size * 0.06
+        # Sound waves (2 concentric arcs) - spaced apart
+        wave_start_x = front_x + size * 0.05
         line_width = max(2, scaled(3))
 
         # Small arc
-        arc_rect1 = (wave_center_x, y - size * 0.18, size * 0.18, size * 0.36)
-        arc_rect1_shadow = (wave_center_x + shadow_offset, y - size * 0.18 + shadow_offset, size * 0.18, size * 0.36)
+        arc_w1 = size * 0.15
+        arc_h1 = size * 0.30
+        arc_rect1 = (wave_start_x, y - arc_h1 / 2, arc_w1, arc_h1)
+        arc_rect1_shadow = (wave_start_x + shadow_offset, y - arc_h1 / 2 + shadow_offset, arc_w1, arc_h1)
         pygame.draw.arc(surface, shadow_color, arc_rect1_shadow, -math.pi / 3, math.pi / 3, line_width)
         pygame.draw.arc(surface, icon_color, arc_rect1, -math.pi / 3, math.pi / 3, line_width)
 
-        # Medium arc
-        arc_rect2 = (wave_center_x + size * 0.08, y - size * 0.28, size * 0.26, size * 0.56)
-        arc_rect2_shadow = (wave_center_x + size * 0.08 + shadow_offset, y - size * 0.28 + shadow_offset, size * 0.26, size * 0.56)
+        # Medium arc - more spaced out
+        arc_w2 = size * 0.22
+        arc_h2 = size * 0.44
+        arc_rect2 = (wave_start_x + size * 0.12, y - arc_h2 / 2, arc_w2, arc_h2)
+        arc_rect2_shadow = (wave_start_x + size * 0.12 + shadow_offset, y - arc_h2 / 2 + shadow_offset, arc_w2, arc_h2)
         pygame.draw.arc(surface, shadow_color, arc_rect2_shadow, -math.pi / 3, math.pi / 3, line_width)
         pygame.draw.arc(surface, icon_color, arc_rect2, -math.pi / 3, math.pi / 3, line_width)
     else:

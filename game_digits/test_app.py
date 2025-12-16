@@ -210,8 +210,8 @@ class TestGameApp:
         current_y = padding
 
         # Pause button and sound icon
-        # Кнопка паузы правее центра, иконка звука у правого края
-        button_x = panel_x + (self.panel_width - PAUSE_BTN_WIDTH) // 2 + scaled(15)
+        # Кнопка паузы по центру, иконка звука у правого края
+        button_x = panel_x + (self.panel_width - PAUSE_BTN_WIDTH) // 2
         button_y = current_y + pause_offset
 
         if button_y >= -10:

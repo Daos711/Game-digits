@@ -211,8 +211,8 @@ class GameApp:
         current_y = padding
 
         # === 1. Кнопка "Пауза" и иконка звука ===
-        # Кнопка паузы правее центра, иконка звука у правого края
-        button_x = panel_x + (self.panel_width - PAUSE_BTN_WIDTH) // 2 + scaled(15)
+        # Кнопка паузы по центру, иконка звука у правого края
+        button_x = panel_x + (self.panel_width - PAUSE_BTN_WIDTH) // 2
         button_y = current_y + pause_offset
 
         # Only draw if visible (y >= 0 means on screen)
