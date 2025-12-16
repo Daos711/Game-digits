@@ -28,6 +28,8 @@ class SettingsWindow:
         # Дополнительные масштабируемые значения (фиксируем при создании)
         self.close_btn_size = scale.scaled(32)
         self.close_btn_margin = scale.scaled(8)
+        self.close_btn_radius = scale.scaled(8)
+        self.close_x_line_width = max(1, scale.scaled(4))
         self.arrow_radius = scale.scaled(6)
         self.corner_radius = scale.CORNER_RADIUS
         self.cell_size = scale.scaled(18)
@@ -166,7 +168,9 @@ class SettingsWindow:
             close_pressed=self.close_pressed,
             corner_radius=self.corner_radius,
             close_btn_size=self.close_btn_size,
-            close_btn_margin=self.close_btn_margin
+            close_btn_margin=self.close_btn_margin,
+            close_btn_radius=self.close_btn_radius,
+            close_x_line_width=self.close_x_line_width
         )
 
         # === Resolution setting ===
