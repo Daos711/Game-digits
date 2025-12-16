@@ -35,8 +35,8 @@ class MenuTile:
         """Draw the tile with letter."""
         surface.fill(color)
 
-        # 3D bevel effect (не масштабируется для сохранения объёма)
-        bevel = 3
+        # 3D bevel effect (пропорционально размеру плитки, ~4.7%)
+        bevel = max(2, round(scale.TILE_SIZE * 3 / 64))
         dark_factor = 0.4
         dark = tuple(max(0, min(255, int(c * dark_factor))) for c in color)
 
@@ -370,9 +370,10 @@ class StartMenu:
                         (0, 0, rect.width, rect.height),
                         width=scale.BORDER_WIDTH, border_radius=scale.scaled(8))
 
-        # Draw text (визуально по центру)
+        # Draw text (визуально по центру - смещение пропорционально высоте)
         text_surf = self.button_font.render(text, True, (255, 255, 255))
-        text_rect = text_surf.get_rect(center=(rect.width // 2, rect.height // 2 - 1))
+        text_y_adjust = rect.height // 20
+        text_rect = text_surf.get_rect(center=(rect.width // 2, rect.height // 2 - text_y_adjust))
         btn_surface.blit(text_surf, text_rect)
 
         btn_surface.set_alpha(self.button_opacity)

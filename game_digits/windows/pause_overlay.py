@@ -450,13 +450,14 @@ class PauseOverlay:
                         border_radius=scale.scaled(8))
         btn_surface.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
 
-        # Текст (небольшой сдвиг вверх для визуального центрирования)
+        # Текст (пропорциональный сдвиг вверх для визуального центрирования)
+        text_y_adjust = rect.height // 20
         text = self.button_font.render("В меню", True, (255, 255, 255))
-        text_rect = text.get_rect(center=(rect.width // 2, rect.height // 2 - 1))
+        text_rect = text.get_rect(center=(rect.width // 2, rect.height // 2 - text_y_adjust))
 
         # Тень текста
         shadow = self.button_font.render("В меню", True, (140, 95, 0))
-        shadow_rect = shadow.get_rect(center=(rect.width // 2 + 1, rect.height // 2))
+        shadow_rect = shadow.get_rect(center=(rect.width // 2 + 1, rect.height // 2 - text_y_adjust))
         btn_surface.blit(shadow, shadow_rect)
         btn_surface.blit(text, text_rect)
 
