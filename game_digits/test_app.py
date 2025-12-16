@@ -386,6 +386,8 @@ class TestGameApp:
                 return True
 
             if self.is_paused:
+                # Проверяем нажатие на кнопку "В меню"
+                self.pause_overlay.handle_mouse_down(pos)
                 return True
 
             if self.game.is_initializing:
