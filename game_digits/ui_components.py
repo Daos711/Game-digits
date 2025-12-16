@@ -632,13 +632,16 @@ def draw_new_game_button(surface, rect, font, is_pressed=False, text="Новая
     # Text - dark blue for contrast on yellow-orange button
     text_surface = font.render(text, True, (20, 60, 120))
 
+    # Вертикальная коррекция для визуального центрирования (шрифт имеет смещённую метрику)
+    text_y_adjust = h // 20
+
     # Shadow - light yellow for depth effect
     shadow_surface = font.render(text, True, (255, 230, 150))
-    shadow_rect = shadow_surface.get_rect(center=(x + w // 2 + 1, y + h // 2 + y_offset))
+    shadow_rect = shadow_surface.get_rect(center=(x + w // 2 + 1, y + h // 2 + y_offset - text_y_adjust))
     surface.blit(shadow_surface, shadow_rect)
 
     # Main text (визуально по центру)
-    text_rect = text_surface.get_rect(center=(x + w // 2, y + h // 2 - 1 + y_offset))
+    text_rect = text_surface.get_rect(center=(x + w // 2, y + h // 2 + y_offset - text_y_adjust))
     surface.blit(text_surface, text_rect)
 
     return pygame.Rect(x, y, w, h)
