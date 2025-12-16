@@ -187,10 +187,18 @@ class ResultWindow:
 
         # Поздравление при попадании в топ-10
         if self.record_position is not None and rows_to_show >= 3 and current_total == self.total_score:
+            # Рамка поздравления (цвет как в оригинале)
+            congrats_bg_color = (255, 238, 194)  # Светло-жёлтый
+            congrats_text_color = (171, 78, 59)   # Красно-коричневый
+            congrats_rect = pygame.Rect(row_x, current_y, row_width, self.CONGRATS_HEIGHT)
+            pygame.draw.rect(window_surface, congrats_bg_color, congrats_rect, border_radius=scaled(8))
+            # Тонкая обводка
+            pygame.draw.rect(window_surface, (220, 200, 160), congrats_rect, width=1, border_radius=scaled(8))
+            # Текст по центру рамки
             place_text = self._get_place_text(self.record_position)
-            congrats_surf = self.label_font.render(place_text, True, (34, 139, 34))  # Зелёный
-            congrats_rect = congrats_surf.get_rect(centerx=self.WINDOW_WIDTH // 2, y=current_y)
-            window_surface.blit(congrats_surf, congrats_rect)
+            congrats_surf = self.label_font.render(place_text, True, congrats_text_color)
+            text_rect = congrats_surf.get_rect(center=congrats_rect.center)
+            window_surface.blit(congrats_surf, text_rect)
 
         # "New game" button (show only when animation is complete)
         if rows_to_show >= 3 and current_total == self.total_score:
