@@ -212,7 +212,7 @@ class GameApp:
 
         # === 1. Кнопка "Пауза" и иконка звука ===
         # Кнопка паузы левее центра, иконка звука у правого края
-        button_x = panel_x + padding
+        button_x = panel_x + padding + scaled(20)
         button_y = current_y + pause_offset
 
         # Only draw if visible (y >= 0 means on screen)

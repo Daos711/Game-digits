@@ -211,7 +211,7 @@ class TestGameApp:
 
         # Pause button and sound icon
         # Кнопка паузы левее, иконка звука у правого края
-        button_x = panel_x + padding
+        button_x = panel_x + padding + scaled(20)
         button_y = current_y + pause_offset
 
         if button_y >= -10:
