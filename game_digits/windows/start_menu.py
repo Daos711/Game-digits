@@ -6,7 +6,7 @@ import pygame
 from game_digits import get_font_path
 from game_digits.constants import COLORS, TILE_SIZE, TILE_BORDER_COLOR
 from game_digits.scale import (
-    TILE_FONT_SIZE, PANEL_WIDTH, CORNER_RADIUS, scaled,
+    TILE_FONT_SIZE, PANEL_WIDTH, CORNER_RADIUS, BORDER_WIDTH, scaled,
     FONT_MENU_BUTTON, FONT_MENU_RECORDS_TITLE, FONT_MENU_RECORDS, FONT_MENU_RECORDS_SMALL,
     BUTTON_WIDTH, BUTTON_HEIGHT, RECORDS_BTN_WIDTH, RECORDS_BTN_HEIGHT,
     RECORDS_PANEL_HEIGHT, RECORDS_PANEL_TOP, RECORDS_ROW_HEIGHT,
@@ -41,7 +41,7 @@ class MenuTile:
         """Draw the tile with letter."""
         surface.fill(color)
 
-        # 3D bevel effect
+        # 3D bevel effect (не масштабируется для сохранения объёма)
         bevel = 3
         dark_factor = 0.4
         dark = tuple(max(0, min(255, int(c * dark_factor))) for c in color)
@@ -104,10 +104,11 @@ class StartMenu:
     RECORDS_SLIDE_DURATION_OPEN = 400  # ms for opening
     RECORDS_SLIDE_DURATION_CLOSE = 200  # ms for closing (faster)
 
-    def __init__(self, screen, screen_size, redraw_background):
+    def __init__(self, screen, screen_size, redraw_background, test_mode=False):
         self.screen = screen
         self.screen_width, self.screen_height = screen_size
         self.redraw_background = redraw_background
+        self.test_mode = test_mode
 
         # Динамические размеры панели
         self.PANEL_WIDTH = PANEL_WIDTH
@@ -354,10 +355,10 @@ class StartMenu:
         # Draw button background
         pygame.draw.rect(btn_surface, bg_color,
                         (0, 0, self.records_button_rect.width, self.records_button_rect.height),
-                        border_radius=8)
+                        border_radius=scaled(8))
         pygame.draw.rect(btn_surface, border_color,
                         (0, 0, self.records_button_rect.width, self.records_button_rect.height),
-                        width=2, border_radius=8)
+                        width=BORDER_WIDTH, border_radius=scaled(8))
 
         # Draw text (визуально по центру)
         text = self.button_font.render("Рекорды", True, (255, 255, 255))
@@ -389,7 +390,7 @@ class StartMenu:
         pygame.draw.rect(panel_surface, (30, 70, 100, 240),
                         (0, 0, panel_width, panel_height), border_radius=CORNER_RADIUS)
         pygame.draw.rect(panel_surface, (50, 100, 140),
-                        (0, 0, panel_width, panel_height), width=2, border_radius=CORNER_RADIUS)
+                        (0, 0, panel_width, panel_height), width=BORDER_WIDTH, border_radius=CORNER_RADIUS)
 
         # Column positions (center-aligned)
         col_positions = [RECORDS_COL_1, RECORDS_COL_2, RECORDS_COL_3, RECORDS_COL_4]
@@ -517,7 +518,7 @@ class StartMenu:
                 # Show records
                 self.show_records = True
                 self.records_slide_direction = 1
-                self.cached_records = records.load_records()
+                self.cached_records = records.load_records(self.test_mode)
 
     def reset_for_entry(self):
         """Reset tiles for entry animation (coming from left)."""

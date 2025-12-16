@@ -84,6 +84,121 @@ def draw_pause_button(surface, rect, font, text="пауза", is_pressed=False):
     return pygame.Rect(x, y, w, h)
 
 
+def draw_sound_icon(surface, center, size, sound_enabled=True):
+    """Draw sound icon - speaker with waves (on) or X (off).
+
+    Style: white icon with shadow on blue background.
+    """
+    x, y = center
+
+    # Colors
+    icon_color = (255, 255, 255)  # White
+    shadow_color = (40, 100, 140)  # Dark blue shadow
+    shadow_offset = max(1, scaled(2))
+
+    # Speaker dimensions - bigger cone
+    body_width = size * 0.18
+    body_height = size * 0.32
+    cone_width = size * 0.28
+    cone_expand = size * 0.28  # Much bigger cone expansion
+
+    # Speaker position (left side of icon)
+    speaker_left = x - size * 0.4
+
+    # Speaker body (small rectangle on the left)
+    body_rect = [
+        (speaker_left, y - body_height / 2),
+        (speaker_left + body_width, y - body_height / 2),
+        (speaker_left + body_width, y + body_height / 2),
+        (speaker_left, y + body_height / 2),
+    ]
+
+    # Speaker cone (trapezoid expanding to the right)
+    cone_points = [
+        (speaker_left + body_width, y - body_height / 2),
+        (speaker_left + body_width + cone_width, y - body_height / 2 - cone_expand),
+        (speaker_left + body_width + cone_width, y + body_height / 2 + cone_expand),
+        (speaker_left + body_width, y + body_height / 2),
+    ]
+
+    # Draw shadow first
+    body_shadow = [(p[0] + shadow_offset, p[1] + shadow_offset) for p in body_rect]
+    cone_shadow = [(p[0] + shadow_offset, p[1] + shadow_offset) for p in cone_points]
+    pygame.draw.polygon(surface, shadow_color, body_shadow)
+    pygame.draw.polygon(surface, shadow_color, cone_shadow)
+
+    # Draw main speaker
+    pygame.draw.polygon(surface, icon_color, body_rect)
+    pygame.draw.polygon(surface, icon_color, cone_points)
+
+    front_x = speaker_left + body_width + cone_width
+
+    if sound_enabled:
+        # Sound waves: 3 solid filled arc segments ")))" to the RIGHT of speaker
+        # Each arc is a donut-slice (filled polygon), not overlapping the speaker
+        wave_center_x = front_x  # Center at cone edge
+        wave_center_y = y
+
+        arc_thickness = size * 0.05  # Thickness of each arc
+        arc_gap = size * 0.07  # Gap between arcs
+        first_gap = size * 0.08  # Gap from speaker to first arc
+
+        # Arc angle spread (opening to the right, ±70 degrees)
+        angle_spread = math.pi / 2.5
+        num_points = 16  # Points per arc edge for smooth curve
+
+        def draw_filled_arc(cx, cy, inner_r, outer_r, spread, color):
+            """Draw a filled arc segment (donut slice) as polygon."""
+            points = []
+            # Outer edge (from -angle to +angle)
+            for i in range(num_points + 1):
+                angle = -spread + (2 * spread * i / num_points)
+                px = cx + outer_r * math.cos(angle)
+                py = cy - outer_r * math.sin(angle)
+                points.append((px, py))
+            # Inner edge (from +angle back to -angle)
+            for i in range(num_points, -1, -1):
+                angle = -spread + (2 * spread * i / num_points)
+                px = cx + inner_r * math.cos(angle)
+                py = cy - inner_r * math.sin(angle)
+                points.append((px, py))
+            pygame.draw.polygon(surface, color, points)
+
+        # Three arcs with increasing radius, starting after gap from speaker
+        r1_inner = first_gap
+        r1_outer = r1_inner + arc_thickness
+        r2_inner = r1_outer + arc_gap
+        r2_outer = r2_inner + arc_thickness
+        r3_inner = r2_outer + arc_gap
+        r3_outer = r3_inner + arc_thickness
+
+        draw_filled_arc(wave_center_x, wave_center_y, r1_inner, r1_outer, angle_spread, icon_color)
+        draw_filled_arc(wave_center_x, wave_center_y, r2_inner, r2_outer, angle_spread, icon_color)
+        draw_filled_arc(wave_center_x, wave_center_y, r3_inner, r3_outer, angle_spread, icon_color)
+    else:
+        # X mark (muted) - taller X to the right of speaker
+        x_center = front_x + size * 0.22
+        x_width = size * 0.12
+        x_height = size * 0.22  # Taller vertically
+        line_width = max(3, scaled(4))
+
+        # Draw shadow
+        pygame.draw.line(surface, shadow_color,
+                        (x_center - x_width + shadow_offset, y - x_height + shadow_offset),
+                        (x_center + x_width + shadow_offset, y + x_height + shadow_offset), line_width)
+        pygame.draw.line(surface, shadow_color,
+                        (x_center - x_width + shadow_offset, y + x_height + shadow_offset),
+                        (x_center + x_width + shadow_offset, y - x_height + shadow_offset), line_width)
+
+        # Draw main X
+        pygame.draw.line(surface, icon_color,
+                        (x_center - x_width, y - x_height),
+                        (x_center + x_width, y + x_height), line_width)
+        pygame.draw.line(surface, icon_color,
+                        (x_center - x_width, y + x_height),
+                        (x_center + x_width, y - x_height), line_width)
+
+
 def draw_clock_icon(surface, center, size):
     """Draw clock icon - yellow circle with clock hands (like reference)."""
     x, y = center

@@ -9,6 +9,7 @@ from game_digits.scale import (
     FONT_RESULT_TITLE, FONT_RESULT_LABEL, FONT_RESULT_VALUE, FONT_RESULT_BUTTON,
     CORNER_RADIUS, scaled
 )
+from game_digits.sprites import ConfettiSystem
 
 
 class ResultWindow:
@@ -37,12 +38,14 @@ class ResultWindow:
     ROW_HEIGHT = scaled(50)
     ROW_GAP = scaled(12)
 
-    def __init__(self, screen, screen_size, game_score, current_time, redraw_callback):
+    def __init__(self, screen, screen_size, game_score, current_time, redraw_callback, play_sound_callback=None, test_mode=False):
         self.screen = screen
         self.screen_width, self.screen_height = screen_size
         self.game_score = game_score
         self.current_time = current_time
         self.redraw_callback = redraw_callback
+        self.play_sound = play_sound_callback
+        self.test_mode = test_mode
 
         # Calculate window position (centered)
         self.window_x = (self.screen_width - self.WINDOW_WIDTH) // 2
@@ -53,6 +56,21 @@ class ResultWindow:
         self.bonus = 300 + 5 * self.remaining_time
         self.total_score = self.game_score + self.bonus
 
+        # Save record FIRST to know if we need extra space
+        self.record_position = records.add_record(
+            score=self.game_score,
+            bonus=self.bonus,
+            total=self.total_score,
+            test_mode=self.test_mode
+        )
+
+        # Adjust window height if showing congratulations
+        self.CONGRATS_HEIGHT = scaled(35) if self.record_position is not None else 0
+        self.actual_window_height = self.WINDOW_HEIGHT + self.CONGRATS_HEIGHT
+
+        # Recalculate window position with new height
+        self.window_y = (self.screen_height - self.actual_window_height) // 2
+
         # Load fonts
         bold_font_path = get_font_path("2204.ttf")
         self.title_font = pygame.font.Font(bold_font_path, FONT_RESULT_TITLE)
@@ -60,10 +78,10 @@ class ResultWindow:
         self.value_font = pygame.font.Font(bold_font_path, FONT_RESULT_VALUE)
         self.button_font = pygame.font.Font(bold_font_path, FONT_RESULT_BUTTON)
 
-        # Button positions (relative to window)
+        # Button positions (relative to window) - adjusted for congrats row
         self.new_game_btn_rel = pygame.Rect(
             self.PADDING,
-            self.HEADER_HEIGHT + self.PADDING + (self.ROW_HEIGHT + self.ROW_GAP) * 3 + 5,
+            self.HEADER_HEIGHT + self.PADDING + (self.ROW_HEIGHT + self.ROW_GAP) * 3 + self.CONGRATS_HEIGHT + scaled(12),
             self.WINDOW_WIDTH - 2 * self.PADDING,
             scaled(50)
         )
@@ -82,12 +100,11 @@ class ResultWindow:
         self.rows_animation_start_time = 0
         self.animation_complete = False
 
-        # Save record
-        self.record_position = records.add_record(
-            score=self.game_score,
-            bonus=self.bonus,
-            total=self.total_score
-        )
+        # Конфетти для топ-10
+        self.confetti = None
+        self.confetti_started = False
+        if self.record_position is not None:
+            self.confetti = ConfettiSystem(self.screen_width, self.screen_height)
 
     def _draw_window(self, rows_to_show=3, current_total=None, opacity=255, overlay_alpha=128):
         """Draw the complete result window with animation state.
@@ -105,7 +122,7 @@ class ResultWindow:
             self.screen.blit(overlay, (0, 0))
 
         # Create window surface
-        window_surface = pygame.Surface((self.WINDOW_WIDTH, self.WINDOW_HEIGHT), pygame.SRCALPHA)
+        window_surface = pygame.Surface((self.WINDOW_WIDTH, self.actual_window_height), pygame.SRCALPHA)
 
         # Draw header FIRST
         close_btn_rect = ui.draw_result_window_header(
@@ -119,10 +136,10 @@ class ResultWindow:
         # Draw checkered ON TOP with rounded corners visible
         ui.draw_checkered_content_area(
             window_surface,
-            (0, 0, self.WINDOW_WIDTH, self.WINDOW_HEIGHT),
+            (0, 0, self.WINDOW_WIDTH, self.actual_window_height),
             self.HEADER_HEIGHT,
-            corner_radius=self.CORNER_RADIUS,
-            cell_size=18,
+            corner_radius=CORNER_RADIUS,
+            cell_size=scaled(18),
             border_color=(145, 179, 163)
         )
 
@@ -166,7 +183,22 @@ class ResultWindow:
                 self.label_font,
                 self.value_font
             )
-        current_y += self.ROW_HEIGHT + self.ROW_GAP + 5
+        current_y += self.ROW_HEIGHT + self.ROW_GAP
+
+        # Поздравление при попадании в топ-10
+        if self.record_position is not None and rows_to_show >= 3 and current_total == self.total_score:
+            # Рамка поздравления (цвет как в оригинале)
+            congrats_bg_color = (255, 238, 194)  # Светло-жёлтый
+            congrats_text_color = (171, 78, 59)   # Красно-коричневый
+            congrats_rect = pygame.Rect(row_x, current_y, row_width, self.CONGRATS_HEIGHT)
+            pygame.draw.rect(window_surface, congrats_bg_color, congrats_rect, border_radius=scaled(8))
+            # Тонкая обводка
+            pygame.draw.rect(window_surface, (220, 200, 160), congrats_rect, width=1, border_radius=scaled(8))
+            # Текст по центру рамки
+            place_text = self._get_place_text(self.record_position)
+            congrats_surf = self.label_font.render(place_text, True, congrats_text_color)
+            text_rect = congrats_surf.get_rect(center=congrats_rect.center)
+            window_surface.blit(congrats_surf, text_rect)
 
         # "New game" button (show only when animation is complete)
         if rows_to_show >= 3 and current_total == self.total_score:
@@ -240,6 +272,17 @@ class ResultWindow:
 
         return window_opacity, overlay_alpha
 
+    def _get_place_text(self, position):
+        """Возвращает текст поздравления с местом."""
+        if position == 1:
+            return "Новый рекорд! 1 место!"
+        elif position == 2:
+            return "Отлично! 2 место!"
+        elif position == 3:
+            return "Отлично! 3 место!"
+        else:
+            return f"Топ-10! {position} место!"
+
     def show(self):
         """Display the result window and wait for user interaction.
 
@@ -285,6 +328,21 @@ class ResultWindow:
                 opacity=window_opacity,
                 overlay_alpha=overlay_alpha
             )
+
+            # Конфетти при попадании в топ-10
+            if self.confetti is not None:
+                # Запускаем конфетти когда анимация завершена
+                if self.animation_complete and not self.confetti_started:
+                    self.confetti.start()
+                    self.confetti_started = True
+                    if self.play_sound:
+                        self.play_sound('celebration')
+
+                # Обновляем и рисуем конфетти
+                if self.confetti_started:
+                    self.confetti.update()
+                    self.confetti.draw(self.screen)
+                    pygame.display.update()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:

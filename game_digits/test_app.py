@@ -4,7 +4,7 @@ Test mode application for quick result window testing.
 """
 import pygame
 
-from game_digits import get_image_path, get_font_path
+from game_digits import get_image_path, get_font_path, get_sound_path
 from game_digits.constants import (
     TILE_SIZE, GAP, COLORS,
     grid_to_pixel, pixel_to_grid, pixel_to_grid_round, create_background_surface
@@ -12,8 +12,9 @@ from game_digits.constants import (
 from game_digits.scale import (
     PANEL_WIDTH, FRAME_WIDTH, GRID_CELL_SIZE,
     FONT_PANEL_LABEL, FONT_PANEL_VALUE, FONT_PANEL_PAUSE,
-    PAUSE_BTN_WIDTH, PAUSE_BTN_HEIGHT, ICON_SIZE,
-    VALUE_BAR_HEIGHT, PROGRESS_BAR_HEIGHT, PANEL_PADDING
+    PAUSE_BTN_WIDTH, PAUSE_BTN_HEIGHT, ICON_SIZE, SOUND_ICON_SIZE,
+    VALUE_BAR_HEIGHT, PROGRESS_BAR_HEIGHT, PANEL_PADDING,
+    scaled
 )
 from game_digits.test_game import TestGame, TEST_BOARD_SIZE
 from game_digits.sprites import Arrow, ScorePopup
@@ -39,8 +40,11 @@ class TestGameApp:
         self.offset = (23, 23)
         self.COLORS = COLORS
 
+        pygame.mixer.pre_init(frequency=44100, size=-16, channels=1, buffer=256)
         pygame.init()
-        pygame.font.init()
+        # Загрузка звуков
+        self.sounds = {}
+        self._load_sounds()
 
         bold_cyrillic = get_font_path("2204.ttf")
         self.font_bold_large = pygame.font.Font(bold_cyrillic, FONT_PANEL_LABEL)
@@ -49,6 +53,8 @@ class TestGameApp:
 
         self.is_paused = False
         self.pause_button_rect = None
+        self.sound_enabled = True
+        self.sound_button_rect = None
         self.pause_start_time = 0
         self.total_pause_time = 0
         self.paused_progress = 1.0
@@ -97,7 +103,8 @@ class TestGameApp:
         self.start_menu = StartMenu(
             screen=self.screen,
             screen_size=(self.WIDTH, self.HEIGHT),
-            redraw_background=self.draw_background_for_menu
+            redraw_background=self.draw_background_for_menu,
+            test_mode=True
         )
 
         # Create pause overlay
@@ -202,8 +209,9 @@ class TestGameApp:
 
         current_y = padding
 
-        # Pause button
-        button_x = panel_x + (self.panel_width - PAUSE_BTN_WIDTH) // 2
+        # Pause button and sound icon
+        # Кнопка паузы левее, иконка звука у правого края
+        button_x = panel_x + padding + scaled(20)
         button_y = current_y + pause_offset
 
         if button_y >= -10:
@@ -213,10 +221,27 @@ class TestGameApp:
                 self.font_bold_medium,
                 is_pressed=self.is_paused
             )
+
+            # Sound icon at right edge of panel
+            sound_icon_x = panel_x + self.panel_width - padding - SOUND_ICON_SIZE // 2
+            sound_icon_y = button_y + PAUSE_BTN_HEIGHT // 2
+            ui.draw_sound_icon(
+                self.screen,
+                (sound_icon_x, sound_icon_y),
+                SOUND_ICON_SIZE,
+                sound_enabled=self.sound_enabled
+            )
+            self.sound_button_rect = pygame.Rect(
+                sound_icon_x - SOUND_ICON_SIZE // 2,
+                sound_icon_y - SOUND_ICON_SIZE // 2,
+                SOUND_ICON_SIZE,
+                SOUND_ICON_SIZE
+            )
         else:
             self.pause_button_rect = None
+            self.sound_button_rect = None
 
-        current_y += PAUSE_BTN_HEIGHT + 25
+        current_y += PAUSE_BTN_HEIGHT + scaled(25)
 
         # Time block
         time_block_y = current_y + time_offset
@@ -229,18 +254,18 @@ class TestGameApp:
 
         if time_block_y >= -10:
             self.screen.blit(time_label, (label_x, time_block_y))
-            icon_y = time_block_y + time_label.get_height() + 10
+            icon_y = time_block_y + time_label.get_height() + scaled(10)
 
             ui.draw_value_bar(
                 self.screen,
-                (bar_x, icon_y + 3, bar_width, VALUE_BAR_HEIGHT),
+                (bar_x, icon_y + scaled(3), bar_width, VALUE_BAR_HEIGHT),
                 self.game.current_time,
                 self.font_bold_value
             )
             ui.draw_clock_icon(self.screen, (icon_x + ICON_SIZE // 2, icon_y + ICON_SIZE // 2), ICON_SIZE)
 
             # Progress bar
-            progress_y = icon_y + ICON_SIZE + 15
+            progress_y = icon_y + ICON_SIZE + scaled(15)
             progress_x = panel_x + padding
             progress_width = self.panel_width - padding * 2
 
@@ -262,7 +287,7 @@ class TestGameApp:
                 progress
             )
 
-        current_y += time_label.get_height() + 10 + ICON_SIZE + 15 + PROGRESS_BAR_HEIGHT + 25
+        current_y += time_label.get_height() + scaled(10) + ICON_SIZE + scaled(15) + PROGRESS_BAR_HEIGHT + scaled(25)
 
         # Score block
         score_block_y = current_y + score_offset
@@ -271,15 +296,37 @@ class TestGameApp:
             score_label = self.font_bold_large.render("Очки", True, (255, 255, 255))
             label_x = panel_x + (self.panel_width - score_label.get_width()) // 2
             self.screen.blit(score_label, (label_x, score_block_y))
-            score_icon_y = score_block_y + score_label.get_height() + 10
+            score_icon_y = score_block_y + score_label.get_height() + scaled(10)
 
             ui.draw_value_bar(
                 self.screen,
-                (bar_x, score_icon_y + 3, bar_width, VALUE_BAR_HEIGHT),
+                (bar_x, score_icon_y + scaled(3), bar_width, VALUE_BAR_HEIGHT),
                 self.game.score,
                 self.font_bold_value
             )
             ui.draw_sun_icon(self.screen, (icon_x + ICON_SIZE // 2, score_icon_y + ICON_SIZE // 2), ICON_SIZE)
+
+    def _load_sounds(self):
+        """Загрузка звуковых эффектов."""
+        sound_files = {
+            'remove': 'remove.wav',
+            'spawn': 'spawn.wav',
+            'celebration': 'celebration.wav',
+        }
+        for name, filename in sound_files.items():
+            try:
+                path = get_sound_path(filename)
+                self.sounds[name] = pygame.mixer.Sound(path)
+            except (pygame.error, FileNotFoundError):
+                self.sounds[name] = None
+
+    def play_sound(self, name):
+        """Воспроизвести звук по имени."""
+        if not self.sound_enabled:
+            return
+        sound = self.sounds.get(name)
+        if sound:
+            sound.play()
 
     def show_result_window(self):
         """Display the game result window with final score.
@@ -299,7 +346,9 @@ class TestGameApp:
             screen_size=(self.WIDTH, self.HEIGHT),
             game_score=self.game.score,
             current_time=self.game.current_time,
-            redraw_callback=redraw_background
+            redraw_callback=redraw_background,
+            play_sound_callback=self.play_sound,
+            test_mode=True
         )
         return result_window.show()
 
@@ -336,6 +385,10 @@ class TestGameApp:
 
             if self.pause_button_rect and self.pause_button_rect.collidepoint(pos):
                 self.toggle_pause()
+                return True
+
+            if self.sound_button_rect and self.sound_button_rect.collidepoint(pos):
+                self.sound_enabled = not self.sound_enabled
                 return True
 
             if self.is_paused:
@@ -393,6 +446,7 @@ class TestGameApp:
                 return
             positions = self.game.remove_tiles(self.game.selected_tile, tile)
             if positions:
+                self.play_sound('remove')
                 self.arrows.empty()
                 self.spawn_score_animation(positions)
                 self.update_display()
