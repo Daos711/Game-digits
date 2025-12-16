@@ -127,11 +127,11 @@ class StartMenu:
         ]
 
         # Calculate tile positions (centered on game field)
-        # Game field starts at (scale.scaled(20), scale.scaled(20)) and is screen_height - scale.scaled(20) in size
-        field_margin = scale.scaled(20)
-        field_size = self.screen_height - field_margin
-        field_center_x = field_margin + field_size // 2
-        field_center_y = field_margin + field_size // 2 - scale.scaled(50)  # Slightly above center
+        # Game field: starts at 2*FRAME_WIDTH, size = HEIGHT - 4*FRAME_WIDTH
+        frame = scale.FRAME_WIDTH
+        tile_area = self.screen_height - 4 * frame  # Actual playable area size
+        field_center_x = 2 * frame + tile_area // 2
+        field_center_y = 2 * frame + tile_area // 2 - scale.scaled(50)  # Slightly above center
 
         tile_gap = scale.scaled(8)
         total_width = len(letters) * scale.TILE_SIZE + (len(letters) - 1) * tile_gap
@@ -144,9 +144,11 @@ class StartMenu:
             y = field_center_y - scale.TILE_SIZE // 2
             self.tiles.append(MenuTile(letter, color, x, y))
 
-        # Start game button setup
+        # Start game button setup - centered below the title tiles
+        # Center button relative to the title tiles for perfect alignment
+        title_center_x = start_x + total_width // 2
         self.button_rect = pygame.Rect(
-            field_center_x - scale.BUTTON_WIDTH // 2,
+            title_center_x - scale.BUTTON_WIDTH // 2,
             field_center_y + scale.TILE_SIZE // 2 + scale.scaled(40),
             scale.BUTTON_WIDTH,
             scale.BUTTON_HEIGHT
