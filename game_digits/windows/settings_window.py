@@ -19,11 +19,12 @@ class SettingsWindow:
     def __init__(self, screen, screen_size, redraw_callback):
         # Window dimensions - computed at runtime (сохраняем при создании, чтобы не менялись при смене пресета)
         self.WINDOW_WIDTH = scale.scaled(380)
-        self.WINDOW_HEIGHT = scale.scaled(250)
+        self.WINDOW_HEIGHT = scale.scaled(340)  # Увеличено для второго ряда
         self.HEADER_HEIGHT = scale.scaled(50)
-        self.PADDING = scale.scaled(25)
-        self.ROW_HEIGHT = scale.scaled(50)
-        self.ROW_GAP = scale.scaled(20)
+        self.PADDING = scale.scaled(20)
+        self.ROW_HEIGHT = scale.scaled(45)
+        self.LABEL_HEIGHT = scale.scaled(25)
+        self.ROW_GAP = scale.scaled(12)
 
         # Дополнительные масштабируемые значения (фиксируем при создании)
         self.close_btn_size = scale.scaled(32)
@@ -48,8 +49,8 @@ class SettingsWindow:
         # Load fonts
         bold_font_path = get_font_path("2204.ttf")
         self.title_font = pygame.font.Font(bold_font_path, scale.scaled(28))
-        self.label_font = pygame.font.Font(bold_font_path, scale.scaled(22))
-        self.value_font = pygame.font.Font(bold_font_path, scale.scaled(20))
+        self.label_font = pygame.font.Font(bold_font_path, scale.scaled(20))
+        self.value_font = pygame.font.Font(bold_font_path, scale.scaled(18))
         self.button_font = pygame.font.Font(bold_font_path, scale.scaled(24))
 
         # Button dimensions
@@ -57,15 +58,20 @@ class SettingsWindow:
         self.apply_btn_width = self.WINDOW_WIDTH - 2 * self.PADDING
         self.apply_btn_height = scale.scaled(45)
 
-        # State
+        # State - size arrows
         self.close_pressed = False
-        self.left_arrow_pressed = False
-        self.right_arrow_pressed = False
+        self.size_left_pressed = False
+        self.size_right_pressed = False
+        # State - speed arrows
+        self.speed_left_pressed = False
+        self.speed_right_pressed = False
         self.apply_pressed = False
 
         # Track if settings changed
-        self.original_preset = settings.get_current_preset()
-        self.settings_changed = False
+        self.original_size_preset = settings.get_current_preset()
+        self.original_speed_preset = settings.get_current_speed_preset()
+        self.size_changed = False
+        self.speed_changed = False
 
     def _get_close_button_rect(self):
         """Get the close button rectangle."""
@@ -76,9 +82,17 @@ class SettingsWindow:
             self.close_btn_size
         )
 
-    def _get_left_arrow_rect(self):
-        """Get left arrow button rectangle."""
-        y = self.window_y + self.HEADER_HEIGHT + self.PADDING + self.ROW_HEIGHT
+    def _get_size_row_y(self):
+        """Get Y position for size row."""
+        return self.HEADER_HEIGHT + self.PADDING + self.LABEL_HEIGHT
+
+    def _get_speed_row_y(self):
+        """Get Y position for speed row."""
+        return self._get_size_row_y() + self.ROW_HEIGHT + self.ROW_GAP + self.LABEL_HEIGHT
+
+    def _get_size_left_rect(self):
+        """Get left arrow button rectangle for size."""
+        y = self.window_y + self._get_size_row_y()
         return pygame.Rect(
             self.window_x + self.PADDING,
             y + (self.ROW_HEIGHT - self.arrow_btn_size) // 2,
@@ -86,9 +100,29 @@ class SettingsWindow:
             self.arrow_btn_size
         )
 
-    def _get_right_arrow_rect(self):
-        """Get right arrow button rectangle."""
-        y = self.window_y + self.HEADER_HEIGHT + self.PADDING + self.ROW_HEIGHT
+    def _get_size_right_rect(self):
+        """Get right arrow button rectangle for size."""
+        y = self.window_y + self._get_size_row_y()
+        return pygame.Rect(
+            self.window_x + self.WINDOW_WIDTH - self.PADDING - self.arrow_btn_size,
+            y + (self.ROW_HEIGHT - self.arrow_btn_size) // 2,
+            self.arrow_btn_size,
+            self.arrow_btn_size
+        )
+
+    def _get_speed_left_rect(self):
+        """Get left arrow button rectangle for speed."""
+        y = self.window_y + self._get_speed_row_y()
+        return pygame.Rect(
+            self.window_x + self.PADDING,
+            y + (self.ROW_HEIGHT - self.arrow_btn_size) // 2,
+            self.arrow_btn_size,
+            self.arrow_btn_size
+        )
+
+    def _get_speed_right_rect(self):
+        """Get right arrow button rectangle for speed."""
+        y = self.window_y + self._get_speed_row_y()
         return pygame.Rect(
             self.window_x + self.WINDOW_WIDTH - self.PADDING - self.arrow_btn_size,
             y + (self.ROW_HEIGHT - self.arrow_btn_size) // 2,
@@ -142,6 +176,39 @@ class SettingsWindow:
 
         pygame.draw.polygon(surface, arrow_color, points)
 
+    def _draw_setting_row(self, surface, label, value, row_y, left_pressed, right_pressed):
+        """Draw a setting row with label, value and arrow buttons."""
+        # Label (по центру)
+        label_y = row_y - self.LABEL_HEIGHT
+        label_surf = self.label_font.render(label, True, (40, 92, 120))
+        label_x = (self.WINDOW_WIDTH - label_surf.get_width()) // 2
+        surface.blit(label_surf, (label_x, label_y))
+
+        # Value display area (between arrows)
+        value_area_x = self.PADDING + self.arrow_btn_size + self.value_gap
+        value_area_width = self.WINDOW_WIDTH - 2 * self.PADDING - 2 * self.arrow_btn_size - 2 * self.value_gap
+
+        # Draw value background
+        value_rect = (value_area_x, row_y, value_area_width, self.ROW_HEIGHT)
+        pygame.draw.rect(surface, (230, 240, 250), value_rect, border_radius=self.value_border_radius)
+        pygame.draw.rect(surface, (150, 180, 200), value_rect, width=2, border_radius=self.value_border_radius)
+
+        # Draw value text
+        value_surf = self.value_font.render(value, True, (40, 80, 120))
+        value_x = value_area_x + (value_area_width - value_surf.get_width()) // 2
+        value_y = row_y + (self.ROW_HEIGHT - value_surf.get_height()) // 2
+        surface.blit(value_surf, (value_x, value_y))
+
+        # Draw arrow buttons
+        left_rect = (self.PADDING, row_y + (self.ROW_HEIGHT - self.arrow_btn_size) // 2,
+                    self.arrow_btn_size, self.arrow_btn_size)
+        right_rect = (self.WINDOW_WIDTH - self.PADDING - self.arrow_btn_size,
+                     row_y + (self.ROW_HEIGHT - self.arrow_btn_size) // 2,
+                     self.arrow_btn_size, self.arrow_btn_size)
+
+        self._draw_arrow_button(surface, left_rect, 'left', left_pressed)
+        self._draw_arrow_button(surface, right_rect, 'right', right_pressed)
+
     def _draw_window(self):
         """Draw the settings window."""
         # Create window surface
@@ -162,7 +229,7 @@ class SettingsWindow:
         )
 
         # Draw header
-        close_rect_rel = ui.draw_result_window_header(
+        ui.draw_result_window_header(
             window_surface,
             (0, 0, self.WINDOW_WIDTH, self.HEADER_HEIGHT),
             "Настройки",
@@ -175,42 +242,25 @@ class SettingsWindow:
             close_x_line_width=self.close_x_line_width
         )
 
-        # === Resolution setting ===
-        current_y = self.HEADER_HEIGHT + self.PADDING
+        # === Size setting row ===
+        self._draw_setting_row(
+            window_surface,
+            "Размер:",
+            settings.get_preset_name(),
+            self._get_size_row_y(),
+            self.size_left_pressed,
+            self.size_right_pressed
+        )
 
-        # Label "Размер:" (по центру)
-        label_text = "Размер:"
-        label_surf = self.label_font.render(label_text, True, (40, 92, 120))
-        label_x = (self.WINDOW_WIDTH - label_surf.get_width()) // 2
-        window_surface.blit(label_surf, (label_x, current_y))
-
-        current_y += self.ROW_HEIGHT
-
-        # Value display area (between arrows)
-        value_area_x = self.PADDING + self.arrow_btn_size + self.value_gap
-        value_area_width = self.WINDOW_WIDTH - 2 * self.PADDING - 2 * self.arrow_btn_size - 2 * self.value_gap
-
-        # Draw value background
-        value_rect = (value_area_x, current_y, value_area_width, self.ROW_HEIGHT)
-        pygame.draw.rect(window_surface, (230, 240, 250), value_rect, border_radius=self.value_border_radius)
-        pygame.draw.rect(window_surface, (150, 180, 200), value_rect, width=2, border_radius=self.value_border_radius)
-
-        # Draw current preset name
-        preset_name = settings.get_preset_name()
-        value_surf = self.value_font.render(preset_name, True, (40, 80, 120))
-        value_x = value_area_x + (value_area_width - value_surf.get_width()) // 2
-        value_y = current_y + (self.ROW_HEIGHT - value_surf.get_height()) // 2
-        window_surface.blit(value_surf, (value_x, value_y))
-
-        # Draw arrow buttons
-        left_rect = (self.PADDING, current_y + (self.ROW_HEIGHT - self.arrow_btn_size) // 2,
-                    self.arrow_btn_size, self.arrow_btn_size)
-        right_rect = (self.WINDOW_WIDTH - self.PADDING - self.arrow_btn_size,
-                     current_y + (self.ROW_HEIGHT - self.arrow_btn_size) // 2,
-                     self.arrow_btn_size, self.arrow_btn_size)
-
-        self._draw_arrow_button(window_surface, left_rect, 'left', self.left_arrow_pressed)
-        self._draw_arrow_button(window_surface, right_rect, 'right', self.right_arrow_pressed)
+        # === Speed setting row ===
+        self._draw_setting_row(
+            window_surface,
+            "Скорость:",
+            settings.get_speed_name(),
+            self._get_speed_row_y(),
+            self.speed_left_pressed,
+            self.speed_right_pressed
+        )
 
         # Draw apply button
         apply_rect = (self.PADDING,
@@ -227,8 +277,8 @@ class SettingsWindow:
         """Show the settings window and handle events.
 
         Returns:
-            'apply' if settings changed and should restart
-            'close' if closed without changes
+            'apply' if size changed and should restart
+            'close' if closed without changes or only speed changed
             None if window was closed by X
         """
         clock = pygame.time.Clock()
@@ -259,17 +309,27 @@ class SettingsWindow:
                     if self._get_close_button_rect().collidepoint(pos):
                         self.close_pressed = True
 
-                    # Check left arrow
-                    elif self._get_left_arrow_rect().collidepoint(pos):
-                        self.left_arrow_pressed = True
+                    # Check size arrows
+                    elif self._get_size_left_rect().collidepoint(pos):
+                        self.size_left_pressed = True
                         settings.prev_preset()
-                        self.settings_changed = (settings.get_current_preset() != self.original_preset)
+                        self.size_changed = (settings.get_current_preset() != self.original_size_preset)
 
-                    # Check right arrow
-                    elif self._get_right_arrow_rect().collidepoint(pos):
-                        self.right_arrow_pressed = True
+                    elif self._get_size_right_rect().collidepoint(pos):
+                        self.size_right_pressed = True
                         settings.next_preset()
-                        self.settings_changed = (settings.get_current_preset() != self.original_preset)
+                        self.size_changed = (settings.get_current_preset() != self.original_size_preset)
+
+                    # Check speed arrows
+                    elif self._get_speed_left_rect().collidepoint(pos):
+                        self.speed_left_pressed = True
+                        settings.prev_speed()
+                        self.speed_changed = (settings.get_current_speed_preset() != self.original_speed_preset)
+
+                    elif self._get_speed_right_rect().collidepoint(pos):
+                        self.speed_right_pressed = True
+                        settings.next_speed()
+                        self.speed_changed = (settings.get_current_speed_preset() != self.original_speed_preset)
 
                     # Check apply button
                     elif self._get_apply_button_rect().collidepoint(pos):
@@ -280,22 +340,27 @@ class SettingsWindow:
 
                     # Check close button release
                     if self.close_pressed and self._get_close_button_rect().collidepoint(pos):
-                        # Restore original preset if changed but not applied
-                        if self.settings_changed:
-                            settings.set_preset(self.original_preset)
+                        # Restore original presets if changed but not applied
+                        if self.size_changed:
+                            settings.set_preset(self.original_size_preset)
+                        if self.speed_changed:
+                            settings.set_speed_preset(self.original_speed_preset)
                         return 'close'
 
                     # Check apply button release
                     if self.apply_pressed and self._get_apply_button_rect().collidepoint(pos):
-                        if self.settings_changed:
+                        # Size change requires restart, speed change doesn't
+                        if self.size_changed:
                             return 'apply'
                         else:
                             return 'close'
 
                     # Reset button states
                     self.close_pressed = False
-                    self.left_arrow_pressed = False
-                    self.right_arrow_pressed = False
+                    self.size_left_pressed = False
+                    self.size_right_pressed = False
+                    self.speed_left_pressed = False
+                    self.speed_right_pressed = False
                     self.apply_pressed = False
 
             clock.tick(60)
