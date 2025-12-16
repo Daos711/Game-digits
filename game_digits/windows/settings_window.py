@@ -160,10 +160,11 @@ class SettingsWindow:
         # === Resolution setting ===
         current_y = self.HEADER_HEIGHT + self.PADDING
 
-        # Label "Размер:"
+        # Label "Размер:" (по центру)
         label_text = "Размер:"
         label_surf = self.label_font.render(label_text, True, (40, 92, 120))
-        window_surface.blit(label_surf, (self.PADDING, current_y))
+        label_x = (self.WINDOW_WIDTH - label_surf.get_width()) // 2
+        window_surface.blit(label_surf, (label_x, current_y))
 
         current_y += self.ROW_HEIGHT
 
