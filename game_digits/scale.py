@@ -90,6 +90,7 @@ BASE_RECORDS_BTN_HEIGHT = 45
 BASE_CLOSE_BTN_SIZE = 32
 BASE_PAUSE_BTN_WIDTH = 120    # кнопка "пауза" на панели
 BASE_PAUSE_BTN_HEIGHT = 40
+BASE_SOUND_ICON_SIZE = 40     # иконка звука рядом с паузой
 
 BUTTON_WIDTH = scaled(BASE_BUTTON_WIDTH)
 BUTTON_HEIGHT = scaled(BASE_BUTTON_HEIGHT)
@@ -98,6 +99,7 @@ RECORDS_BTN_HEIGHT = scaled(BASE_RECORDS_BTN_HEIGHT)
 CLOSE_BTN_SIZE = scaled(BASE_CLOSE_BTN_SIZE)
 PAUSE_BTN_WIDTH = scaled(BASE_PAUSE_BTN_WIDTH)
 PAUSE_BTN_HEIGHT = scaled(BASE_PAUSE_BTN_HEIGHT)
+SOUND_ICON_SIZE = scaled(BASE_SOUND_ICON_SIZE)
 
 # ============================================
 # РАЗМЕРЫ ИКОНОК И ПАНЕЛИ

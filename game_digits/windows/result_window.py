@@ -81,7 +81,7 @@ class ResultWindow:
         # Button positions (relative to window) - adjusted for congrats row
         self.new_game_btn_rel = pygame.Rect(
             self.PADDING,
-            self.HEADER_HEIGHT + self.PADDING + (self.ROW_HEIGHT + self.ROW_GAP) * 3 + self.CONGRATS_HEIGHT + scaled(5),
+            self.HEADER_HEIGHT + self.PADDING + (self.ROW_HEIGHT + self.ROW_GAP) * 3 + self.CONGRATS_HEIGHT + scaled(12),
             self.WINDOW_WIDTH - 2 * self.PADDING,
             scaled(50)
         )

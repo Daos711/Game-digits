@@ -84,6 +84,77 @@ def draw_pause_button(surface, rect, font, text="пауза", is_pressed=False):
     return pygame.Rect(x, y, w, h)
 
 
+def draw_sound_icon(surface, center, size, sound_enabled=True):
+    """Draw sound icon - speaker with waves (on) or X (off).
+
+    Args:
+        surface: Pygame surface to draw on
+        center: (x, y) center position
+        size: Icon size
+        sound_enabled: If True, draw waves; if False, draw X
+    """
+    x, y = center
+
+    # Speaker body - yellow gradient circle background (like other icons)
+    radius = size // 2
+    pygame.draw.circle(surface, (255, 210, 70), (x, y), radius)
+    pygame.draw.circle(surface, (255, 230, 100), (x, y), int(radius * 0.7))
+    pygame.draw.circle(surface, (200, 150, 40), (x, y), radius, BORDER_WIDTH)
+
+    # Speaker shape - dark brown color (like clock hands)
+    speaker_color = (80, 50, 20)
+
+    # Speaker body (trapezoid-like shape)
+    speaker_width = size * 0.2
+    speaker_height = size * 0.35
+    speaker_x = x - size * 0.15
+
+    # Draw speaker as polygon
+    points = [
+        (speaker_x - speaker_width * 0.3, y - speaker_height * 0.4),  # top-left
+        (speaker_x + speaker_width * 0.5, y - speaker_height * 0.4),  # top-right
+        (speaker_x + speaker_width * 0.5, y + speaker_height * 0.4),  # bottom-right
+        (speaker_x - speaker_width * 0.3, y + speaker_height * 0.4),  # bottom-left
+    ]
+    pygame.draw.polygon(surface, speaker_color, points)
+
+    # Speaker cone (triangle)
+    cone_points = [
+        (speaker_x + speaker_width * 0.5, y - speaker_height * 0.4),
+        (speaker_x + speaker_width * 1.5, y - speaker_height * 0.8),
+        (speaker_x + speaker_width * 1.5, y + speaker_height * 0.8),
+        (speaker_x + speaker_width * 0.5, y + speaker_height * 0.4),
+    ]
+    pygame.draw.polygon(surface, speaker_color, points)
+    pygame.draw.polygon(surface, speaker_color, cone_points)
+
+    if sound_enabled:
+        # Sound waves (arcs)
+        wave_color = speaker_color
+        wave_x = x + size * 0.1
+
+        # Small wave
+        pygame.draw.arc(surface, wave_color,
+                       (wave_x, y - size * 0.15, size * 0.15, size * 0.3),
+                       -math.pi/3, math.pi/3, max(1, scaled(2)))
+        # Medium wave
+        pygame.draw.arc(surface, wave_color,
+                       (wave_x + size * 0.05, y - size * 0.25, size * 0.25, size * 0.5),
+                       -math.pi/3, math.pi/3, max(1, scaled(2)))
+    else:
+        # X mark (muted)
+        x_color = (180, 50, 50)  # Red X
+        x_center = x + size * 0.2
+        x_size = size * 0.2
+        line_width = max(2, scaled(3))
+        pygame.draw.line(surface, x_color,
+                        (x_center - x_size, y - x_size),
+                        (x_center + x_size, y + x_size), line_width)
+        pygame.draw.line(surface, x_color,
+                        (x_center - x_size, y + x_size),
+                        (x_center + x_size, y - x_size), line_width)
+
+
 def draw_clock_icon(surface, center, size):
     """Draw clock icon - yellow circle with clock hands (like reference)."""
     x, y = center

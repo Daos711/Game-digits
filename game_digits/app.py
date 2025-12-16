@@ -8,7 +8,7 @@ from game_digits.constants import (
 from game_digits.scale import (
     PANEL_WIDTH, FRAME_WIDTH, GRID_CELL_SIZE, scaled,
     FONT_PANEL_LABEL, FONT_PANEL_VALUE, FONT_PANEL_PAUSE,
-    PAUSE_BTN_WIDTH, PAUSE_BTN_HEIGHT, ICON_SIZE,
+    PAUSE_BTN_WIDTH, PAUSE_BTN_HEIGHT, ICON_SIZE, SOUND_ICON_SIZE,
     VALUE_BAR_HEIGHT, PROGRESS_BAR_HEIGHT, PANEL_PADDING
 )
 from game_digits.game import Game
@@ -44,6 +44,8 @@ class GameApp:
         # Состояние UI
         self.is_paused = False
         self.pause_button_rect = None
+        self.sound_enabled = True
+        self.sound_button_rect = None
         # Для сохранения времени паузы
         self.pause_start_time = 0
         self.total_pause_time = 0
@@ -208,8 +210,13 @@ class GameApp:
 
         current_y = padding
 
-        # === 1. Кнопка "Пауза" (центрированная) ===
-        button_x = panel_x + (self.panel_width - PAUSE_BTN_WIDTH) // 2  # Центрирование
+        # === 1. Кнопка "Пауза" и иконка звука ===
+        # Располагаем кнопку паузы и иконку звука рядом по центру
+        gap_between = scaled(8)  # Отступ между кнопкой и иконкой
+        total_width = PAUSE_BTN_WIDTH + gap_between + SOUND_ICON_SIZE
+        start_x = panel_x + (self.panel_width - total_width) // 2
+
+        button_x = start_x
         button_y = current_y + pause_offset
 
         # Only draw if visible (y >= 0 means on screen)
@@ -220,8 +227,26 @@ class GameApp:
                 self.font_bold_medium,
                 is_pressed=self.is_paused
             )
+
+            # Иконка звука справа от кнопки паузы
+            sound_icon_x = button_x + PAUSE_BTN_WIDTH + gap_between + SOUND_ICON_SIZE // 2
+            sound_icon_y = button_y + PAUSE_BTN_HEIGHT // 2
+            ui.draw_sound_icon(
+                self.screen,
+                (sound_icon_x, sound_icon_y),
+                SOUND_ICON_SIZE,
+                sound_enabled=self.sound_enabled
+            )
+            # Сохраняем rect для обработки кликов
+            self.sound_button_rect = pygame.Rect(
+                sound_icon_x - SOUND_ICON_SIZE // 2,
+                sound_icon_y - SOUND_ICON_SIZE // 2,
+                SOUND_ICON_SIZE,
+                SOUND_ICON_SIZE
+            )
         else:
             self.pause_button_rect = None
+            self.sound_button_rect = None
 
         current_y += PAUSE_BTN_HEIGHT + scaled(25)
 
@@ -343,6 +368,8 @@ class GameApp:
 
     def play_sound(self, name):
         """Воспроизвести звук по имени."""
+        if not self.sound_enabled:
+            return
         sound = self.sounds.get(name)
         if sound:
             sound.play()
@@ -389,6 +416,11 @@ class GameApp:
             # Проверяем нажатие на кнопку паузы
             if self.pause_button_rect and self.pause_button_rect.collidepoint(pos):
                 self.toggle_pause()
+                return True
+
+            # Проверяем нажатие на иконку звука
+            if self.sound_button_rect and self.sound_button_rect.collidepoint(pos):
+                self.sound_enabled = not self.sound_enabled
                 return True
 
             # Обработка клика на паузе
