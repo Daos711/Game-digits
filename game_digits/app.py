@@ -212,7 +212,7 @@ class GameApp:
 
         # === 1. Кнопка "Пауза" и иконка звука ===
         # Располагаем кнопку паузы и иконку звука рядом по центру
-        gap_between = scaled(8)  # Отступ между кнопкой и иконкой
+        gap_between = scaled(15)  # Отступ между кнопкой и иконкой
         total_width = PAUSE_BTN_WIDTH + gap_between + SOUND_ICON_SIZE
         start_x = panel_x + (self.panel_width - total_width) // 2
 

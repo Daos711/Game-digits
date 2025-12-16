@@ -87,70 +87,92 @@ def draw_pause_button(surface, rect, font, text="пауза", is_pressed=False):
 def draw_sound_icon(surface, center, size, sound_enabled=True):
     """Draw sound icon - speaker with waves (on) or X (off).
 
-    Args:
-        surface: Pygame surface to draw on
-        center: (x, y) center position
-        size: Icon size
-        sound_enabled: If True, draw waves; if False, draw X
+    Style: white icon with shadow on blue background.
     """
     x, y = center
 
-    # Speaker body - yellow gradient circle background (like other icons)
-    radius = size // 2
-    pygame.draw.circle(surface, (255, 210, 70), (x, y), radius)
-    pygame.draw.circle(surface, (255, 230, 100), (x, y), int(radius * 0.7))
-    pygame.draw.circle(surface, (200, 150, 40), (x, y), radius, BORDER_WIDTH)
+    # Colors
+    icon_color = (255, 255, 255)  # White
+    shadow_color = (40, 100, 140)  # Dark blue shadow
+    shadow_offset = max(1, scaled(2))
 
-    # Speaker shape - dark brown color (like clock hands)
-    speaker_color = (80, 50, 20)
+    # Speaker dimensions
+    body_width = size * 0.18
+    body_height = size * 0.35
+    cone_width = size * 0.22
+    cone_expand = size * 0.15  # How much cone expands
 
-    # Speaker body (trapezoid-like shape)
-    speaker_width = size * 0.2
-    speaker_height = size * 0.35
-    speaker_x = x - size * 0.15
+    # Speaker position (left side of icon)
+    speaker_left = x - size * 0.35
 
-    # Draw speaker as polygon
-    points = [
-        (speaker_x - speaker_width * 0.3, y - speaker_height * 0.4),  # top-left
-        (speaker_x + speaker_width * 0.5, y - speaker_height * 0.4),  # top-right
-        (speaker_x + speaker_width * 0.5, y + speaker_height * 0.4),  # bottom-right
-        (speaker_x - speaker_width * 0.3, y + speaker_height * 0.4),  # bottom-left
+    # Speaker body (small rectangle on the left)
+    body_rect = [
+        (speaker_left, y - body_height / 2),
+        (speaker_left + body_width, y - body_height / 2),
+        (speaker_left + body_width, y + body_height / 2),
+        (speaker_left, y + body_height / 2),
     ]
-    pygame.draw.polygon(surface, speaker_color, points)
 
-    # Speaker cone (triangle)
+    # Speaker cone (trapezoid expanding to the right)
     cone_points = [
-        (speaker_x + speaker_width * 0.5, y - speaker_height * 0.4),
-        (speaker_x + speaker_width * 1.5, y - speaker_height * 0.8),
-        (speaker_x + speaker_width * 1.5, y + speaker_height * 0.8),
-        (speaker_x + speaker_width * 0.5, y + speaker_height * 0.4),
+        (speaker_left + body_width, y - body_height / 2),
+        (speaker_left + body_width + cone_width, y - body_height / 2 - cone_expand),
+        (speaker_left + body_width + cone_width, y + body_height / 2 + cone_expand),
+        (speaker_left + body_width, y + body_height / 2),
     ]
-    pygame.draw.polygon(surface, speaker_color, points)
-    pygame.draw.polygon(surface, speaker_color, cone_points)
+
+    # Draw shadow first
+    body_shadow = [(p[0] + shadow_offset, p[1] + shadow_offset) for p in body_rect]
+    cone_shadow = [(p[0] + shadow_offset, p[1] + shadow_offset) for p in cone_points]
+    pygame.draw.polygon(surface, shadow_color, body_shadow)
+    pygame.draw.polygon(surface, shadow_color, cone_shadow)
+
+    # Draw main speaker
+    pygame.draw.polygon(surface, icon_color, body_rect)
+    pygame.draw.polygon(surface, icon_color, cone_points)
+
+    # Front edge line (thin vertical separator on cone front)
+    front_x = speaker_left + body_width + cone_width
+    pygame.draw.line(surface, shadow_color,
+                    (front_x, y - body_height / 2 - cone_expand + 2),
+                    (front_x, y + body_height / 2 + cone_expand - 2), 1)
 
     if sound_enabled:
-        # Sound waves (arcs)
-        wave_color = speaker_color
-        wave_x = x + size * 0.1
-
-        # Small wave
-        pygame.draw.arc(surface, wave_color,
-                       (wave_x, y - size * 0.15, size * 0.15, size * 0.3),
-                       -math.pi/3, math.pi/3, max(1, scaled(2)))
-        # Medium wave
-        pygame.draw.arc(surface, wave_color,
-                       (wave_x + size * 0.05, y - size * 0.25, size * 0.25, size * 0.5),
-                       -math.pi/3, math.pi/3, max(1, scaled(2)))
-    else:
-        # X mark (muted)
-        x_color = (180, 50, 50)  # Red X
-        x_center = x + size * 0.2
-        x_size = size * 0.2
+        # Sound waves (2-3 concentric arcs)
+        wave_center_x = front_x + size * 0.08
         line_width = max(2, scaled(3))
-        pygame.draw.line(surface, x_color,
+
+        # Small arc
+        arc_rect1 = (wave_center_x, y - size * 0.12, size * 0.12, size * 0.24)
+        # Draw shadow
+        arc_rect1_shadow = (wave_center_x + shadow_offset, y - size * 0.12 + shadow_offset, size * 0.12, size * 0.24)
+        pygame.draw.arc(surface, shadow_color, arc_rect1_shadow, -math.pi / 3, math.pi / 3, line_width)
+        pygame.draw.arc(surface, icon_color, arc_rect1, -math.pi / 3, math.pi / 3, line_width)
+
+        # Medium arc
+        arc_rect2 = (wave_center_x + size * 0.06, y - size * 0.2, size * 0.18, size * 0.4)
+        arc_rect2_shadow = (wave_center_x + size * 0.06 + shadow_offset, y - size * 0.2 + shadow_offset, size * 0.18, size * 0.4)
+        pygame.draw.arc(surface, shadow_color, arc_rect2_shadow, -math.pi / 3, math.pi / 3, line_width)
+        pygame.draw.arc(surface, icon_color, arc_rect2, -math.pi / 3, math.pi / 3, line_width)
+    else:
+        # X mark (muted) - large X to the right of speaker
+        x_center = front_x + size * 0.18
+        x_size = size * 0.14
+        line_width = max(3, scaled(4))
+
+        # Draw shadow
+        pygame.draw.line(surface, shadow_color,
+                        (x_center - x_size + shadow_offset, y - x_size + shadow_offset),
+                        (x_center + x_size + shadow_offset, y + x_size + shadow_offset), line_width)
+        pygame.draw.line(surface, shadow_color,
+                        (x_center - x_size + shadow_offset, y + x_size + shadow_offset),
+                        (x_center + x_size + shadow_offset, y - x_size + shadow_offset), line_width)
+
+        # Draw main X
+        pygame.draw.line(surface, icon_color,
                         (x_center - x_size, y - x_size),
                         (x_center + x_size, y + x_size), line_width)
-        pygame.draw.line(surface, x_color,
+        pygame.draw.line(surface, icon_color,
                         (x_center - x_size, y + x_size),
                         (x_center + x_size, y - x_size), line_width)
 

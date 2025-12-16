@@ -210,7 +210,7 @@ class TestGameApp:
         current_y = padding
 
         # Pause button and sound icon
-        gap_between = scaled(8)
+        gap_between = scaled(15)
         total_width = PAUSE_BTN_WIDTH + gap_between + SOUND_ICON_SIZE
         start_x = panel_x + (self.panel_width - total_width) // 2
 
