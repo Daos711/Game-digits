@@ -330,9 +330,8 @@ class GameApp:
         """Загрузка звуковых эффектов."""
         sound_files = {
             'click': 'click.wav',
-            # 'remove': 'remove.wav',
-            # 'move': 'move.wav',
-            # 'spawn': 'spawn.wav',
+            'remove': 'remove.wav',
+            'spawn': 'spawn.wav',
         }
         for name, filename in sound_files.items():
             try:
@@ -482,6 +481,7 @@ class GameApp:
                 return
             positions = self.game.remove_tiles(self.game.selected_tile, tile)
             if positions:
+                self.play_sound('remove')
                 self.arrows.empty()  # Очищаем стрелки после удаления плиток
                 self.spawn_score_animation(positions)  # Создаём анимацию очков
                 self.update_display()
@@ -901,6 +901,8 @@ class GameApp:
                     pass  # pending_tile_spawn остаётся True, бар на 0
                 else:
                     pending_tile_spawn = False
+                    if spawn_result:  # True = плитка появилась
+                        self.play_sound('spawn')
                     # Спавн произошёл - запускаем фазу заполнения бара
                     self.bar_phase = 'filling'
                     self.bar_phase_start = pygame.time.get_ticks()
