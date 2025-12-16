@@ -632,11 +632,12 @@ class StartMenu:
                 total_rect = total_text.get_rect(midright=(col_x[4] + scale.scaled(28), row_center_y))
                 panel_surface.blit(total_text, total_rect)
 
-                # Rank badge (auto-sized, centered at col_x[5])
+                # Rank badge (auto-sized, centered at col_x[5]) with animation
                 badge_height = scale.scaled(30)
+                current_time = pygame.time.get_ticks()
                 ranks.draw_rank_badge(panel_surface,
                                      (col_x[5], row_center_y, rank_col_max_width, badge_height),
-                                     rank_name, rank_fg, rank_bg)
+                                     rank_name, rank_fg, rank_bg, time_ms=current_time)
 
                 # Row divider (not after last row)
                 if i < min(len(self.cached_records), 10) - 1:

@@ -200,16 +200,17 @@ class ResultWindow:
             label_rect = rank_label.get_rect(midleft=(row_x + scale.scaled(15), current_y + rank_row_rect.height // 2))
             window_surface.blit(rank_label, label_rect)
 
-            # Rank badge (auto-sized, centered)
+            # Rank badge (auto-sized, centered) with animation
             badge_max_width = scale.scaled(180)
             badge_height = scale.scaled(28)
             badge_center_x = row_x + row_width - badge_max_width // 2 - scale.scaled(15)
             badge_center_y = current_y + rank_row_rect.height // 2
 
-            # Draw rank badge
+            # Draw rank badge with animation
+            current_time = pygame.time.get_ticks()
             ranks.draw_rank_badge(window_surface,
                                  (badge_center_x, badge_center_y, badge_max_width, badge_height),
-                                 self.rank_name, self.rank_fg, self.rank_bg)
+                                 self.rank_name, self.rank_fg, self.rank_bg, time_ms=current_time)
 
         current_y += self.RANK_ROW_HEIGHT
 
