@@ -17,13 +17,23 @@ class SettingsWindow:
     """
 
     def __init__(self, screen, screen_size, redraw_callback):
-        # Window dimensions - computed at runtime
+        # Window dimensions - computed at runtime (сохраняем при создании, чтобы не менялись при смене пресета)
         self.WINDOW_WIDTH = scale.scaled(380)
         self.WINDOW_HEIGHT = scale.scaled(250)
         self.HEADER_HEIGHT = scale.scaled(50)
         self.PADDING = scale.scaled(25)
         self.ROW_HEIGHT = scale.scaled(50)
         self.ROW_GAP = scale.scaled(20)
+
+        # Дополнительные масштабируемые значения (фиксируем при создании)
+        self.close_btn_size = scale.scaled(32)
+        self.close_btn_margin = scale.scaled(8)
+        self.arrow_radius = scale.scaled(6)
+        self.corner_radius = scale.CORNER_RADIUS
+        self.cell_size = scale.scaled(18)
+        self.value_gap = scale.scaled(15)
+        self.value_border_radius = scale.scaled(8)
+
         self.screen = screen
         self.screen_width, self.screen_height = screen_size
         self.redraw_callback = redraw_callback
@@ -56,13 +66,11 @@ class SettingsWindow:
 
     def _get_close_button_rect(self):
         """Get the close button rectangle."""
-        btn_size = scale.scaled(32)
-        btn_margin = scale.scaled(8)
         return pygame.Rect(
-            self.window_x + self.WINDOW_WIDTH - btn_size - btn_margin,
-            self.window_y + (self.HEADER_HEIGHT - btn_size) // 2,
-            btn_size,
-            btn_size
+            self.window_x + self.WINDOW_WIDTH - self.close_btn_size - self.close_btn_margin,
+            self.window_y + (self.HEADER_HEIGHT - self.close_btn_size) // 2,
+            self.close_btn_size,
+            self.close_btn_size
         )
 
     def _get_left_arrow_rect(self):
@@ -97,7 +105,7 @@ class SettingsWindow:
     def _draw_arrow_button(self, surface, rect, direction, is_pressed=False):
         """Draw an arrow button (< or >)."""
         x, y, w, h = rect
-        radius = scale.scaled(6)
+        radius = self.arrow_radius
 
         if is_pressed:
             color_top = (200, 135, 0)
@@ -142,8 +150,8 @@ class SettingsWindow:
             window_surface,
             (0, 0, self.WINDOW_WIDTH, self.WINDOW_HEIGHT),
             self.HEADER_HEIGHT,
-            corner_radius=scale.CORNER_RADIUS,
-            cell_size=scale.scaled(18),
+            corner_radius=self.corner_radius,
+            cell_size=self.cell_size,
             border_color=(100, 150, 130),
             border_width=2
         )
@@ -169,13 +177,13 @@ class SettingsWindow:
         current_y += self.ROW_HEIGHT
 
         # Value display area (between arrows)
-        value_area_x = self.PADDING + self.arrow_btn_size + scale.scaled(15)
-        value_area_width = self.WINDOW_WIDTH - 2 * self.PADDING - 2 * self.arrow_btn_size - scale.scaled(30)
+        value_area_x = self.PADDING + self.arrow_btn_size + self.value_gap
+        value_area_width = self.WINDOW_WIDTH - 2 * self.PADDING - 2 * self.arrow_btn_size - 2 * self.value_gap
 
         # Draw value background
         value_rect = (value_area_x, current_y, value_area_width, self.ROW_HEIGHT)
-        pygame.draw.rect(window_surface, (230, 240, 250), value_rect, border_radius=scale.scaled(8))
-        pygame.draw.rect(window_surface, (150, 180, 200), value_rect, width=2, border_radius=scale.scaled(8))
+        pygame.draw.rect(window_surface, (230, 240, 250), value_rect, border_radius=self.value_border_radius)
+        pygame.draw.rect(window_surface, (150, 180, 200), value_rect, width=2, border_radius=self.value_border_radius)
 
         # Draw current preset name
         preset_name = settings.get_preset_name()
