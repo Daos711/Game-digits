@@ -30,7 +30,6 @@ class TestGameApp:
         self.WIDTH = self.window + 2 * self.frame + self.panel_width
         self.HEIGHT = self.window + 2 * self.frame
 
-        self.speed = settings.get_speed()
         self.tile_size, self.gap = scale.TILE_SIZE, scale.GAP
         self.offset = (23, 23)
         self.COLORS = COLORS
@@ -695,13 +694,14 @@ class TestGameApp:
         dx = target_rect.topleft[0] - tile.rect.topleft[0]
         dy = target_rect.topleft[1] - tile.rect.topleft[1]
 
+        speed = settings.get_speed()
         if dx == 0 and dy != 0:
             # Ограничиваем шаг чтобы не перескочить цель
-            step_y = min(self.speed, abs(dy)) * (1 if dy > 0 else -1)
+            step_y = min(speed, abs(dy)) * (1 if dy > 0 else -1)
             tile.rect.y += step_y
         elif dy == 0 and dx != 0:
             # Ограничиваем шаг чтобы не перескочить цель
-            step_x = min(self.speed, abs(dx)) * (1 if dx > 0 else -1)
+            step_x = min(speed, abs(dx)) * (1 if dx > 0 else -1)
             tile.rect.x += step_x
 
         if hasattr(tile, 'last_grid_pos'):

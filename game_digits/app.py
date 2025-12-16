@@ -17,7 +17,6 @@ from game_digits.windows import ResultWindow, StartMenu, PauseOverlay
 class GameApp:
     def __init__(self):
         self.frame = scale.FRAME_WIDTH
-        self.speed = settings.get_speed()
         self.tile_size, self.gap = scale.TILE_SIZE, scale.GAP
         # Вычисляем размеры окна из размера плиток
         tile_area = BOARD_SIZE * scale.TILE_SIZE + (BOARD_SIZE + 1) * scale.GAP
@@ -679,13 +678,14 @@ class GameApp:
         target_rect = tile.target_rect
         dx = target_rect.topleft[0] - tile.rect.topleft[0]
         dy = target_rect.topleft[1] - tile.rect.topleft[1]
+        speed = settings.get_speed()
         if dx == 0 and dy != 0:
             # Ограничиваем шаг чтобы не перескочить цель
-            step_y = min(self.speed, abs(dy)) * (1 if dy > 0 else -1)
+            step_y = min(speed, abs(dy)) * (1 if dy > 0 else -1)
             tile.rect.y += step_y
         elif dy == 0 and dx != 0:
             # Ограничиваем шаг чтобы не перескочить цель
-            step_x = min(self.speed, abs(dx)) * (1 if dx > 0 else -1)
+            step_x = min(speed, abs(dx)) * (1 if dx > 0 else -1)
             tile.rect.x += step_x
 
         # Проверяем, покинула ли плитка ячейку (для анимации -N)
