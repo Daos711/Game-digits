@@ -38,13 +38,14 @@ class ResultWindow:
     ROW_HEIGHT = scaled(50)
     ROW_GAP = scaled(12)
 
-    def __init__(self, screen, screen_size, game_score, current_time, redraw_callback, play_sound_callback=None):
+    def __init__(self, screen, screen_size, game_score, current_time, redraw_callback, play_sound_callback=None, test_mode=False):
         self.screen = screen
         self.screen_width, self.screen_height = screen_size
         self.game_score = game_score
         self.current_time = current_time
         self.redraw_callback = redraw_callback
         self.play_sound = play_sound_callback
+        self.test_mode = test_mode
 
         # Calculate window position (centered)
         self.window_x = (self.screen_width - self.WINDOW_WIDTH) // 2
@@ -88,7 +89,8 @@ class ResultWindow:
         self.record_position = records.add_record(
             score=self.game_score,
             bonus=self.bonus,
-            total=self.total_score
+            total=self.total_score,
+            test_mode=self.test_mode
         )
 
         # Конфетти для топ-10

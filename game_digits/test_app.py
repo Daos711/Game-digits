@@ -324,7 +324,8 @@ class TestGameApp:
             game_score=self.game.score,
             current_time=self.game.current_time,
             redraw_callback=redraw_background,
-            play_sound_callback=self.play_sound
+            play_sound_callback=self.play_sound,
+            test_mode=True
         )
         return result_window.show()
 
