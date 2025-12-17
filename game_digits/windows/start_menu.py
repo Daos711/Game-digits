@@ -117,6 +117,15 @@ class StartMenu:
         self.records_font = pygame.font.Font(bold_font_path, scale.FONT_MENU_RECORDS)
         self.records_small_font = pygame.font.Font(bold_font_path, scale.FONT_MENU_RECORDS_SMALL)
 
+        # Fonts for records table (cached to avoid creating on every frame)
+        self.table_title_font = pygame.font.Font(bold_font_path, scale.scaled(32))
+        self.table_header_font = pygame.font.Font(bold_font_path, scale.scaled(16))
+        self.table_data_font = pygame.font.Font(bold_font_path, scale.scaled(20))
+        self.table_bold_font = pygame.font.Font(bold_font_path, scale.scaled(21))
+        self.table_date_font = pygame.font.Font(bold_font_path, scale.scaled(16))
+        self.table_pos_font = pygame.font.Font(bold_font_path, scale.scaled(16))
+        self.table_pos_font_large = pygame.font.Font(bold_font_path, scale.scaled(18))
+
         # Title letters and colors (using game tile colors)
         letters = ['Ц', 'И', 'Ф', 'Р', 'Ы']
         tile_colors = [
@@ -497,8 +506,7 @@ class StartMenu:
             pygame.draw.line(panel_surface, grid_color, (0, y), (panel_width, y), 1)
 
         # Title
-        title_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(32))
-        title = title_font.render("Таблица рекордов", True, (80, 70, 60))
+        title = self.table_title_font.render("Таблица рекордов", True, (80, 70, 60))
         title_rect = title.get_rect(center=(panel_width // 2, scale.scaled(35)))
         panel_surface.blit(title, title_rect)
 
@@ -539,10 +547,9 @@ class StartMenu:
         # Header
         header_y = table_top + scale.scaled(18)
         headers = ["#", "Дата", "Очки", "Бонус", "Итого", "Ранг"]
-        header_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(16))
         header_color = (120, 110, 100)
         for text, cx in zip(headers, col_x):
-            header = header_font.render(text, True, header_color)
+            header = self.table_header_font.render(text, True, header_color)
             header_rect = header.get_rect(center=(cx, header_y))
             panel_surface.blit(header, header_rect)
 
@@ -552,10 +559,10 @@ class StartMenu:
                         (padding + scale.scaled(5), header_div_y),
                         (panel_width - padding - scale.scaled(5), header_div_y), 1)
 
-        # Fonts for content
-        data_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(20))
-        bold_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(21))
-        date_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(16))
+        # Use cached fonts for content
+        data_font = self.table_data_font
+        bold_font = self.table_bold_font
+        date_font = self.table_date_font
 
         # Row highlight colors for top-3
         row_highlights = [
@@ -597,30 +604,28 @@ class StartMenu:
                 medal_size = scale.scaled(20)
                 icon_slot_x = col_x[0] - scale.scaled(14)  # Icon slot (left)
                 num_slot_x = col_x[0] + scale.scaled(12)   # Number slot (right, fixed for all)
-                pos_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(16))
 
                 if i == 0:
                     # Draw trophy + "1" for 1st place
                     self._draw_trophy(panel_surface, icon_slot_x, row_center_y, medal_size, (200, 150, 30))
-                    pos_text = pos_font.render("1", True, (200, 150, 30))
+                    pos_text = self.table_pos_font.render("1", True, (200, 150, 30))
                     pos_rect = pos_text.get_rect(center=(num_slot_x, row_center_y))
                     panel_surface.blit(pos_text, pos_rect)
                 elif i == 1:
                     # Draw silver medal + "2"
                     self._draw_medal(panel_surface, icon_slot_x, row_center_y, medal_size, (160, 165, 175), 2)
-                    pos_text = pos_font.render("2", True, (140, 140, 150))
+                    pos_text = self.table_pos_font.render("2", True, (140, 140, 150))
                     pos_rect = pos_text.get_rect(center=(num_slot_x, row_center_y))
                     panel_surface.blit(pos_text, pos_rect)
                 elif i == 2:
                     # Draw bronze medal + "3"
                     self._draw_medal(panel_surface, icon_slot_x, row_center_y, medal_size, (185, 135, 85), 3)
-                    pos_text = pos_font.render("3", True, (170, 120, 70))
+                    pos_text = self.table_pos_font.render("3", True, (170, 120, 70))
                     pos_rect = pos_text.get_rect(center=(num_slot_x, row_center_y))
                     panel_surface.blit(pos_text, pos_rect)
                 else:
                     # Regular position number (same X as top-3 for alignment)
-                    pos_font_reg = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(18))
-                    pos_text = pos_font_reg.render(str(i + 1), True, (100, 100, 100))
+                    pos_text = self.table_pos_font_large.render(str(i + 1), True, (100, 100, 100))
                     pos_rect = pos_text.get_rect(center=(num_slot_x, row_center_y))
                     panel_surface.blit(pos_text, pos_rect)
 

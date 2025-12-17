@@ -81,6 +81,7 @@ class ResultWindow:
         self.label_font = pygame.font.Font(bold_font_path, scale.FONT_RESULT_LABEL)
         self.value_font = pygame.font.Font(bold_font_path, scale.FONT_RESULT_VALUE)
         self.button_font = pygame.font.Font(bold_font_path, scale.FONT_RESULT_BUTTON)
+        self.rank_fallback_font = pygame.font.Font(bold_font_path, scale.scaled(20))  # For long rank names
 
         # Button positions (relative to window) - adjusted for congrats row and rank row
         self.new_game_btn_rel = pygame.Rect(
@@ -232,10 +233,9 @@ class ResultWindow:
             rank_font = self.value_font
             rank_text = rank_font.render(self.rank_name, True, text_color)
 
-            # If text is too wide, use smaller font
+            # If text is too wide, use smaller font (cached)
             if rank_text.get_width() > available_width:
-                smaller_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(20))
-                rank_text = smaller_font.render(self.rank_name, True, text_color)
+                rank_text = self.rank_fallback_font.render(self.rank_name, True, text_color)
 
             rank_text_rect = rank_text.get_rect(midright=(row_x + row_width - text_padding, text_y))
             window_surface.blit(rank_text, rank_text_rect)
