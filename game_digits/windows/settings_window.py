@@ -23,7 +23,7 @@ class SettingsWindow:
         self.HEADER_HEIGHT = scale.scaled(50)
         self.PADDING = scale.scaled(20)
         self.ROW_HEIGHT = scale.scaled(45)
-        self.LABEL_HEIGHT = scale.scaled(25)
+        self.LABEL_HEIGHT = scale.scaled(30)  # More space between label and control
         self.ROW_GAP = scale.scaled(12)
 
         # Дополнительные масштабируемые значения (фиксируем при создании)
@@ -56,7 +56,7 @@ class SettingsWindow:
         # Button dimensions
         self.arrow_btn_size = scale.scaled(36)
         self.apply_btn_width = self.WINDOW_WIDTH - 2 * self.PADDING
-        self.apply_btn_height = scale.scaled(55)
+        self.apply_btn_height = scale.scaled(60)
 
         # State - size arrows
         self.close_pressed = False
