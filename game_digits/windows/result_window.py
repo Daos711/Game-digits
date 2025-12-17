@@ -234,7 +234,7 @@ class ResultWindow:
 
             # If text is too wide, use smaller font
             if rank_text.get_width() > available_width:
-                smaller_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(18))
+                smaller_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(20))
                 rank_text = smaller_font.render(self.rank_name, True, text_color)
 
             rank_text_rect = rank_text.get_rect(midright=(row_x + row_width - text_padding, text_y))
