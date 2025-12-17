@@ -9,6 +9,17 @@ from game_digits import ranks
 from game_digits import scale
 from game_digits.sprites import ConfettiSystem
 
+# Colors for rank row (same as ui_components result rows)
+RANK_BORDER_COLOR = (120, 170, 190)
+RANK_BG_COLOR = (168, 212, 242)
+RANK_TEXT_COLOR = (40, 92, 120)
+RANK_ROW_ALPHA = 170
+
+# Colors for congratulation panel
+CONGRATS_BG_COLOR = (255, 238, 194)
+CONGRATS_TEXT_COLOR = (171, 78, 59)
+CONGRATS_BORDER_COLOR = (220, 200, 160)
+
 
 class ResultWindow:
     """Display the game result window with final score.
@@ -56,8 +67,8 @@ class ResultWindow:
         # Get rank info (name, fg_color, bg_color)
         self.rank_name, self.rank_fg, self.rank_bg = ranks.get_rank(self.total_score)
 
-        # Add height for rank row
-        self.RANK_ROW_HEIGHT = scale.scaled(45)
+        # Add height for rank row (same as other rows)
+        self.RANK_ROW_HEIGHT = self.ROW_HEIGHT + self.ROW_GAP  # Same visual height as other rows
         self.WINDOW_HEIGHT += self.RANK_ROW_HEIGHT
 
         # Save record FIRST to know if we need extra space
@@ -81,6 +92,7 @@ class ResultWindow:
         self.label_font = pygame.font.Font(bold_font_path, scale.FONT_RESULT_LABEL)
         self.value_font = pygame.font.Font(bold_font_path, scale.FONT_RESULT_VALUE)
         self.button_font = pygame.font.Font(bold_font_path, scale.FONT_RESULT_BUTTON)
+        self.rank_fallback_font = pygame.font.Font(bold_font_path, scale.scaled(20))  # For long rank names
 
         # Button positions (relative to window) - adjusted for congrats row and rank row
         self.new_game_btn_rel = pygame.Rect(
@@ -191,41 +203,61 @@ class ResultWindow:
 
         # Row 4: Rank (show when total animation is complete)
         if rows_to_show >= 3 and current_total == self.total_score:
-            # Rank row background
-            rank_row_rect = pygame.Rect(row_x, current_y, row_width, self.RANK_ROW_HEIGHT - self.ROW_GAP)
-            pygame.draw.rect(window_surface, (250, 248, 242), rank_row_rect, border_radius=scale.scaled(8))
+            # Same style as other rows: blue background with border
+            rank_row_h = self.ROW_HEIGHT  # Same height as other rows
+            radius = scale.scaled(10)
+            border_width = scale.BORDER_WIDTH
 
-            # "Ваш ранг:" label
-            rank_label = self.label_font.render("Ваш ранг:", True, (80, 70, 60))
-            label_rect = rank_label.get_rect(midleft=(row_x + scale.scaled(15), current_y + rank_row_rect.height // 2))
+            # Create temp surface for proper alpha handling
+            temp = pygame.Surface((row_width, rank_row_h), pygame.SRCALPHA)
+
+            # Draw border first (filled rounded rect)
+            ui.draw_rounded_rect(temp, (*RANK_BORDER_COLOR, 255), (0, 0, row_width, rank_row_h), radius)
+
+            # Draw background on top (smaller by border_width)
+            inner_radius = max(1, radius - border_width)
+            ui.draw_rounded_rect(temp, (*RANK_BG_COLOR, 255),
+                              (border_width, border_width, row_width - 2 * border_width, rank_row_h - 2 * border_width),
+                              inner_radius)
+
+            # Apply transparency
+            temp.set_alpha(RANK_ROW_ALPHA)
+            window_surface.blit(temp, (row_x, current_y))
+
+            # Text color - same as other rows
+            text_color = RANK_TEXT_COLOR
+            text_padding = scale.scaled(15)
+            text_y = current_y + rank_row_h // 2 - scale.scaled(2)  # Slight upward adjustment for visual centering
+
+            # "Ранг:" label
+            rank_label = self.label_font.render("Ранг:", True, text_color)
+            label_rect = rank_label.get_rect(midleft=(row_x + text_padding, text_y))
             window_surface.blit(rank_label, label_rect)
 
-            # Rank badge (auto-sized, centered) with animation
-            badge_max_width = scale.scaled(180)
-            badge_height = scale.scaled(28)
-            badge_center_x = row_x + row_width - badge_max_width // 2 - scale.scaled(15)
-            badge_center_y = current_y + rank_row_rect.height // 2
+            # Rank name as text (right-aligned)
+            # Calculate available width for rank name
+            available_width = row_width - label_rect.width - text_padding * 3
 
-            # Draw rank badge with animation
-            current_time = pygame.time.get_ticks()
-            ranks.draw_rank_badge(window_surface,
-                                 (badge_center_x, badge_center_y, badge_max_width, badge_height),
-                                 self.rank_name, self.rank_fg, self.rank_bg, time_ms=current_time)
+            # Try with normal font first, reduce if too wide
+            rank_font = self.value_font
+            rank_text = rank_font.render(self.rank_name, True, text_color)
+
+            # If text is too wide, use smaller font (cached)
+            if rank_text.get_width() > available_width:
+                rank_text = self.rank_fallback_font.render(self.rank_name, True, text_color)
+
+            rank_text_rect = rank_text.get_rect(midright=(row_x + row_width - text_padding, text_y))
+            window_surface.blit(rank_text, rank_text_rect)
 
         current_y += self.RANK_ROW_HEIGHT
 
         # Поздравление при попадании в топ-10
         if self.record_position is not None and rows_to_show >= 3 and current_total == self.total_score:
-            # Рамка поздравления (цвет как в оригинале)
-            congrats_bg_color = (255, 238, 194)  # Светло-жёлтый
-            congrats_text_color = (171, 78, 59)   # Красно-коричневый
             congrats_rect = pygame.Rect(row_x, current_y, row_width, self.CONGRATS_HEIGHT)
-            pygame.draw.rect(window_surface, congrats_bg_color, congrats_rect, border_radius=scale.scaled(8))
-            # Тонкая обводка
-            pygame.draw.rect(window_surface, (220, 200, 160), congrats_rect, width=1, border_radius=scale.scaled(8))
-            # Текст по центру рамки
+            pygame.draw.rect(window_surface, CONGRATS_BG_COLOR, congrats_rect, border_radius=scale.scaled(8))
+            pygame.draw.rect(window_surface, CONGRATS_BORDER_COLOR, congrats_rect, width=1, border_radius=scale.scaled(8))
             place_text = self._get_place_text(self.record_position)
-            congrats_surf = self.label_font.render(place_text, True, congrats_text_color)
+            congrats_surf = self.label_font.render(place_text, True, CONGRATS_TEXT_COLOR)
             text_rect = congrats_surf.get_rect(center=congrats_rect.center)
             window_surface.blit(congrats_surf, text_rect)
 
@@ -247,7 +279,6 @@ class ResultWindow:
 
         # Blit window to screen
         self.screen.blit(window_surface, (self.window_x, self.window_y))
-        pygame.display.update()
 
         return close_btn_rect, new_game_btn_rect
 
@@ -371,7 +402,9 @@ class ResultWindow:
                 if self.confetti_started:
                     self.confetti.update()
                     self.confetti.draw(self.screen)
-                    pygame.display.update()
+
+            # Single display update per frame (after all drawing)
+            pygame.display.update()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:

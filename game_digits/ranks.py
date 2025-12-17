@@ -21,7 +21,7 @@ RANKS = [
     # Мастерские ранги
     (2600, "Кандидат в мастера",         (106, 27, 154),  (241, 230, 250)),
     (2700, "Мастер",                     (40, 53, 147),   (230, 234, 251)),
-    (2800, "Мастер международного класса", (255, 255, 255), (100, 149, 237)),
+    (2800, "Мастер-международник", (255, 255, 255), (100, 149, 237)),
 
     # Элитные ранги
     (2900, "Эксперт",                    (255, 255, 255), (70, 100, 180)),
@@ -37,24 +37,25 @@ RANKS = [
 
 # Gradient definitions for legendary ranks (3000+)
 # Format: min_score -> list of color stops
-# Colors will be muted 35% toward table background for premium look
+# Colors darkened ~12% for richer premium look
 LEGENDARY_GRADIENTS = {
-    3000: [(139, 0, 0), (200, 60, 60)],           # Гроссмейстер: dark red -> muted red
-    3100: [(40, 160, 80), (200, 180, 80)],        # Соломон: muted green -> muted gold
-    3200: [(40, 180, 200), (60, 110, 200)],       # Сверхчеловек: muted cyan -> blue
-    3300: [(200, 100, 40), (200, 60, 70)],        # Титан: muted orange -> muted red
-    3400: [(90, 50, 160), (200, 180, 80)],        # Зевс-Демиург: muted violet -> muted gold
-    3500: [(30, 20, 60), (50, 40, 100), (80, 60, 140)],  # Unreal: dark indigo base (космос)
+    3000: [(120, 0, 0), (175, 50, 50)],           # Гроссмейстер: darker red
+    3100: [(35, 140, 70), (175, 155, 70)],        # Соломон: darker green -> gold
+    3200: [(35, 155, 175), (50, 95, 175)],        # Сверхчеловек: darker cyan -> blue
+    3300: [(175, 85, 35), (175, 50, 60)],         # Титан: darker orange -> red
+    3400: [(80, 45, 140), (175, 155, 70)],        # Зевс-Демиург: darker violet -> gold
+    3500: [(20, 10, 40), (40, 20, 80), (60, 30, 120)],  # Unreal: deep cosmic violet
 }
 
 # Shine animation intervals (ms between shine passes) - rare and elegant
+# Pauses between 2-3.5 seconds for subtle effect
 SHINE_INTERVALS = {
     3000: 3500,  # Гроссмейстер: ~3.5s
-    3100: 3200,  # Соломон: ~3.2s
-    3200: 3000,  # Сверхчеловек: ~3.0s
-    3300: 2800,  # Титан: ~2.8s
-    3400: 2600,  # Зевс-Демиург: ~2.6s
-    3500: 2400,  # Unreal: ~2.4s
+    3100: 3300,  # Соломон: ~3.3s
+    3200: 3100,  # Сверхчеловек: ~3.1s
+    3300: 2900,  # Титан: ~2.9s
+    3400: 2700,  # Зевс-Демиург: ~2.7s
+    3500: 2500,  # Unreal: ~2.5s
 }
 
 # Shine duration (how long the shine takes to cross) per rank
@@ -198,9 +199,28 @@ def _create_badge_surface(badge_w, height, bg_color, rank_score, scale_module):
 
     # Main badge body
     main_rect = (offset_x, offset_y, badge_w, height)
-    main_alpha = 180  # Slightly more transparent for softer look
+    # Unreal is fully opaque, others slightly transparent
+    main_alpha = 255 if rank_score >= 3500 else 180
 
     if is_legendary and gradient_colors:
+        # Draw bright border for Unreal FIRST (underneath)
+        if rank_score >= 3500:
+            # Prismatic border: cyan -> magenta -> gold
+            border_w = 3
+            for b in range(border_w):
+                border_alpha = 255 - b * 60
+                # Cycle through prismatic colors
+                if b == 0:
+                    border_color = (100, 200, 255, border_alpha)  # Cyan
+                elif b == 1:
+                    border_color = (200, 100, 255, border_alpha)  # Magenta
+                else:
+                    border_color = (255, 200, 100, border_alpha)  # Gold
+                border_rect = (offset_x - border_w + b, offset_y - border_w + b,
+                              badge_w + (border_w - b) * 2, height + (border_w - b) * 2)
+                pygame.draw.rect(temp_surface, border_color, border_rect,
+                               width=1, border_radius=radius + border_w - b)
+
         # Create gradient surface
         grad_surface = pygame.Surface((badge_w, height), pygame.SRCALPHA)
         _draw_gradient_rect(grad_surface, (0, 0, badge_w, height), gradient_colors, horizontal=True)
@@ -212,11 +232,6 @@ def _create_badge_surface(badge_w, height, bg_color, rank_score, scale_module):
         # Combine gradient with mask
         grad_surface.blit(mask_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
         temp_surface.blit(grad_surface, (offset_x, offset_y))
-
-        # Add subtle outer glow for Unreal (3500+)
-        if rank_score >= 3500:
-            glow_rect = (offset_x - 3, offset_y - 3, badge_w + 6, height + 6)
-            pygame.draw.rect(temp_surface, (255, 255, 255, 12), glow_rect, border_radius=radius + 3)
     else:
         # Flat color badge
         main_color = (*bg_color[:3], main_alpha)
@@ -259,14 +274,15 @@ def _draw_shine(surface, badge_w, height, offset_x, offset_y, time_ms, rank_scor
     shine_surface = pygame.Surface((badge_w, height), pygame.SRCALPHA)
 
     # Determine shine color and alpha based on rank
+    # alpha_peak 10-16 for muted elegance, 25 for Unreal (dark bg needs more contrast)
     if rank_score >= 3500:  # Unreal - prismatic/rainbow shine
-        alpha_peak = 35  # Brighter for dark background
+        alpha_peak = 25  # Brighter for dark background
     elif rank_score == 3300:  # Титан - warm
-        alpha_peak = 16
+        alpha_peak = 12
     elif rank_score == 3400:  # Зевс
-        alpha_peak = 16
+        alpha_peak = 12
     else:
-        alpha_peak = 15  # Very subtle for others
+        alpha_peak = 10  # Very subtle for others
 
     # Draw thin diagonal shine stripe with soft feathered edges
     for i in range(stripe_w):
@@ -385,6 +401,14 @@ def draw_rank_badge(surface, rect, rank_name, fg_color, bg_color, max_width=None
 
     # Draw text on main surface (crisp, on top)
     text_rect = text_surf.get_rect(center=(center_x, center_y))
+
+    # Add text shadow for Unreal (dark background needs contrast)
+    if rank_score >= 3500:
+        shadow_surf = font.render(rank_name, True, (0, 0, 0))
+        shadow_surf.set_alpha(200)  # 80% opacity shadow
+        shadow_rect = shadow_surf.get_rect(center=(center_x + 1, center_y + 1))
+        surface.blit(shadow_surf, shadow_rect)
+
     surface.blit(text_surf, text_rect)
 
 
