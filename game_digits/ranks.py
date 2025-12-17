@@ -37,33 +37,34 @@ RANKS = [
 
 # Gradient definitions for legendary ranks (3000+)
 # Format: min_score -> list of color stops
+# Colors will be muted 35% toward table background for premium look
 LEGENDARY_GRADIENTS = {
-    3000: [(139, 0, 0), (229, 57, 53)],           # Гроссмейстер: dark red -> red
-    3100: [(0, 200, 83), (255, 213, 79)],         # Соломон: green -> gold
-    3200: [(0, 229, 255), (46, 125, 255)],        # Сверхчеловек: cyan -> blue (без фиолета)
-    3300: [(255, 109, 0), (255, 23, 68)],         # Титан: orange -> red
-    3400: [(106, 0, 255), (255, 215, 0)],         # Зевс-Демиург: violet -> gold (электро-божественный)
-    3500: [(0, 229, 255), (213, 0, 249), (255, 214, 0)],  # Unreal: cyan -> magenta -> gold
+    3000: [(139, 0, 0), (200, 60, 60)],           # Гроссмейстер: dark red -> muted red
+    3100: [(40, 160, 80), (200, 180, 80)],        # Соломон: muted green -> muted gold
+    3200: [(40, 180, 200), (60, 110, 200)],       # Сверхчеловек: muted cyan -> blue
+    3300: [(200, 100, 40), (200, 60, 70)],        # Титан: muted orange -> muted red
+    3400: [(90, 50, 160), (200, 180, 80)],        # Зевс-Демиург: muted violet -> muted gold
+    3500: [(30, 20, 60), (50, 40, 100), (80, 60, 140)],  # Unreal: dark indigo base (космос)
 }
 
-# Shine animation intervals (ms between shine passes) - made longer/rarer
+# Shine animation intervals (ms between shine passes) - rare and elegant
 SHINE_INTERVALS = {
-    3000: 3200,  # Гроссмейстер: ~3.2s
-    3100: 3000,  # Соломон: ~3.0s
-    3200: 2800,  # Сверхчеловек: ~2.8s
-    3300: 2600,  # Титан: ~2.6s
-    3400: 2400,  # Зевс-Демиург: ~2.4s
-    3500: 2200,  # Unreal: ~2.2s (slower, more elegant)
+    3000: 3500,  # Гроссмейстер: ~3.5s
+    3100: 3200,  # Соломон: ~3.2s
+    3200: 3000,  # Сверхчеловек: ~3.0s
+    3300: 2800,  # Титан: ~2.8s
+    3400: 2600,  # Зевс-Демиург: ~2.6s
+    3500: 2400,  # Unreal: ~2.4s
 }
 
 # Shine duration (how long the shine takes to cross) per rank
 SHINE_DURATIONS = {
-    3000: 700,   # Гроссмейстер
-    3100: 700,   # Соломон
-    3200: 800,   # Сверхчеловек
-    3300: 800,   # Титан
-    3400: 900,   # Зевс-Демиург
-    3500: 1000,  # Unreal: slowest, most elegant
+    3000: 800,   # Гроссмейстер
+    3100: 800,   # Соломон
+    3200: 900,   # Сверхчеловек
+    3300: 900,   # Титан
+    3400: 1000,  # Зевс-Демиург
+    3500: 1200,  # Unreal: slowest, most elegant
 }
 
 # Badge surface cache: (rank_name, badge_w, badge_h) -> (static_surface, is_legendary)
@@ -183,10 +184,15 @@ def _create_badge_surface(badge_w, height, bg_color, rank_score, scale_module):
         (1, 55),   # +1px, alpha 55
     ]
 
+    # For legendary ranks, use first gradient color for feather edges
+    feather_color = bg_color[:3]
+    if is_legendary and gradient_colors:
+        feather_color = gradient_colors[0]
+
     for expand, alpha in feather_layers:
         layer_rect = (offset_x - expand, offset_y - expand,
                      badge_w + expand * 2, height + expand * 2)
-        layer_color = (*bg_color[:3], alpha)
+        layer_color = (*feather_color, alpha)
         pygame.draw.rect(temp_surface, layer_color, layer_rect,
                         border_radius=radius + expand)
 
@@ -224,8 +230,8 @@ def _draw_shine(surface, badge_w, height, offset_x, offset_y, time_ms, rank_scor
     import pygame
 
     # Get shine interval and duration for this rank tier
-    shine_interval = 3000  # default
-    shine_duration = 800   # default
+    shine_interval = 3500  # default
+    shine_duration = 900   # default
     for score in sorted(SHINE_INTERVALS.keys(), reverse=True):
         if rank_score >= score:
             shine_interval = SHINE_INTERVALS[score]
@@ -242,8 +248,8 @@ def _draw_shine(surface, badge_w, height, offset_x, offset_y, time_ms, rank_scor
 
     # Calculate stripe position
     progress = cycle_time / shine_duration
-    # Thin stripe: 12-15% of badge width
-    stripe_w = max(4, int(badge_w * 0.14))
+    # Very thin stripe: 12% of badge width
+    stripe_w = max(3, int(badge_w * 0.12))
     total_travel = badge_w + stripe_w
     stripe_x = int(progress * total_travel) - stripe_w
 
@@ -252,16 +258,17 @@ def _draw_shine(surface, badge_w, height, offset_x, offset_y, time_ms, rank_scor
     # Create shine surface
     shine_surface = pygame.Surface((badge_w, height), pygame.SRCALPHA)
 
-    # Determine shine color tint based on rank (warm vs cool)
-    if rank_score == 3300:  # Титан - warm yellow-white
-        shine_color = (255, 250, 220)
-    elif rank_score == 3400:  # Зевс - cool blue-white
-        shine_color = (220, 240, 255)
+    # Determine shine color and alpha based on rank
+    if rank_score >= 3500:  # Unreal - prismatic/rainbow shine
+        alpha_peak = 35  # Brighter for dark background
+    elif rank_score == 3300:  # Титан - warm
+        alpha_peak = 16
+    elif rank_score == 3400:  # Зевс
+        alpha_peak = 16
     else:
-        shine_color = (255, 255, 255)  # Pure white
+        alpha_peak = 15  # Very subtle for others
 
     # Draw thin diagonal shine stripe with soft feathered edges
-    alpha_peak = 24  # Much softer: 18-30 range
     for i in range(stripe_w):
         # Strong feather: gaussian-like falloff
         dist_from_center = abs(i - stripe_w // 2) / max(1, stripe_w // 2)
@@ -279,6 +286,22 @@ def _draw_shine(surface, badge_w, height, offset_x, offset_y, time_ms, rank_scor
                 skew = int((y - height // 2) * 0.35)  # Slight diagonal
                 actual_x = x + skew
                 if 0 <= actual_x < badge_w:
+                    # Unreal gets prismatic rainbow colors
+                    if rank_score >= 3500:
+                        # Rainbow based on position
+                        hue_shift = (actual_x + y * 0.5) / badge_w
+                        if hue_shift < 0.33:
+                            shine_color = (100, 200, 255)  # Cyan
+                        elif hue_shift < 0.66:
+                            shine_color = (200, 100, 255)  # Magenta
+                        else:
+                            shine_color = (255, 200, 100)  # Gold
+                    elif rank_score == 3300:
+                        shine_color = (255, 250, 220)  # Warm
+                    elif rank_score == 3400:
+                        shine_color = (220, 240, 255)  # Cool
+                    else:
+                        shine_color = (255, 255, 255)  # White
                     shine_surface.set_at((actual_x, y), (*shine_color, alpha))
 
     # Apply capsule mask to shine
