@@ -191,26 +191,19 @@ class ResultWindow:
 
         # Row 4: Rank (show when total animation is complete)
         if rows_to_show >= 3 and current_total == self.total_score:
-            # Rank row background
+            # Rank row background (same style as other rows)
             rank_row_rect = pygame.Rect(row_x, current_y, row_width, self.RANK_ROW_HEIGHT - self.ROW_GAP)
             pygame.draw.rect(window_surface, (250, 248, 242), rank_row_rect, border_radius=scale.scaled(8))
 
-            # "Ваш ранг:" label
-            rank_label = self.label_font.render("Ваш ранг:", True, (80, 70, 60))
+            # "Ранг:" label (same style as other labels)
+            rank_label = self.label_font.render("Ранг:", True, (80, 70, 60))
             label_rect = rank_label.get_rect(midleft=(row_x + scale.scaled(15), current_y + rank_row_rect.height // 2))
             window_surface.blit(rank_label, label_rect)
 
-            # Rank badge (auto-sized, centered) with animation
-            badge_max_width = scale.scaled(180)
-            badge_height = scale.scaled(28)
-            badge_center_x = row_x + row_width - badge_max_width // 2 - scale.scaled(15)
-            badge_center_y = current_y + rank_row_rect.height // 2
-
-            # Draw rank badge with animation
-            current_time = pygame.time.get_ticks()
-            ranks.draw_rank_badge(window_surface,
-                                 (badge_center_x, badge_center_y, badge_max_width, badge_height),
-                                 self.rank_name, self.rank_fg, self.rank_bg, time_ms=current_time)
+            # Rank name as text (same style as values, right-aligned)
+            rank_text = self.value_font.render(self.rank_name, True, (80, 70, 60))
+            rank_text_rect = rank_text.get_rect(midright=(row_x + row_width - scale.scaled(15), current_y + rank_row_rect.height // 2))
+            window_surface.blit(rank_text, rank_text_rect)
 
         current_y += self.RANK_ROW_HEIGHT
 
