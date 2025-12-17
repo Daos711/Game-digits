@@ -6,7 +6,6 @@ import sys
 # Add game_digits to path
 sys.path.insert(0, '.')
 
-from game_digits import scale
 from game_digits.ranks import RANKS
 from game_digits.windows.result_window import ResultWindow
 
@@ -14,10 +13,7 @@ from game_digits.windows.result_window import ResultWindow
 def main():
     pygame.init()
 
-    # Initialize scale
     screen_size = (800, 600)
-    scale.init(screen_size)
-
     screen = pygame.display.set_mode(screen_size)
     pygame.display.set_caption("Test All Ranks")
 
