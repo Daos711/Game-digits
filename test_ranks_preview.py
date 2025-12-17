@@ -17,7 +17,7 @@ from game_digits import get_font_path
 def main():
     # Set up display
     screen_width = 700
-    screen_height = 800
+    screen_height = 850
     screen = pygame.display.set_mode((screen_width, screen_height))
     pygame.display.set_caption("Просмотр всех рангов")
 

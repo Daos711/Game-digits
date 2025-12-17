@@ -184,10 +184,15 @@ def _create_badge_surface(badge_w, height, bg_color, rank_score, scale_module):
         (1, 55),   # +1px, alpha 55
     ]
 
+    # For legendary ranks, use first gradient color for feather edges
+    feather_color = bg_color[:3]
+    if is_legendary and gradient_colors:
+        feather_color = gradient_colors[0]
+
     for expand, alpha in feather_layers:
         layer_rect = (offset_x - expand, offset_y - expand,
                      badge_w + expand * 2, height + expand * 2)
-        layer_color = (*bg_color[:3], alpha)
+        layer_color = (*feather_color, alpha)
         pygame.draw.rect(temp_surface, layer_color, layer_rect,
                         border_radius=radius + expand)
 
