@@ -225,7 +225,18 @@ class ResultWindow:
             window_surface.blit(rank_label, label_rect)
 
             # Rank name as text (right-aligned)
-            rank_text = self.value_font.render(self.rank_name, True, text_color)
+            # Calculate available width for rank name
+            available_width = row_width - label_rect.width - text_padding * 3
+
+            # Try with normal font first, reduce if too wide
+            rank_font = self.value_font
+            rank_text = rank_font.render(self.rank_name, True, text_color)
+
+            # If text is too wide, use smaller font
+            if rank_text.get_width() > available_width:
+                smaller_font = pygame.font.Font(get_font_path("2204.ttf"), scale.scaled(18))
+                rank_text = smaller_font.render(self.rank_name, True, text_color)
+
             rank_text_rect = rank_text.get_rect(midright=(row_x + row_width - text_padding, text_y))
             window_surface.blit(rank_text, rank_text_rect)
 
