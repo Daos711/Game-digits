@@ -56,8 +56,8 @@ class ResultWindow:
         # Get rank info (name, fg_color, bg_color)
         self.rank_name, self.rank_fg, self.rank_bg = ranks.get_rank(self.total_score)
 
-        # Add height for rank row
-        self.RANK_ROW_HEIGHT = scale.scaled(45)
+        # Add height for rank row (same as other rows)
+        self.RANK_ROW_HEIGHT = self.ROW_HEIGHT + self.ROW_GAP  # Same visual height as other rows
         self.WINDOW_HEIGHT += self.RANK_ROW_HEIGHT
 
         # Save record FIRST to know if we need extra space
@@ -192,7 +192,7 @@ class ResultWindow:
         # Row 4: Rank (show when total animation is complete)
         if rows_to_show >= 3 and current_total == self.total_score:
             # Same style as other rows: blue background with border
-            rank_row_h = self.RANK_ROW_HEIGHT - self.ROW_GAP
+            rank_row_h = self.ROW_HEIGHT  # Same height as other rows
             radius = scale.scaled(10)
             border_width = scale.BORDER_WIDTH
 
