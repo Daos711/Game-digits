@@ -217,15 +217,16 @@ class ResultWindow:
             # Text color - same as other rows
             text_color = (40, 92, 120)
             text_padding = scale.scaled(15)
+            text_y = current_y + rank_row_h // 2 - scale.scaled(2)  # Slight upward adjustment for visual centering
 
             # "Ранг:" label
             rank_label = self.label_font.render("Ранг:", True, text_color)
-            label_rect = rank_label.get_rect(midleft=(row_x + text_padding, current_y + rank_row_h // 2))
+            label_rect = rank_label.get_rect(midleft=(row_x + text_padding, text_y))
             window_surface.blit(rank_label, label_rect)
 
             # Rank name as text (right-aligned)
             rank_text = self.value_font.render(self.rank_name, True, text_color)
-            rank_text_rect = rank_text.get_rect(midright=(row_x + row_width - text_padding, current_y + rank_row_h // 2))
+            rank_text_rect = rank_text.get_rect(midright=(row_x + row_width - text_padding, text_y))
             window_surface.blit(rank_text, rank_text_rect)
 
         current_y += self.RANK_ROW_HEIGHT
