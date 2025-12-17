@@ -191,18 +191,41 @@ class ResultWindow:
 
         # Row 4: Rank (show when total animation is complete)
         if rows_to_show >= 3 and current_total == self.total_score:
-            # Rank row background (same style as other rows)
-            rank_row_rect = pygame.Rect(row_x, current_y, row_width, self.RANK_ROW_HEIGHT - self.ROW_GAP)
-            pygame.draw.rect(window_surface, (250, 248, 242), rank_row_rect, border_radius=scale.scaled(8))
+            # Same style as other rows: blue background with border
+            rank_row_h = self.RANK_ROW_HEIGHT - self.ROW_GAP
+            radius = scale.scaled(10)
+            border_width = scale.BORDER_WIDTH
 
-            # "Ранг:" label (same style as other labels)
-            rank_label = self.label_font.render("Ранг:", True, (80, 70, 60))
-            label_rect = rank_label.get_rect(midleft=(row_x + scale.scaled(15), current_y + rank_row_rect.height // 2))
+            # Create temp surface for proper alpha handling
+            temp = pygame.Surface((row_width, rank_row_h), pygame.SRCALPHA)
+
+            # Draw border first (filled rounded rect)
+            border_color = (120, 170, 190)
+            ui.draw_rounded_rect(temp, (*border_color, 255), (0, 0, row_width, rank_row_h), radius)
+
+            # Draw background on top (smaller by border_width)
+            bg_color = (168, 212, 242)
+            inner_radius = max(1, radius - border_width)
+            ui.draw_rounded_rect(temp, (*bg_color, 255),
+                              (border_width, border_width, row_width - 2 * border_width, rank_row_h - 2 * border_width),
+                              inner_radius)
+
+            # Apply transparency
+            temp.set_alpha(170)
+            window_surface.blit(temp, (row_x, current_y))
+
+            # Text color - same as other rows
+            text_color = (40, 92, 120)
+            text_padding = scale.scaled(15)
+
+            # "Ранг:" label
+            rank_label = self.label_font.render("Ранг:", True, text_color)
+            label_rect = rank_label.get_rect(midleft=(row_x + text_padding, current_y + rank_row_h // 2))
             window_surface.blit(rank_label, label_rect)
 
-            # Rank name as text (same style as values, right-aligned)
-            rank_text = self.value_font.render(self.rank_name, True, (80, 70, 60))
-            rank_text_rect = rank_text.get_rect(midright=(row_x + row_width - scale.scaled(15), current_y + rank_row_rect.height // 2))
+            # Rank name as text (right-aligned)
+            rank_text = self.value_font.render(self.rank_name, True, text_color)
+            rank_text_rect = rank_text.get_rect(midright=(row_x + row_width - text_padding, current_y + rank_row_h // 2))
             window_surface.blit(rank_text, rank_text_rect)
 
         current_y += self.RANK_ROW_HEIGHT
