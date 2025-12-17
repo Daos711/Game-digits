@@ -503,14 +503,14 @@ class StartMenu:
         panel_surface.blit(title, title_rect)
 
         # Decorative line under title
-        line_y = scale.scaled(60)
+        line_y = scale.scaled(65)
         pygame.draw.line(panel_surface, (220, 200, 140),
                         (scale.scaled(40), line_y),
                         (panel_width - scale.scaled(40), line_y), 2)
 
         # Table area dimensions (for solid card background)
         padding = scale.scaled(12)
-        table_top = scale.scaled(70)
+        table_top = scale.scaled(85)  # Increased gap from title
         table_height = panel_height - table_top - scale.scaled(10)
         content_width = panel_width - 2 * padding
 
