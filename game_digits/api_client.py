@@ -66,7 +66,7 @@ def submit_score(game_score: int, remaining_time: int, callback=None):
                 "remaining_time": remaining_time
             }).encode('utf-8')
 
-            url = f"{SUPABASE_URL}/rest/v1/scores"
+            url = f"{SUPABASE_URL}/rest/v1/scores?on_conflict=player_id"
             req = urllib.request.Request(
                 url,
                 data=data,
