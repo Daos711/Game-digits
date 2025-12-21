@@ -19,7 +19,7 @@ class SettingsWindow:
     def __init__(self, screen, screen_size, redraw_callback):
         # Window dimensions - computed at runtime (сохраняем при создании, чтобы не менялись при смене пресета)
         self.WINDOW_WIDTH = scale.scaled(380)
-        self.WINDOW_HEIGHT = scale.scaled(340)  # Увеличено для второго ряда
+        self.WINDOW_HEIGHT = scale.scaled(420)  # Увеличено для поля имени
         self.HEADER_HEIGHT = scale.scaled(50)
         self.PADDING = scale.scaled(20)
         self.ROW_HEIGHT = scale.scaled(45)
@@ -73,6 +73,14 @@ class SettingsWindow:
         self.size_changed = False
         self.speed_changed = False
 
+        # Name input state
+        self.name_text = settings.get_player_name()
+        self.name_focused = False
+        self.name_cursor_visible = True
+        self.name_cursor_timer = 0
+        self.NAME_CURSOR_BLINK = 500  # ms
+        self.NAME_MAX_LENGTH = 20
+
         # Animation state
         self.animation_start_time = 0
         self.FADE_IN_DURATION = 200  # ms
@@ -93,6 +101,20 @@ class SettingsWindow:
     def _get_speed_row_y(self):
         """Get Y position for speed row."""
         return self._get_size_row_y() + self.ROW_HEIGHT + self.ROW_GAP + self.LABEL_HEIGHT
+
+    def _get_name_row_y(self):
+        """Get Y position for name row."""
+        return self._get_speed_row_y() + self.ROW_HEIGHT + self.ROW_GAP + self.LABEL_HEIGHT
+
+    def _get_name_input_rect(self):
+        """Get the name input field rectangle (screen coords)."""
+        y = self.window_y + self._get_name_row_y()
+        return pygame.Rect(
+            self.window_x + self.PADDING,
+            y,
+            self.WINDOW_WIDTH - 2 * self.PADDING,
+            self.ROW_HEIGHT
+        )
 
     def _get_size_left_rect(self):
         """Get left arrow button rectangle for size."""
@@ -180,6 +202,43 @@ class SettingsWindow:
 
         pygame.draw.polygon(surface, arrow_color, points)
 
+    def _draw_name_input(self, surface, row_y):
+        """Draw the name input field."""
+        # Label
+        label_y = row_y - self.LABEL_HEIGHT
+        label_surf = self.label_font.render("Имя игрока:", True, (40, 92, 120))
+        label_x = (self.WINDOW_WIDTH - label_surf.get_width()) // 2
+        surface.blit(label_surf, (label_x, label_y))
+
+        # Input field background
+        input_rect = (self.PADDING, row_y, self.WINDOW_WIDTH - 2 * self.PADDING, self.ROW_HEIGHT)
+
+        # Different colors when focused
+        if self.name_focused:
+            bg_color = (255, 255, 255)
+            border_color = (243, 165, 0)  # Orange when focused
+            border_width = 3
+        else:
+            bg_color = (230, 240, 250)
+            border_color = (150, 180, 200)
+            border_width = 2
+
+        pygame.draw.rect(surface, bg_color, input_rect, border_radius=self.value_border_radius)
+        pygame.draw.rect(surface, border_color, input_rect, width=border_width, border_radius=self.value_border_radius)
+
+        # Draw text
+        text_surf = self.value_font.render(self.name_text, True, (40, 80, 120))
+        text_x = self.PADDING + scale.scaled(10)
+        text_y = row_y + (self.ROW_HEIGHT - text_surf.get_height()) // 2
+        surface.blit(text_surf, (text_x, text_y))
+
+        # Draw cursor when focused
+        if self.name_focused and self.name_cursor_visible:
+            cursor_x = text_x + text_surf.get_width() + 2
+            cursor_y = row_y + scale.scaled(8)
+            cursor_height = self.ROW_HEIGHT - scale.scaled(16)
+            pygame.draw.line(surface, (40, 80, 120), (cursor_x, cursor_y), (cursor_x, cursor_y + cursor_height), 2)
+
     def _draw_setting_row(self, surface, label, value, row_y, left_pressed, right_pressed):
         """Draw a setting row with label, value and arrow buttons."""
         # Label (по центру)
@@ -266,6 +325,9 @@ class SettingsWindow:
             self.speed_right_pressed
         )
 
+        # === Name input row ===
+        self._draw_name_input(window_surface, self._get_name_row_y())
+
         # Draw apply button
         apply_rect = (self.PADDING,
                      self.WINDOW_HEIGHT - self.PADDING - self.apply_btn_height,
@@ -295,6 +357,12 @@ class SettingsWindow:
             elapsed = current_time - self.animation_start_time
             fade_progress = min(1.0, elapsed / self.FADE_IN_DURATION)
 
+            # Cursor blink
+            if self.name_focused:
+                if current_time - self.name_cursor_timer > self.NAME_CURSOR_BLINK:
+                    self.name_cursor_visible = not self.name_cursor_visible
+                    self.name_cursor_timer = current_time
+
             # Redraw background
             self.redraw_callback()
 
@@ -318,6 +386,14 @@ class SettingsWindow:
 
                 elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     pos = pygame.mouse.get_pos()
+
+                    # Check name input field click
+                    if self._get_name_input_rect().collidepoint(pos):
+                        self.name_focused = True
+                        self.name_cursor_visible = True
+                        self.name_cursor_timer = current_time
+                    else:
+                        self.name_focused = False
 
                     # Check close button
                     if self._get_close_button_rect().collidepoint(pos):
@@ -363,6 +439,8 @@ class SettingsWindow:
 
                     # Check apply button release
                     if self.apply_pressed and self._get_apply_button_rect().collidepoint(pos):
+                        # Save player name
+                        settings.set_player_name(self.name_text)
                         # Size change requires restart, speed change doesn't
                         if self.size_changed:
                             return 'apply'
@@ -376,6 +454,21 @@ class SettingsWindow:
                     self.speed_left_pressed = False
                     self.speed_right_pressed = False
                     self.apply_pressed = False
+
+                elif event.type == pygame.KEYDOWN and self.name_focused:
+                    if event.key == pygame.K_BACKSPACE:
+                        self.name_text = self.name_text[:-1]
+                    elif event.key == pygame.K_RETURN:
+                        self.name_focused = False
+                    elif event.key == pygame.K_ESCAPE:
+                        self.name_focused = False
+                    elif len(self.name_text) < self.NAME_MAX_LENGTH:
+                        # Add character if printable
+                        if event.unicode and event.unicode.isprintable():
+                            self.name_text += event.unicode
+                    # Reset cursor to visible on any keypress
+                    self.name_cursor_visible = True
+                    self.name_cursor_timer = current_time
 
             clock.tick(60)
 

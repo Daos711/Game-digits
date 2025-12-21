@@ -1,6 +1,12 @@
 # Модуль настроек игры
 # Поддерживает динамическое изменение масштаба и скорости
 
+import json
+from pathlib import Path
+
+# Путь к файлу конфигурации
+CONFIG_PATH = Path.home() / ".game_digits" / "config.json"
+
 # Пресеты размеров
 SIZE_PRESETS = {
     'small': {'name': 'Маленький', 'scale': 0.7},
@@ -126,3 +132,47 @@ def prev_speed():
 def get_all_presets():
     """Получить все пресеты размера."""
     return [(key, SIZE_PRESETS[key]['name']) for key in SIZE_ORDER]
+
+
+# === Имя игрока ===
+
+_player_name = "Player"  # Значение по умолчанию
+
+
+def _load_config():
+    """Загрузить конфигурацию из файла."""
+    global _player_name
+    if CONFIG_PATH.exists():
+        try:
+            with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                _player_name = config.get('player_name', 'Player')
+        except (json.JSONDecodeError, IOError):
+            pass
+
+
+def _save_config():
+    """Сохранить конфигурацию в файл."""
+    CONFIG_PATH.parent.mkdir(exist_ok=True)
+    config = {'player_name': _player_name}
+    try:
+        with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
+            json.dump(config, f, ensure_ascii=False, indent=2)
+    except IOError:
+        pass
+
+
+def get_player_name():
+    """Получить имя игрока."""
+    return _player_name
+
+
+def set_player_name(name):
+    """Установить имя игрока и сохранить."""
+    global _player_name
+    _player_name = name.strip() or "Player"
+    _save_config()
+
+
+# Загружаем конфиг при импорте модуля
+_load_config()
