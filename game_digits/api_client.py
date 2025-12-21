@@ -39,8 +39,8 @@ def submit_score(game_score: int, remaining_time: int, callback=None):
     """
     def _send():
         try:
-            # Расчёт бонуса и общего счёта
-            time_bonus = remaining_time * 10
+            # Расчёт бонуса и общего счёта (формула как в игре)
+            time_bonus = 300 + 5 * remaining_time
             total_score = game_score + time_bonus
 
             data = json.dumps({
