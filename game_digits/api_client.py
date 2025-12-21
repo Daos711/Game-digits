@@ -3,16 +3,35 @@ import threading
 import urllib.request
 import urllib.error
 import json
+import uuid
+from pathlib import Path
+
+from game_digits import settings
 
 # URL сервера (локальная разработка)
 API_URL = "http://localhost:3001/api/digits/score"
 
+# Путь к файлу с ID игрока
+PLAYER_ID_PATH = Path.home() / ".game_digits" / "player_id"
 
-def submit_score(name: str, game_score: int, remaining_time: int, callback=None):
+
+def get_player_id():
+    """Получить или создать уникальный ID игрока."""
+    PLAYER_ID_PATH.parent.mkdir(exist_ok=True)
+
+    if PLAYER_ID_PATH.exists():
+        return PLAYER_ID_PATH.read_text().strip()
+
+    # Создаём новый ID при первом запуске
+    player_id = str(uuid.uuid4())
+    PLAYER_ID_PATH.write_text(player_id)
+    return player_id
+
+
+def submit_score(game_score: int, remaining_time: int, callback=None):
     """Отправляет лучший результат на сервер (в фоновом потоке).
 
     Args:
-        name: Имя игрока
         game_score: Очки за игру
         remaining_time: Оставшееся время (для расчёта бонуса на сервере)
         callback: Функция(success, response) вызывается после завершения
@@ -20,7 +39,8 @@ def submit_score(name: str, game_score: int, remaining_time: int, callback=None)
     def _send():
         try:
             data = json.dumps({
-                "name": name,
+                "playerId": get_player_id(),
+                "name": settings.get_player_name(),
                 "gameScore": game_score,
                 "remainingTime": remaining_time
             }).encode('utf-8')

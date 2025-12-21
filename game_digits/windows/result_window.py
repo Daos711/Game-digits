@@ -84,7 +84,6 @@ class ResultWindow:
         # Отправляем на сервер ТОЛЬКО если это новый лучший результат (1 место)
         if self.record_position == 1 and not self.test_mode:
             api_client.submit_score(
-                name=settings.get_player_name(),
                 game_score=self.game_score,
                 remaining_time=self.remaining_time
             )
