@@ -1,4 +1,4 @@
-"""API клиент для отправки лучшего результата на сервер."""
+"""API клиент для отправки лучшего результата в Supabase."""
 import threading
 import urllib.request
 import urllib.error
@@ -8,8 +8,9 @@ from pathlib import Path
 
 from game_digits import settings
 
-# URL сервера (локальная разработка)
-API_URL = "http://localhost:3001/api/digits/score"
+# Supabase конфигурация
+SUPABASE_URL = "https://tuskcdlcbasehlrsrsoe.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1c2tjZGxjYmFzZWhscnNyc29lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyOTM4NzcsImV4cCI6MjA4MTg2OTg3N30.VdfhknWL4SgbMUOxFZKsnAsjI3SUbcyoYXDiONjOjao"
 
 # Путь к файлу с ID игрока
 PLAYER_ID_PATH = Path.home() / ".game_digits" / "player_id"
@@ -29,26 +30,38 @@ def get_player_id():
 
 
 def submit_score(game_score: int, remaining_time: int, callback=None):
-    """Отправляет лучший результат на сервер (в фоновом потоке).
+    """Отправляет лучший результат в Supabase (в фоновом потоке).
 
     Args:
         game_score: Очки за игру
-        remaining_time: Оставшееся время (для расчёта бонуса на сервере)
+        remaining_time: Оставшееся время в секундах
         callback: Функция(success, response) вызывается после завершения
     """
     def _send():
         try:
+            # Расчёт бонуса и общего счёта
+            time_bonus = remaining_time * 10
+            total_score = game_score + time_bonus
+
             data = json.dumps({
-                "playerId": get_player_id(),
+                "player_id": get_player_id(),
                 "name": settings.get_player_name(),
-                "gameScore": game_score,
-                "remainingTime": remaining_time
+                "score": total_score,
+                "game_score": game_score,
+                "time_bonus": time_bonus,
+                "remaining_time": remaining_time
             }).encode('utf-8')
 
+            url = f"{SUPABASE_URL}/rest/v1/scores"
             req = urllib.request.Request(
-                API_URL,
+                url,
                 data=data,
-                headers={"Content-Type": "application/json"},
+                headers={
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_KEY}",
+                    "Content-Type": "application/json",
+                    "Prefer": "resolution=merge-duplicates"
+                },
                 method="POST"
             )
 
