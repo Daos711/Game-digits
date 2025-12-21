@@ -7,6 +7,7 @@ from game_digits import ui_components as ui
 from game_digits import records
 from game_digits import ranks
 from game_digits import scale
+from game_digits import api_client
 from game_digits.sprites import ConfettiSystem
 
 # Colors for rank row (same as ui_components result rows)
@@ -78,6 +79,14 @@ class ResultWindow:
             total=self.total_score,
             test_mode=self.test_mode
         )
+
+        # Отправляем на сервер ТОЛЬКО если это новый лучший результат (1 место)
+        if self.record_position == 1 and not self.test_mode:
+            api_client.submit_score(
+                name="Player",  # TODO: можно добавить ввод имени в настройках
+                game_score=self.game_score,
+                remaining_time=self.remaining_time
+            )
 
         # Adjust window height if showing congratulations
         self.CONGRATS_HEIGHT = scale.scaled(35) if self.record_position is not None else 0
